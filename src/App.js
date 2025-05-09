@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useState as useReactState } from "react";
+import React, { useState, useMemo, useEffect, useRef, useState as useReactState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import releases from "./releases";
 import About from "./About";
@@ -7,116 +7,129 @@ import './index.css';
 import ReleasePage from "./ReleasePage";
 
 
-const Home = ({ theme, toggleTheme }) => (
-  <div style={{
-    textAlign: "center",
-    fontFamily: "Arial, sans-serif",
-    padding: "40px",
-    backgroundColor: theme === "dark" ? "#000" : "#fff",
-    color: theme === "dark" ? "#fff" : "#000",
-    minHeight: "100vh"
-  }}>
-    <div style={{ marginBottom: "30px" }}>
-    <video
-  autoPlay
-  muted
-  playsInline
-  onEnded={() => {
-    const vid = document.getElementById("title-video");
-    const img = document.getElementById("title-image");
-    if (vid && img) {
-      vid.style.display = "none";
-      img.style.display = "inline";
+const Home = ({ theme, toggleTheme }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.log("Autoplay error:", error);
+        });
+      }
     }
-  }}
-  id="title-video"
-  style={{
-    width: "clamp(300px, 50vw, 600px)",
-    height: "auto",
-    filter: theme === "light" ? "invert(1)" : "none"
-  }}
->
-  <source src="/YEN SOUND PR LOGO VID.mp4" type="video/mp4" />
-  Your browser does not support the video tag.
-</video>
+  }, []);
 
-<img
-  id="title-image"
-  src="/yen sound white on black raw.png"
-  alt="Yen Sound Logo"
-  style={{
-    display: "none",
-    width: "clamp(300px, 50vw, 600px)",
-    height: "auto",
-    filter: theme === "light" ? "invert(1)" : "none"
-  }}
-/>
+  return (
+    <div style={{
+      textAlign: "center",
+      fontFamily: "Arial, sans-serif",
+      padding: "40px",
+      backgroundColor: theme === "dark" ? "#000" : "#fff",
+      color: theme === "dark" ? "#fff" : "#000",
+      minHeight: "100vh"
+    }}>
+      <div style={{ marginBottom: "30px" }}>
+        <video
+          ref={videoRef}
+          id="title-video"
+          src="/YEN SOUND PR LOGO VID.mp4"
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onEnded={() => {
+            const vid = document.getElementById("title-video");
+            const img = document.getElementById("title-image");
+            if (vid && img) {
+              vid.style.display = "none";
+              img.style.display = "inline";
+            }
+          }}
+          style={{
+            width: "clamp(300px, 50vw, 600px)",
+            height: "auto",
+            filter: theme === "light" ? "invert(1)" : "none"
+          }}
+        />
+        <img
+          id="title-image"
+          src="/yen sound white on black raw.png"
+          alt="Yen Sound Logo"
+          style={{
+            display: "none",
+            width: "clamp(300px, 50vw, 600px)",
+            height: "auto",
+            filter: theme === "light" ? "invert(1)" : "none"
+          }}
+        />
+      </div>
 
+      <p style={{ fontSize: "clamp(1rem, 3vw, 1.5rem)", marginBottom: "30px" }}>
+        Boutique PR & Distribution
+        <br />
+        Based in Tel Aviv
+      </p>
 
-    </div>
-
-    <p style={{ fontSize: "clamp(1rem, 3vw, 1.5rem)", marginBottom: "30px" }}>
-      Boutique PR & Distribution
-      <br />
-      Based in Tel Aviv
-    </p>
-
-    <Link to="/releases">
-      <button style={{
-        padding: "14px 24px",
-        minHeight: "44px",
-        fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
-        backgroundColor: "transparent",
-        color: theme === "dark" ? "#fff" : "#000",
-        border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-        borderRadius: "5px",
-        cursor: "pointer",
-        fontWeight: "bold",
-        transition: "all 0.3s ease-in-out",
-        boxShadow: "0 0 0 transparent"
-      }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
-          e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
-          e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
+      <Link to="/releases">
+        <button style={{
+          padding: "14px 24px",
+          minHeight: "44px",
+          fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
+          backgroundColor: "transparent",
+          color: theme === "dark" ? "#fff" : "#000",
+          border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+          borderRadius: "5px",
+          cursor: "pointer",
+          fontWeight: "bold",
+          transition: "all 0.3s ease-in-out",
+          boxShadow: "0 0 0 transparent"
         }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
-          e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
-          e.currentTarget.style.boxShadow = "0 0 0 transparent";
-        }}
-      >
-        ENTER
-      </button>
-    </Link>
-
-    <div style={{ marginTop: "30px" }}>
-      <Link to="/about" style={{
-        color: theme === "dark" ? "#fff" : "#000",
-        textDecoration: "underline",
-        fontSize: "clamp(1rem, 3vw, 1.2rem)"
-      }}>
-        ABOUT YEN SOUND
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
+            e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
+            e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
+            e.currentTarget.style.boxShadow = "0 0 0 transparent";
+          }}
+        >
+          ENTER
+        </button>
       </Link>
-    </div>
 
-    <div style={{ marginTop: "30px" }}>
-      <button
-        onClick={toggleTheme}
-        style={{
-          width: "18px",
-          height: "18px",
-          borderRadius: "50%",
-          border: "2px solid",
-          borderColor: theme === "dark" ? "#fff" : "#000",
-          backgroundColor: theme === "dark" ? "#fff" : "#000",
-          cursor: "pointer"
-        }}
-        aria-label="Toggle Theme"
-      />
+      <div style={{ marginTop: "30px" }}>
+        <Link to="/about" style={{
+          color: theme === "dark" ? "#fff" : "#000",
+          textDecoration: "underline",
+          fontSize: "clamp(1rem, 3vw, 1.2rem)"
+        }}>
+          ABOUT YEN SOUND
+        </Link>
+      </div>
+
+      <div style={{ marginTop: "30px" }}>
+        <button
+          onClick={toggleTheme}
+          style={{
+            width: "18px",
+            height: "18px",
+            borderRadius: "50%",
+            border: "2px solid",
+            borderColor: theme === "dark" ? "#fff" : "#000",
+            backgroundColor: theme === "dark" ? "#fff" : "#000",
+            cursor: "pointer"
+          }}
+          aria-label="Toggle Theme"
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 
 const Releases = ({ theme, toggleTheme }) => {
@@ -338,21 +351,25 @@ const Releases = ({ theme, toggleTheme }) => {
         }}>← Back to Home</Link>
       </div>
 
-      <div style={{ textAlign: "center", marginTop: "30px" }}>
-        <button
-          onClick={toggleTheme}
-          style={{
-            width: "18px",
-            height: "18px",
-            borderRadius: "50%",
-            border: "2px solid",
-            borderColor: theme === "dark" ? "#fff" : "#000",
-            backgroundColor: theme === "dark" ? "#fff" : "#000",
-            cursor: "pointer"
-          }}
-          aria-label="Toggle Theme"
-        />
-      </div>
+      <div style={{ marginTop: "30px", display: "flex", justifyContent: "center" }}>
+  <button
+    onClick={toggleTheme}
+    style={{
+      width: "18px",
+      height: "18px",
+      aspectRatio: "1 / 1",
+      borderRadius: "50%",
+      border: "2px solid",
+      borderColor: theme === "dark" ? "#fff" : "#000",
+      backgroundColor: theme === "dark" ? "#fff" : "#000",
+      cursor: "pointer",
+      display: "inline-block"
+    }}
+    aria-label="Toggle Theme"
+  />
+</div>
+
+
 
       <Footer />
     </div>
@@ -408,6 +425,13 @@ function App() {
     localStorage.setItem("theme", theme); // ← add this
   }, [theme]);
   
+  useEffect(() => {
+    const disableRightClick = (e) => e.preventDefault();
+    document.addEventListener("contextmenu", disableRightClick);
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick);
+    };
+  }, []);
 
   return (
     <Router>
