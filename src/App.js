@@ -5,6 +5,11 @@ import About from "./About";
 import Footer from "./Footer";
 import './index.css'; 
 import ReleasePage from "./ReleasePage";
+import IpodFrame from './components/ipod/IpodFrame';
+import CoverFlowFrame from './components/ipod/CoverFlowFrame';
+import Contact from "./Contact";
+
+
 
 
 const Home = ({ theme, toggleTheme }) => {
@@ -99,6 +104,8 @@ const Home = ({ theme, toggleTheme }) => {
         >
           ENTER
         </button>
+        <Contact />
+
       </Link>
 
       <div style={{ marginTop: "30px" }}>
@@ -440,7 +447,8 @@ function App() {
         <Route path="/releases" element={<Releases theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/about" element={<About theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
-      </Routes>
+        <Route path="/ipod" element={<CoverFlowFrame />} />
+        </Routes>
     </Router>
   );
 }

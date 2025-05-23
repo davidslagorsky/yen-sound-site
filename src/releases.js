@@ -26,6 +26,38 @@ const releases = [
     date: "2025-05-01"
   },
   {
+    title: "לילה לבן",
+    artist: "רוי ניסמו",
+    type: "Single",
+    smartLink: "https://ffm.to/laylalavan",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/37/e9/2c/37e92cda-23a2-4013-726f-0a805bfaf05d/artwork.jpg/600x600bb.jpg",
+    date: "2024-10-01"
+  },
+  {
+    title: "לחם עבודה",
+    artist: "רוי ניסמו",
+    type: "Single",
+    smartLink: "https://ffm.to/lehemavoda",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/08/89/f6/0889f612-d62f-38c9-9bbf-fdb5f393dca0/artwork.jpg/600x600bb.jpg",
+    date: "2024-10-01"
+  },
+  {
+    title: "חורף24",
+    artist: "SHOWER",
+    type: "Album",
+    smartLink: "https://ffm.to/horef24",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/56/77/00567788-fcda-b197-9630-93b6baa1c945/artwork.jpg/600x600bb.jpg",
+    date: "2024-11-01"
+  },
+  {
+    title: "צלקות",
+    artist: "SHOWER",
+    type: "Album",
+    smartLink: "https://ffm.to/tzalakot",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/2e/ba/d3/2ebad32e-f64a-c26c-0e5f-317036c9098e/artwork.jpg/600x600bb.jpg",
+    date: "2023-05-01"
+  },
+  {
     title: "צלילי אהבה",
     artist: "Sighdafekt",
     type: "Album",
