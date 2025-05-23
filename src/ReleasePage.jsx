@@ -28,20 +28,24 @@ export default function ReleasePage({ theme }) {
       position: "relative"
     }}>
       {/* Back Arrow */}
-      <div
-        onClick={() => navigate(-1)}
-        style={{
-          position: "absolute",
-          top: "24px",
-          left: "24px",
-          fontSize: "28px",
-          cursor: "pointer",
-          color: fg
-        }}
-        aria-label="Back"
-      >
-        ←
-      </div>
+      {/* Bottom Center Back Arrow */}
+<div
+  onClick={() => navigate(-1)}
+  style={{
+    position: "fixed",
+    bottom: "24px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    fontSize: "32px",
+    color: fg,
+    cursor: "pointer",
+    zIndex: 1000
+  }}
+  aria-label="Back"
+>
+  ←
+</div>
+
 
       {/* Modal box */}
       <div style={{
@@ -66,7 +70,7 @@ export default function ReleasePage({ theme }) {
           }}
         />
 
-        {/* Stream Button */}
+        {/* Smart Link Button */}
         <a
           href={release.smartLink}
           target="_blank"
@@ -92,8 +96,41 @@ export default function ReleasePage({ theme }) {
             e.currentTarget.style.color = fg;
           }}
         >
-          STREAM
+          Listen on All Platforms
         </a>
+
+        {/* Platform Icons (Spotify, Apple, YouTube) */}
+        <div style={{
+          marginTop: "16px",
+          display: "flex",
+          justifyContent: "center",
+          gap: "16px"
+        }}>
+          {["spotify", "apple", "youtube"].map(service => (
+            <a
+              key={service}
+              href={release.smartLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Listen on ${service.charAt(0).toUpperCase() + service.slice(1)}`}
+            >
+              <img
+                src={`/${service}.png`}
+                alt={service}
+                style={{
+  width: "32px",
+  height: "32px",
+  opacity: 0.85,
+  transition: "opacity 0.2s",
+  filter: theme === "dark" ? "brightness(1000%)" : "none"
+}}
+
+                onMouseOver={e => e.currentTarget.style.opacity = "1"}
+                onMouseOut={e => e.currentTarget.style.opacity = "0.85"}
+              />
+            </a>
+          ))}
+        </div>
 
         {/* Artist + Song Title */}
         <div style={{
@@ -105,16 +142,20 @@ export default function ReleasePage({ theme }) {
         </div>
 
         {/* Distributed by line */}
-        <div style={{ textAlign: "center", marginTop: "20px", opacity: 0.6, fontStyle: "italic", fontSize: "0.9rem" }}>
-  <div>הופץ ע״י YEN SOUND</div>
-  <img 
-    src="/yen-logo.gif" 
-    alt="Yen Sound Animated Logo" 
-    style={{ width: "40px", marginTop: "10px" }} 
-  />
-</div>
-
-
+        <div style={{
+          textAlign: "center",
+          marginTop: "20px",
+          opacity: 0.6,
+          fontStyle: "italic",
+          fontSize: "0.9rem"
+        }}>
+          <div>הופץ ע״י YEN SOUND</div>
+          <img
+            src="/yen-logo.gif"
+            alt="Yen Sound Animated Logo"
+            style={{ width: "40px", marginTop: "10px" }}
+          />
+        </div>
       </div>
     </div>
   );

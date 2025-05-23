@@ -46,7 +46,6 @@ const About = ({ theme, toggleTheme }) => (
           <br />
           info@sigh.live
           <br />
-          Or you can contact us through our{" "}
           <a
             href="https://instagram.com/yen.sound"
             target="_blank"

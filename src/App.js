@@ -77,36 +77,67 @@ const Home = ({ theme, toggleTheme }) => {
         Based in Tel Aviv
       </p>
 
-      <Link to="/releases">
-        <button style={{
-          padding: "14px 24px",
-          minHeight: "44px",
-          fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
-          backgroundColor: "transparent",
-          color: theme === "dark" ? "#fff" : "#000",
-          border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-          borderRadius: "5px",
-          cursor: "pointer",
-          fontWeight: "bold",
-          transition: "all 0.3s ease-in-out",
-          boxShadow: "0 0 0 transparent"
-        }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
-            e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
-            e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-            e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
-            e.currentTarget.style.boxShadow = "0 0 0 transparent";
-          }}
-        >
-          ENTER
-        </button>
-        <Contact />
+     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", marginBottom: "30px" }}>
+  <Link to="/releases">
+    <button style={{
+      padding: "14px 24px",
+      minHeight: "44px",
+      fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
+      backgroundColor: "transparent",
+      color: theme === "dark" ? "#fff" : "#000",
+      border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+      borderRadius: "5px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      transition: "all 0.3s ease-in-out",
+      boxShadow: "0 0 0 transparent"
+    }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
+        e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
+        e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.backgroundColor = "transparent";
+        e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
+        e.currentTarget.style.boxShadow = "0 0 0 transparent";
+      }}
+    >
+      ENTER
+    </button>
+  </Link>
 
-      </Link>
+  <Link to="/contact">
+    <button style={{
+      padding: "14px 24px",
+      minHeight: "44px",
+      fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
+      backgroundColor: "transparent",
+      color: theme === "dark" ? "#fff" : "#000",
+      border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+      borderRadius: "5px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      transition: "all 0.3s ease-in-out",
+      boxShadow: "0 0 0 transparent"
+    }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
+        e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
+        e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.backgroundColor = "transparent";
+        e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
+        e.currentTarget.style.boxShadow = "0 0 0 transparent";
+      }}
+    >
+      CONTACT
+    </button>
+  </Link>
+</div>
+
+
 
       <div style={{ marginTop: "30px" }}>
         <Link to="/about" style={{
@@ -118,21 +149,24 @@ const Home = ({ theme, toggleTheme }) => {
         </Link>
       </div>
 
-      <div style={{ marginTop: "30px" }}>
-        <button
-          onClick={toggleTheme}
-          style={{
-            width: "18px",
-            height: "18px",
-            borderRadius: "50%",
-            border: "2px solid",
-            borderColor: theme === "dark" ? "#fff" : "#000",
-            backgroundColor: theme === "dark" ? "#fff" : "#000",
-            cursor: "pointer"
-          }}
-          aria-label="Toggle Theme"
-        />
-      </div>
+      {/* Theme Toggle Button Removed
+<div style={{ marginTop: "30px" }}>
+  <button
+    onClick={toggleTheme}
+    style={{
+      width: "18px",
+      height: "18px",
+      borderRadius: "50%",
+      border: "2px solid",
+      borderColor: theme === "dark" ? "#fff" : "#000",
+      backgroundColor: theme === "dark" ? "#fff" : "#000",
+      cursor: "pointer"
+    }}
+    aria-label="Toggle Theme"
+  />
+</div>
+*/}
+
     </div>
   );
 };
@@ -358,23 +392,8 @@ const Releases = ({ theme, toggleTheme }) => {
         }}>← Back to Home</Link>
       </div>
 
-      <div style={{ marginTop: "30px", display: "flex", justifyContent: "center" }}>
-  <button
-    onClick={toggleTheme}
-    style={{
-      width: "18px",
-      height: "18px",
-      aspectRatio: "1 / 1",
-      borderRadius: "50%",
-      border: "2px solid",
-      borderColor: theme === "dark" ? "#fff" : "#000",
-      backgroundColor: theme === "dark" ? "#fff" : "#000",
-      cursor: "pointer",
-      display: "inline-block"
-    }}
-    aria-label="Toggle Theme"
-  />
-</div>
+      {/* Removed theme toggle button from Releases page */}
+
 
 
 
@@ -448,6 +467,7 @@ function App() {
         <Route path="/about" element={<About theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
         <Route path="/ipod" element={<CoverFlowFrame />} />
+        <Route path="/contact" element={<Contact />} />
         </Routes>
     </Router>
   );
