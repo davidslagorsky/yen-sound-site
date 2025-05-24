@@ -27,7 +27,7 @@ const releases = [
   },
   {
     title: "לילה לבן",
-    artist: "רוי ניסמו",
+    artist: "Roy Nismo",
     type: "Single",
     smartLink: "https://ffm.to/laylalavan",
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/37/e9/2c/37e92cda-23a2-4013-726f-0a805bfaf05d/artwork.jpg/600x600bb.jpg",
@@ -35,7 +35,7 @@ const releases = [
   },
   {
     title: "לחם עבודה",
-    artist: "רוי ניסמו",
+    artist: "Roy Nismo",
     type: "Single",
     smartLink: "https://ffm.to/lehemavoda",
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/08/89/f6/0889f612-d62f-38c9-9bbf-fdb5f393dca0/artwork.jpg/600x600bb.jpg",

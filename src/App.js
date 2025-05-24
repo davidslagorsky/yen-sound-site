@@ -8,6 +8,9 @@ import ReleasePage from "./ReleasePage";
 import IpodFrame from './components/ipod/IpodFrame';
 import CoverFlowFrame from './components/ipod/CoverFlowFrame';
 import Contact from "./Contact";
+import Roster from "./Roster";
+import { useLocation } from "react-router-dom";
+import ArtistPage from "./ArtistPage";
 
 
 
@@ -178,6 +181,9 @@ const Releases = ({ theme, toggleTheme }) => {
   const [artistFilter, setArtistFilter] = useState("All");
   const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
   const [columns, setColumns] = useReactState(3);
+  const [showRoster, setShowRoster] = useState(false);
+  const [filteredFromURL, setFilteredFromURL] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
     const updateColumns = () => {
@@ -195,6 +201,45 @@ const Releases = ({ theme, toggleTheme }) => {
     });
     return Array.from(names);
   }, []);
+
+  // Normalize URL param and match to known artist names
+  const artistNameMap = {
+  sgulot: "סגולות",
+  ethel: "Ethel",
+  sighdafekt: "Sighdafekt",
+  shower: "Shower",
+  kizels: "Kizels",
+  roynismo: "רוי ניסמו"
+};
+
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const artistFromURL = params.get("artist");
+
+  if (artistFromURL) {
+    const normalized = artistFromURL.toLowerCase().replace(/\s+/g, "");
+    const mappedName = artistNameMap[normalized];
+
+    if (mappedName && allArtists.includes(mappedName)) {
+      setArtistFilter(mappedName);
+      setFilteredFromURL(mappedName);
+      setShowRoster(false);
+    } else {
+      const fallback = allArtists.find(a =>
+        a.toLowerCase().replace(/\s+/g, "") === normalized
+      );
+
+      if (fallback) {
+        setArtistFilter(fallback);
+        setFilteredFromURL(fallback);
+        setShowRoster(false);
+      } else {
+        setArtistFilter("All");
+        setFilteredFromURL(null);
+      }
+    }
+  }
+}, [location.search, allArtists]);
 
   const sortedReleases = useMemo(() => {
     return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -225,15 +270,16 @@ const Releases = ({ theme, toggleTheme }) => {
         Releases
       </h2>
 
-      {/* Filter Buttons */}
       <div style={{ textAlign: "center", margin: "40px 0", position: "relative" }}>
         {["All", "Album", "Single"].map((t) => (
           <button
             key={t}
             onClick={() => {
+              setShowRoster(false);
               setFilter(t);
               setArtistFilter("All");
               setArtistDropdownOpen(false);
+              setFilteredFromURL(null);
             }}
             style={{
               margin: "6px",
@@ -253,7 +299,6 @@ const Releases = ({ theme, toggleTheme }) => {
           </button>
         ))}
 
-        {/* Artist Dropdown Toggle */}
         <button
           onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
           style={{
@@ -273,7 +318,29 @@ const Releases = ({ theme, toggleTheme }) => {
           Artists ▾
         </button>
 
-        {/* Dropdown Menu */}
+        <button
+          onClick={() => {
+            setShowRoster(true);
+            setArtistDropdownOpen(false);
+            setFilteredFromURL(null);
+          }}
+          style={{
+            margin: "6px",
+            padding: "14px 20px",
+            minHeight: "44px",
+            borderRadius: "5px",
+            border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+            backgroundColor: showRoster ? (theme === "dark" ? "#fff" : "#000") : "transparent",
+            color: showRoster ? (theme === "dark" ? "#000" : "#fff") : (theme === "dark" ? "#fff" : "#000"),
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+            transition: "background-color 0.2s"
+          }}
+        >
+          Roster
+        </button>
+
         {artistDropdownOpen && (
           <div style={{
             position: "absolute",
@@ -292,6 +359,7 @@ const Releases = ({ theme, toggleTheme }) => {
             <button
               onClick={() => {
                 setArtistFilter("All");
+                setFilteredFromURL(null);
                 setArtistDropdownOpen(false);
               }}
               style={dropdownBtnStyle(theme)}
@@ -303,6 +371,7 @@ const Releases = ({ theme, toggleTheme }) => {
                 key={artist}
                 onClick={() => {
                   setArtistFilter(artist);
+                  setFilteredFromURL(artist);
                   setArtistDropdownOpen(false);
                 }}
                 style={dropdownBtnStyle(theme)}
@@ -314,93 +383,76 @@ const Releases = ({ theme, toggleTheme }) => {
         )}
       </div>
 
-      {/* Release Grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gap: "30px",
-        maxWidth: "1000px",
-        margin: "auto"
-      }}>
-        {filtered.map((r, i) => (
-      <Link
-      key={i}
-      to={`/release/${r.title.toLowerCase().replace(/\s+/g, "-")}`}
-      style={{
-        textDecoration: "none",
-        color: theme === "dark" ? "#fff" : "#000",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center"
-      }}
-    >
-      <img
-        src={r.cover}
-        alt={r.title}
-        style={{
-          width: "100%",
-          maxWidth: "240px",
-          borderRadius: "10px",
+      {filteredFromURL && !showRoster && (
+        <div style={{
+          textAlign: "center",
+          fontSize: "0.95rem",
+          marginTop: "-20px",
           marginBottom: "10px",
-          display: "block",
-          transition: "all 0.3s ease",
-          border: "2px solid transparent"
-        }}
-        onMouseOver={e => e.currentTarget.style.border = `2px solid ${theme === "dark" ? "#fff" : "#000"}`}
-        onMouseOut={e => e.currentTarget.style.border = "2px solid transparent"}
-      />
-      <div style={{
-        fontWeight: "bold",
-        fontSize: "1em",
-        textAlign: "center",
-        maxWidth: "240px"
-      }}>
-        {r.title}<br />
-        <span style={{ fontWeight: "normal", fontSize: "0.9em" }}>
-          {r.artist} ({r.type})
-        </span>
-      </div>
-    </Link>
-    
-        ))}
-      </div>
-
-      <div style={{ textAlign: "center", marginTop: "40px" }}>
-        <a href="https://instagram.com/yen.sound" target="_blank" rel="noopener noreferrer" style={linkBtnStyle(theme)}>
-          Instagram
-        </a>
-        <a href="mailto:info@sigh.live" style={linkBtnStyle(theme)}>
-          Email
-        </a>
-      </div>
-
-      <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <Link to="/about" style={{
-          color: theme === "dark" ? "#fff" : "#000",
-          textDecoration: "underline",
-          fontSize: "clamp(1rem, 3vw, 1.2rem)"
+          color: theme === "dark" ? "#aaa" : "#444"
         }}>
-          ABOUT YEN SOUND
-        </Link>
-      </div>
+          🔍 Showing results for: <strong>{filteredFromURL}</strong>
+        </div>
+      )}
 
-      <div style={{ textAlign: "center", marginTop: "30px" }}>
-        <Link to="/" style={{
-          color: theme === "dark" ? "#fff" : "#000",
-          textDecoration: "underline",
-          fontSize: "clamp(1rem, 3vw, 1.2rem)"
-        }}>← Back to Home</Link>
-      </div>
-
-      {/* Removed theme toggle button from Releases page */}
-
-
-
-
-      <Footer />
+      {/* Conditional Roster or Release Grid */}
+      {showRoster ? (
+        <Roster />
+      ) : (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          gap: "30px",
+          maxWidth: "1000px",
+          margin: "auto"
+        }}>
+          {filtered.map((r, i) => (
+            <Link
+              key={i}
+              to={`/release/${r.title.toLowerCase().replace(/\s+/g, "-")}`}
+              style={{
+                textDecoration: "none",
+                color: theme === "dark" ? "#fff" : "#000",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
+              }}
+            >
+              <img
+                src={r.cover}
+                alt={r.title}
+                style={{
+                  width: "100%",
+                  maxWidth: "240px",
+                  borderRadius: "10px",
+                  marginBottom: "10px",
+                  display: "block",
+                  transition: "all 0.3s ease",
+                  border: "2px solid transparent"
+                }}
+                onMouseOver={e => e.currentTarget.style.border = `2px solid ${theme === "dark" ? "#fff" : "#000"}`}
+                onMouseOut={e => e.currentTarget.style.border = "2px solid transparent"}
+              />
+              <div style={{
+                fontWeight: "bold",
+                fontSize: "1em",
+                textAlign: "center",
+                maxWidth: "240px"
+              }}>
+                {r.title}<br />
+                <span style={{ fontWeight: "normal", fontSize: "0.9em" }}>
+                  {r.artist} ({r.type})
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+
 
 
 // Shared styles as functions:
@@ -468,6 +520,8 @@ function App() {
         <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
         <Route path="/ipod" element={<CoverFlowFrame />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/roster" element={<Roster />} />
+        <Route path="/artist/:slug" element={<ArtistPage theme={theme} />} />
         </Routes>
     </Router>
   );
