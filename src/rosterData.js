@@ -1,7 +1,6 @@
 const roster = [
   {
     name: "Shower",
-    displayName: "SHOWER",
     slug: "shower",
     bio: "SHOWER blurs the lines between melodic trap and experimental hip-hop, fusing slick vocal delivery with emotional depth.",
     image: "https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages221/v4/07/c6/e5/07c6e576-9209-6826-9e50-26344cde6f14/file_cropped.png/1000x1000bb.jpg",
@@ -14,7 +13,6 @@ const roster = [
   },
   {
     name: "Ethel",
-    displayName: "ETHEL",
     slug: "ethel",
     bio: "Ethel blends dreamy alt-pop and intimate vocals with experimental textures, creating soundscapes that are both fragile and powerful.",
     image: "https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages221/v4/97/c3/7c/97c37cea-bb2b-8810-f212-aefd2776a60f/ami-identity-0f1b16c6ef8b615b90d8f8518116958d-2025-04-26T10-15-25.457Z_cropped.png/1000x1000bb.jpg",
@@ -27,7 +25,6 @@ const roster = [
   },
   {
     name: "Kizels",
-    displayName: "KIZELS",
     slug: "kizels",
     bio: "Kizels creates lo-fi rap and ambient soundscapes, combining streetwise lyrics with dreamy, minimal production.",
     image: "https://is1-ssl.mzstatic.com/image/thumb/Features114/v4/93/f2/75/93f275c2-e4f4-b420-c8a8-b15710884242/mzl.kliamxbb.jpg/1000x1000bb.jpg",
@@ -40,7 +37,6 @@ const roster = [
   },
   {
     name: "Sighdafekt",
-    displayName: "SIGHDAFEKT",
     slug: "sighdafekt",
     bio: "Sighdafekt, also known as Dave Slagorsky, bridges Israeli hip-hop and international production styles with emotionally raw, high-concept releases.",
     image: "https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages221/v4/e8/f7/3c/e8f73c64-5e0b-ce16-bdf0-ec0308931ff8/7f8a5081-38ab-4b07-a23f-87c3dea38270_file_cropped.png/1000x1000bb.jpg",
@@ -53,8 +49,9 @@ const roster = [
   },
   {
     name: "רוי ניסמו",
-    displayName: "ROY NISMO",
-    slug: "roy-nismo",
+    slug: "roynismo",
+    displayName: "Roy Nismo",
+    aliases: ["רוי ניסמו", "Roy Nismo"],
     bio: "Melancholic hip-hop from Israel blending lo-fi trap with raw emotion. For fans of $uicideboy$ and dark, introspective vibes.",
     image: "https://i.scdn.co/image/ab6761610000e5eb857ad2aa383c67f4c04488da",
     releasesLink: "/releases?artist=רוי ניסמו",
@@ -68,6 +65,7 @@ const roster = [
     name: "סגולות",
     displayName: "SGULOT",
     slug: "sgulot",
+    aliases: ["סגולות", "Sgulot"],
     bio: "A rap duo from Haifa, Sgulot blends sharp Hebrew bars with dusty beats and experimental textures. Members Adi Yonatan Cohen and Ofer Yarkoni bring lyrical depth and raw energy to every track.",
     image: "https://i.scdn.co/image/ab6761610000e5eb912bae37f837455d83f1d2e1",
     releasesLink: "/releases?artist=סגולות",

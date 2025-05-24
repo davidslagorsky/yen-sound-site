@@ -15,4 +15,24 @@ code {
 html {
   scroll-behavior: smooth;
 }
+/* Vinyl gloss overlay on hover */
+.release-cover-wrapper {
+  position: relative;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.release-cover-wrapper:hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%);
+  pointer-events: none;
+  border-radius: 10px;
+  z-index: 2;
+}
+
 

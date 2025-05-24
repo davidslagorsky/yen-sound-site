@@ -118,8 +118,8 @@ export default function ReleasePage({ theme }) {
                 src={`/${service}.png`}
                 alt={service}
                 style={{
-  width: "32px",
-  height: "32px",
+  width: "25px",
+  height: "25px",
   opacity: 0.85,
   transition: "opacity 0.2s",
   filter: theme === "dark" ? "brightness(1000%)" : "none"

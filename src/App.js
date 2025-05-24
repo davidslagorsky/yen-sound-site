@@ -11,6 +11,7 @@ import Contact from "./Contact";
 import Roster from "./Roster";
 import { useLocation } from "react-router-dom";
 import ArtistPage from "./ArtistPage";
+import InstallPrompt from "./components/InstallPrompt";
 
 
 
@@ -418,21 +419,24 @@ useEffect(() => {
                 alignItems: "center"
               }}
             >
-              <img
-                src={r.cover}
-                alt={r.title}
-                style={{
-                  width: "100%",
-                  maxWidth: "240px",
-                  borderRadius: "10px",
-                  marginBottom: "10px",
-                  display: "block",
-                  transition: "all 0.3s ease",
-                  border: "2px solid transparent"
-                }}
-                onMouseOver={e => e.currentTarget.style.border = `2px solid ${theme === "dark" ? "#fff" : "#000"}`}
-                onMouseOut={e => e.currentTarget.style.border = "2px solid transparent"}
-              />
+              <div className="release-cover-wrapper">
+  <img
+    src={r.cover}
+    alt={r.title}
+    style={{
+      width: "100%",
+      maxWidth: "240px",
+      borderRadius: "10px",
+      marginBottom: "10px",
+      display: "block",
+      transition: "all 0.3s ease",
+      border: "2px solid transparent"
+    }}
+    onMouseOver={e => e.currentTarget.style.border = `2px solid ${theme === "dark" ? "#fff" : "#000"}`}
+    onMouseOut={e => e.currentTarget.style.border = "2px solid transparent"}
+  />
+</div>
+
               <div style={{
                 fontWeight: "bold",
                 fontSize: "1em",
