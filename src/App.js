@@ -487,26 +487,12 @@ const linkBtnStyle = (theme) => ({
 
 
 function App() {
-  const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored) return stored;
-  
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    return prefersDark ? "dark" : "light";
-  });
-  
-  
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
-
+  const theme = "dark"; // force dark theme
   useEffect(() => {
-    document.body.style.backgroundColor = theme === "dark" ? "#000" : "#fff";
-    document.body.style.color = theme === "dark" ? "#fff" : "#000";
-    localStorage.setItem("theme", theme); // ← add this
-  }, [theme]);
-  
+    document.body.style.backgroundColor = "#000";
+    document.body.style.color = "#fff";
+  }, []);
+
   useEffect(() => {
     const disableRightClick = (e) => e.preventDefault();
     document.addEventListener("contextmenu", disableRightClick);
@@ -518,17 +504,18 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/releases" element={<Releases theme={theme} toggleTheme={toggleTheme} />} />
-        <Route path="/about" element={<About theme={theme} toggleTheme={toggleTheme} />} />
+        <Route path="/" element={<Home theme={theme} />} />
+        <Route path="/releases" element={<Releases theme={theme} />} />
+        <Route path="/about" element={<About theme={theme} />} />
         <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
         <Route path="/ipod" element={<CoverFlowFrame />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/roster" element={<Roster />} />
         <Route path="/artist/:slug" element={<ArtistPage theme={theme} />} />
-        </Routes>
+      </Routes>
     </Router>
   );
 }
+
 
 export default App;
