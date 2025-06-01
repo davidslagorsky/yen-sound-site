@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/releaseform",
+      "destination": "https://www.jotform.com/sign/251511470415043/invite/01jwn0x05n3e3c96cc7ac49f67",
+      "permanent": true
+    },
+    {
+      "source": "/releasesubmit",
+      "destination": "https://jx4omz1zr14.typeform.com/to/aar28BMm",
+      "permanent": true
+    }
+  ]
+}
