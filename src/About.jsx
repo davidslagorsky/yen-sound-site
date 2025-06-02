@@ -44,7 +44,11 @@ const About = ({ theme, toggleTheme }) => (
         <p>
           For contact:
           <br />
-          info@sigh.live
+          pr@yensound.com 
+          <br />
+          For technichal / legal matters:
+          <br />
+          office@yensound.com 
           <br />
           <a
             href="https://instagram.com/yen.sound"

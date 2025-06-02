@@ -12,6 +12,9 @@ import Roster from "./Roster";
 import { useLocation } from "react-router-dom";
 import ArtistPage from "./ArtistPage";
 import InstallPrompt from "./components/InstallPrompt";
+import ArtistLogin from "./components/ArtistLogin";
+import ArtistDashboard from "./components/ArtistDashboard";
+import SubmitForm from "./components/SubmitForm";
 
 
 
@@ -111,34 +114,36 @@ const Home = ({ theme, toggleTheme }) => {
     </button>
   </Link>
 
-  <Link to="/contact">
-    <button style={{
-      padding: "14px 24px",
-      minHeight: "44px",
-      fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
-      backgroundColor: "transparent",
-      color: theme === "dark" ? "#fff" : "#000",
-      border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-      borderRadius: "5px",
-      cursor: "pointer",
-      fontWeight: "bold",
-      transition: "all 0.3s ease-in-out",
-      boxShadow: "0 0 0 transparent"
+
+  <Link to="/artist-login">
+  <button style={{
+    padding: "14px 24px",
+    minHeight: "44px",
+    fontSize: "clamp(1rem, 3.5vw, 1.2rem)",
+    backgroundColor: "transparent",
+    color: theme === "dark" ? "#fff" : "#000",
+    border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "all 0.3s ease-in-out",
+    boxShadow: "0 0 0 transparent"
+  }}
+    onMouseOver={(e) => {
+      e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
+      e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
+      e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
     }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
-        e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
-        e.currentTarget.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.2)";
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.backgroundColor = "transparent";
-        e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
-        e.currentTarget.style.boxShadow = "0 0 0 transparent";
-      }}
-    >
-      CONTACT
-    </button>
-  </Link>
+    onMouseOut={(e) => {
+      e.currentTarget.style.backgroundColor = "transparent";
+      e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
+      e.currentTarget.style.boxShadow = "0 0 0 transparent";
+    }}
+  >
+    ARTIST LOGIN
+  </button>
+</Link>
+
 </div>
 
 
@@ -270,6 +275,7 @@ useEffect(() => {
       }}>
         Releases
       </h2>
+      
 
       <div style={{ textAlign: "center", margin: "40px 0", position: "relative" }}>
         {["All", "Album", "Single"].map((t) => (
@@ -341,6 +347,34 @@ useEffect(() => {
         >
           Roster
         </button>
+        <Link to="/artist-login">
+  <button
+    style={{
+      margin: "6px",
+      padding: "14px 20px",
+      minHeight: "44px",
+      borderRadius: "5px",
+      border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
+      backgroundColor: "transparent",
+      color: theme === "dark" ? "#fff" : "#000",
+      cursor: "pointer",
+      fontWeight: "bold",
+      fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
+      transition: "background-color 0.2s"
+    }}
+    onMouseOver={(e) => {
+      e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
+      e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
+    }}
+    onMouseOut={(e) => {
+      e.currentTarget.style.backgroundColor = "transparent";
+      e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
+    }}
+  >
+    Artist Login
+  </button>
+</Link>
+
 
         {artistDropdownOpen && (
           <div style={{
@@ -407,6 +441,7 @@ useEffect(() => {
           maxWidth: "1000px",
           margin: "auto"
         }}>
+          
           {filtered.map((r, i) => (
             <Link
               key={i}
@@ -418,8 +453,10 @@ useEffect(() => {
                 flexDirection: "column",
                 alignItems: "center"
               }}
+              
             >
               <div className="release-cover-wrapper">
+                
   <img
     src={r.cover}
     alt={r.title}
@@ -437,6 +474,7 @@ useEffect(() => {
   />
 </div>
 
+
               <div style={{
                 fontWeight: "bold",
                 fontSize: "1em",
@@ -451,8 +489,12 @@ useEffect(() => {
             </Link>
           ))}
         </div>
+        
       )}
+      
+
     </div>
+    
   );
 };
 
@@ -512,6 +554,9 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/roster" element={<Roster />} />
         <Route path="/artist/:slug" element={<ArtistPage theme={theme} />} />
+        <Route path="/artist-login" element={<ArtistLogin />} />
+        <Route path="/artist-dashboard/:artistId" element={<ArtistDashboard />} />
+        <Route path="/artist-dashboard/submit" element={<SubmitForm />} />
       </Routes>
     </Router>
   );

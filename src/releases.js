@@ -176,7 +176,39 @@ const releases = [
     smartLink: "https://sigh.ffm.to/summersover",
     cover: "https://cdn-images.dzcdn.net/images/cover/8b5701173c7838bf0677ab70c19c37b9/0x1900-000000-80-0-0.jpg",
     date: "2019-10-01"
-  }
+  },
+  {
+    title: "פשוט מוצא אותי",
+    artist: "עדי יונתן כהן",
+    type: "Album",
+    smartLink: "https://ffm.to/pashutmozeoti",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/85/74/f7/8574f778-6aa9-9e25-5af2-3e9a7c068732/196862747440.jpg/600x600bb.jpg",
+    date: "2022-05-01"
+  },
+  {
+    title: "ולפעמים אני מגזים",
+    artist: "עדי יונתן כהן",
+    type: "Album",
+    smartLink: "https://ffm.to/velifamimanimagzim",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/21/ae/e9/21aee95f-ffc1-0f71-602c-5b02b6ada425/3616553895375.jpg/600x600bb.jpg",
+    date: "2021-05-01"
+  },
+  {
+    title: "ביטבלוק #1 - צפרירים 31",
+    artist: "עופר ירקוני",
+    type: "Album",
+    smartLink: "https://ffm.to/beatblock1",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1f/dd/fc/1fddfc17-7988-8ce8-220c-052b8930db85/198661940039.jpg/600x600bb.jpg",
+    date: "2024-09-04"
+  },
+  {
+    title: "שלב הבתים",
+    artist: "עופר ירקוני",
+    type: "Album",
+    smartLink: "https://ffm.to/shlavhabatim",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/da/17/85/da178586-fdc7-db90-335c-581f8fb903ef/197509158292.jpg/600x600bb.jpg",
+    date: "2023-01-05"
+  },
 ];
 
 export default releases;
