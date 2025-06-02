@@ -24,15 +24,15 @@ const Home = ({ theme, toggleTheme }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current) {
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-          console.log("Autoplay error:", error);
-        });
-      }
+  const video = videoRef.current;
+  if (video) {
+    video.muted = true; // <- explicitly enforce this again
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => console.warn("Autoplay failed:", err));
     }
-  }, []);
+  }
+}, []);
 
   return (
     <div style={{
