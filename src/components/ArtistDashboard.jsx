@@ -31,11 +31,11 @@ export default function ArtistDashboard() {
         >
           Submit a Release
         </a>
-        <a href={uploadURL} target="_blank" rel="noopener noreferrer" style={buttonStyle}>
-          Upload Files
-        </a>
         <a href="/docs/YEN_DISTRIBUTION_FORM.pdf" download style={buttonStyle}>
           Download Distribution Form
+        </a>
+        <a href={uploadURL} target="_blank" rel="noopener noreferrer" style={buttonStyle}>
+          Vault
         </a>
       </div>
 
