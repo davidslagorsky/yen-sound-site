@@ -3,18 +3,18 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration'; // ✅ Enables PWA
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import { BrowserRouter } from 'react-router-dom'; // ✅ Add this line
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter> {/* ✅ Wrap App in Router */}
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
-// ✅ Register service worker to enable installability/offline support
 serviceWorkerRegistration.register();
-
-// ✅ Optional: Measure performance
 reportWebVitals();

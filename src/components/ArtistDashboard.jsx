@@ -17,39 +17,31 @@ export default function ArtistDashboard() {
   const uploadURL = uploadLinks[artistId];
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#000",
-      color: "#fff",
-      fontFamily: "Arial, sans-serif",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      alignItems: "center",
-      padding: "40px",
-      textAlign: "center"
-    }}>
-      <h2 style={{ fontSize: "clamp(1.8rem, 5vw, 2.5rem)", marginBottom: "30px" }}>
+    <div style={containerStyle}>
+      <h2 style={headingStyle}>
         Welcome, {displayName}
       </h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "300px" }}>
-        <Link to="/artist-dashboard/submit" style={buttonStyle}>Submit a Release</Link>
-        <a href={uploadURL} target="_blank" rel="noopener noreferrer" style={buttonStyle}>Upload Files</a>
-        <a href="/docs/YEN_DISTRIBUTION_FORM.pdf" download style={buttonStyle}>Download Distribution Form</a>
+
+      <div style={buttonGroupStyle}>
+        <a
+          href="https://docs.google.com/forms/d/e/1FAIpQLSe8rH0NRf1YBN-rD78uuzIoLxwZjJAl4qBKPn7tQ0hZeNr59w/viewform?usp=header"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={buttonStyle}
+        >
+          Submit a Release
+        </a>
+        <a href={uploadURL} target="_blank" rel="noopener noreferrer" style={buttonStyle}>
+          Upload Files
+        </a>
+        <a href="/docs/YEN_DISTRIBUTION_FORM.pdf" download style={buttonStyle}>
+          Download Distribution Form
+        </a>
       </div>
 
-      <Link to="/" style={{ marginTop: "40px", textDecoration: "none" }}>
+      <Link to="/" style={{ marginTop: "40px", textDecoration: "none", width: "100%", maxWidth: "300px" }}>
         <button
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "transparent",
-            color: "#fff",
-            border: "2px solid #fff",
-            borderRadius: "5px",
-            fontWeight: "bold",
-            cursor: "pointer",
-            transition: "all 0.3s ease-in-out"
-          }}
+          style={backButtonStyle}
           onMouseOver={(e) => {
             e.currentTarget.style.backgroundColor = "#fff";
             e.currentTarget.style.color = "#000";
@@ -66,6 +58,33 @@ export default function ArtistDashboard() {
   );
 }
 
+// 🔧 Styles
+const containerStyle = {
+  minHeight: "100vh",
+  backgroundColor: "#000",
+  color: "#fff",
+  fontFamily: "Arial, sans-serif",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: "40px 20px",
+  textAlign: "center",
+};
+
+const headingStyle = {
+  fontSize: "clamp(1.8rem, 6vw, 2.5rem)",
+  marginBottom: "30px"
+};
+
+const buttonGroupStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+  width: "100%",
+  maxWidth: "300px"
+};
+
 const buttonStyle = {
   padding: "14px 24px",
   backgroundColor: "transparent",
@@ -73,7 +92,15 @@ const buttonStyle = {
   border: "2px solid #fff",
   borderRadius: "5px",
   fontWeight: "bold",
-  fontSize: "1rem",
+  fontSize: "clamp(1rem, 3vw, 1.1rem)",
   textDecoration: "none",
+  textAlign: "center",
   transition: "all 0.3s ease-in-out"
+};
+
+const backButtonStyle = {
+  ...buttonStyle,
+  width: "100%",
+  marginTop: "20px",
+  cursor: "pointer"
 };

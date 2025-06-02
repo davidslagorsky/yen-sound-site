@@ -19,6 +19,7 @@ import SubmitForm from "./components/SubmitForm";
 
 
 
+
 const Home = ({ theme, toggleTheme }) => {
   const videoRef = useRef(null);
 
@@ -183,13 +184,14 @@ const Home = ({ theme, toggleTheme }) => {
 
 
 const Releases = ({ theme, toggleTheme }) => {
+  const currentLocation = useLocation();
   const [filter, setFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
   const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
   const [columns, setColumns] = useReactState(3);
   const [showRoster, setShowRoster] = useState(false);
   const [filteredFromURL, setFilteredFromURL] = useState(null);
-  const location = useLocation();
+ 
 
   useEffect(() => {
     const updateColumns = () => {
@@ -219,7 +221,7 @@ const Releases = ({ theme, toggleTheme }) => {
 };
 
 useEffect(() => {
-  const params = new URLSearchParams(location.search);
+  const params = new URLSearchParams(currentLocation.search);
   const artistFromURL = params.get("artist");
 
   if (artistFromURL) {
@@ -245,7 +247,7 @@ useEffect(() => {
       }
     }
   }
-}, [location.search, allArtists]);
+}, [currentLocation.search, allArtists]);
 
   const sortedReleases = useMemo(() => {
     return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -529,7 +531,9 @@ const linkBtnStyle = (theme) => ({
 
 
 function App() {
+  const currentLocation = useLocation();
   const theme = "dark"; // force dark theme
+  
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
     document.body.style.color = "#fff";
@@ -543,24 +547,28 @@ function App() {
     };
   }, []);
 
+  
+
   return (
-    <Router>
+    <>
       <Routes>
-        <Route path="/" element={<Home theme={theme} />} />
-        <Route path="/releases" element={<Releases theme={theme} />} />
-        <Route path="/about" element={<About theme={theme} />} />
+        <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
+        <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} /></div>} />
+        <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
         <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
-        <Route path="/ipod" element={<CoverFlowFrame />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/roster" element={<Roster />} />
-        <Route path="/artist/:slug" element={<ArtistPage theme={theme} />} />
-        <Route path="/artist-login" element={<ArtistLogin />} />
-        <Route path="/artist-dashboard/:artistId" element={<ArtistDashboard />} />
-        <Route path="/artist-dashboard/submit" element={<SubmitForm />} />
+        <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
+        <Route path="/contact" element={<div style={{ paddingBottom: "100px" }}><Contact /></div>} />
+        <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
+        <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
+        <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
+        <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
+        <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
       </Routes>
-    </Router>
+
+      {/* ✅ Only show footer when NOT on release page */}
+    {!currentLocation.pathname.startsWith("/release/") && <Footer />}
+    </>
   );
 }
-
 
 export default App;
