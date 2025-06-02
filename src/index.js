@@ -3,17 +3,18 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration'; // ✅ NEW
+import * as serviceWorkerRegistration from './serviceWorkerRegistration'; // ✅ Enables PWA
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
 
-// Register the service worker for PWA support ✅
+// ✅ Register service worker to enable installability/offline support
 serviceWorkerRegistration.register();
 
-// Performance reporting (optional)
+// ✅ Optional: Measure performance
 reportWebVitals();
