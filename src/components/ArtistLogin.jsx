@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const passwords = {
-  showerbitch: 'shower',
+  s8shower888: 'shower',
   ethelpetel: 'ethel',
   kizelspink: 'kizels',
   sighmadethissite: 'sigh',
