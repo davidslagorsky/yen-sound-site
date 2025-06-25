@@ -15,6 +15,7 @@ import InstallPrompt from "./components/InstallPrompt";
 import ArtistLogin from "./components/ArtistLogin";
 import ArtistDashboard from "./components/ArtistDashboard";
 import SubmitForm from "./components/SubmitForm";
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 
 
