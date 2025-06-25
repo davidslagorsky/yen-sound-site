@@ -16,6 +16,9 @@ import ArtistLogin from "./components/ArtistLogin";
 import ArtistDashboard from "./components/ArtistDashboard";
 import SubmitForm from "./components/SubmitForm";
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import Redirector from "./Redirector";
+import AdminDashboard from "./AdminDashboard";
+
 
 
 
@@ -564,6 +567,8 @@ function App() {
         <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
         <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
         <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
+        <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
+        <Route path="/:shortlink" element={<Redirector />} />
       </Routes>
 
       {/* ✅ Only show footer when NOT on release page */}
