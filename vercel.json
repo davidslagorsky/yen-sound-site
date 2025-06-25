@@ -14,6 +14,11 @@
       "source": "/shower",
       "destination": "https://ffm.to/showerbitch",
       "permanent": true
+    },
+     {
+      "source": "/home",
+      "destination": "https://yensound.com/",
+      "permanent": true
     }
   ]
 }
