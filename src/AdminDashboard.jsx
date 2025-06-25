@@ -1,30 +1,19 @@
 import { useState, useEffect } from "react";
-import { supabase } from "./supabase";
+import linkMap from "./linkMap";
 
 export default function AdminDashboard() {
-  const [shortlink, setShortlink] = useState("");
-  const [destination, setDestination] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [linkList, setLinkList] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [auth, setAuth] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // Load auth from localStorage
+  const [shortlink, setShortlink] = useState("");
+  const [destination, setDestination] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState(null);
+
   useEffect(() => {
     if (localStorage.getItem("yenAdminAuthed") === "true") setAuth(true);
   }, []);
-
-  // Load existing links
-  useEffect(() => {
-    if (auth) fetchLinks();
-  }, [auth]);
-
-  const fetchLinks = async () => {
-    const { data } = await supabase.from("links").select("*").order("created_at", { ascending: false });
-    setLinkList(data || []);
-  };
 
   const handleLogin = () => {
     if (password === "password") {
@@ -35,42 +24,22 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!shortlink || !destination) return;
-
-    setLoading(true);
-    const trimmedSlug = shortlink.trim();
-    const trimmedUrl = destination.trim();
-
-    if (editingId) {
-      // Update existing
-      await supabase.from("links").update({ slug: trimmedSlug, url: trimmedUrl }).eq("id", editingId);
-    } else {
-      // Insert new
-      const { error } = await supabase.from("links").insert([{ slug: trimmedSlug, url: trimmedUrl }]);
-      if (error && error.code === "23505") {
-        alert("This shortlink already exists.");
-      }
-    }
-
-    setShortlink("");
-    setDestination("");
-    setEditingId(null);
-    setLoading(false);
-    fetchLinks();
+  const generateSnippet = () => {
+    return `"${shortlink.trim()}": "${destination.trim()}"`;
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this link?")) {
-      await supabase.from("links").delete().eq("id", id);
-      fetchLinks();
-    }
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generateSnippet()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
-  const handleEdit = (link) => {
-    setShortlink(link.slug);
-    setDestination(link.url);
-    setEditingId(link.id);
+  const handleCopySlug = (slug) => {
+    const fullURL = `https://yensound.com/${slug}`;
+    navigator.clipboard.writeText(fullURL);
+    setCopiedSlug(slug);
+    setTimeout(() => setCopiedSlug(null), 1500);
   };
 
   if (!auth) {
@@ -94,12 +63,12 @@ export default function AdminDashboard() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Shortlink Manager</h2>
+      <h2 style={styles.title}>Shortlink Generator</h2>
 
       <div style={styles.form}>
         <input
           type="text"
-          placeholder="short path"
+          placeholder="short path (e.g. presskit)"
           value={shortlink}
           onChange={(e) => setShortlink(e.target.value)}
           style={styles.input}
@@ -111,22 +80,30 @@ export default function AdminDashboard() {
           onChange={(e) => setDestination(e.target.value)}
           style={styles.input}
         />
-        <button onClick={handleSubmit} disabled={loading} style={styles.button}>
-          {editingId ? "Update" : "Save"}
+        <button onClick={copyToClipboard} style={styles.button}>
+          Copy Snippet
         </button>
+        {copied && <p style={styles.success}>Copied to clipboard</p>}
+        {shortlink && destination && (
+          <pre style={styles.snippetBox}>
+            {generateSnippet()}
+          </pre>
+        )}
       </div>
 
+      <h3 style={styles.subtitle}>Existing Links</h3>
       <div style={styles.list}>
-        {linkList.map((link) => (
-          <div key={link.id} style={styles.row}>
-            <div style={styles.slug}>{link.slug}</div>
-            <a href={link.url} target="_blank" rel="noreferrer" style={styles.url}>
-              {link.url}
-            </a>
-            <div style={styles.actions}>
-              <button onClick={() => handleEdit(link)} style={styles.smallBtn}>edit</button>
-              <button onClick={() => handleDelete(link.id)} style={styles.smallBtn}>×</button>
+        {Object.entries(linkMap).map(([slug, url]) => (
+          <div key={slug} style={styles.row}>
+            <div style={styles.linkHeader}>
+              <span style={styles.slug}>{slug}</span>
+              <button onClick={() => handleCopySlug(slug)} style={styles.copyButton}>
+                {copiedSlug === slug ? "Copied" : "Copy URL"}
+              </button>
             </div>
+            <a href={url} target="_blank" rel="noreferrer" style={styles.url}>
+              {url}
+            </a>
           </div>
         ))}
       </div>
@@ -150,11 +127,16 @@ const styles = {
     borderBottom: "1px solid #333",
     paddingBottom: "10px"
   },
+  subtitle: {
+    marginTop: "50px",
+    fontSize: "1.2rem",
+    borderBottom: "1px solid #444",
+    paddingBottom: "10px"
+  },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
-    marginBottom: "40px"
+    gap: "10px"
   },
   input: {
     background: "transparent",
@@ -166,9 +148,9 @@ const styles = {
   },
   button: {
     padding: "10px",
-    background: "#fff",
-    color: "#000",
-    border: "none",
+    background: "black",
+    color: "white",
+    border: "1px solid white",
     fontWeight: "bold",
     cursor: "pointer",
     borderRadius: "4px",
@@ -176,13 +158,31 @@ const styles = {
   },
   error: {
     color: "red",
+    textAlign: "center",
+    marginTop: "10px"
+  },
+  success: {
+    color: "lightgreen",
     marginTop: "10px",
-    textAlign: "center"
+    textAlign: "center",
+    fontSize: "0.9rem"
+  },
+  snippetBox: {
+    marginTop: "20px",
+    backgroundColor: "#111",
+    color: "#0f0",
+    padding: "10px",
+    fontFamily: "monospace",
+    border: "1px solid #333",
+    borderRadius: "6px",
+    fontSize: "0.95rem",
+    wordBreak: "break-word"
   },
   list: {
     display: "flex",
     flexDirection: "column",
-    gap: "16px"
+    gap: "16px",
+    marginTop: "20px"
   },
   row: {
     display: "flex",
@@ -192,28 +192,28 @@ const styles = {
     borderRadius: "6px",
     backgroundColor: "#111"
   },
+  linkHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "6px"
+  },
   slug: {
     fontWeight: "bold",
-    fontSize: "1rem",
-    marginBottom: "6px"
+    fontSize: "1rem"
   },
   url: {
     fontSize: "0.9rem",
     color: "#ccc",
     textDecoration: "none",
-    wordBreak: "break-all",
-    marginBottom: "10px"
+    wordBreak: "break-all"
   },
-  actions: {
-    display: "flex",
-    gap: "12px"
-  },
-  smallBtn: {
-    fontSize: "0.8rem",
-    padding: "6px 10px",
-    backgroundColor: "transparent",
-    border: "1px solid #666",
-    color: "#fff",
+  copyButton: {
+    fontSize: "0.75rem",
+    padding: "4px 10px",
+    backgroundColor: "black",
+    color: "white",
+    border: "1px solid white",
     borderRadius: "4px",
     cursor: "pointer"
   }
