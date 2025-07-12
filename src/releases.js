@@ -33,6 +33,14 @@ const releases = [
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/37/e9/2c/37e92cda-23a2-4013-726f-0a805bfaf05d/artwork.jpg/600x600bb.jpg",
     date: "2024-10-01"
   },
+   {
+    title: "הלילה בא",
+    artist: "יערה לוי",
+    type: "Single",
+    smartLink: "https://ffm.to/halaylaba",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/c7/25/25/c725256b-a692-bd3a-b127-cc176c1cb8ff/9999900360622.jpg/600x600bb.jpg",
+    date: "2024-06-01"
+  },
   {
     title: "לחם עבודה",
     artist: "Roy Nismo",
@@ -171,11 +179,19 @@ const releases = [
   },
   {
     title: "Summers Over",
-    artist: "Sighdafekt",
+    artist: "Sighdafekt, יערה לוי, Iancu",
     type: "Single",
     smartLink: "https://sigh.ffm.to/summersover",
     cover: "https://cdn-images.dzcdn.net/images/cover/8b5701173c7838bf0677ab70c19c37b9/0x1900-000000-80-0-0.jpg",
     date: "2019-10-01"
+  },
+  {
+    title: "שריטות",
+    artist: "Stiki",
+    type: "Single",
+    smartLink: "https://ffm.to/stikisritot",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/58/30/a9/5830a989-725c-cabe-84c6-29ae0b8a7843/199538202090.jpg/600x600bb.jpg",
+    date: "2024-10-01"
   },
   {
     title: "פשוט מוצא אותי",
