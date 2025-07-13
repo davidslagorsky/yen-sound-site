@@ -210,10 +210,10 @@ const releases = [
     date: "2021-05-01"
   },
   {
-    title: "ביטבלוק #1 - צפרירים 31",
+    title: "ביטבלוק אחד - צפרירים 31",
     artist: "עופר ירקוני",
     type: "Album",
-    smartLink: "https://ffm.to/beatblock1",
+    smartLink: "https://album.link/s/6uk0PXkwpbIWIH2g0zOkER",
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1f/dd/fc/1fddfc17-7988-8ce8-220c-052b8930db85/198661940039.jpg/600x600bb.jpg",
     date: "2024-09-04"
   },
