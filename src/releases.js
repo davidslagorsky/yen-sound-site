@@ -227,7 +227,7 @@ const releases = [
   },
     {
     title: "להבות",
-    artist: "Shower",
+    artist: "SHOWER",
     type: "Single",
     smartLink: "https://ffm.to/lehavot",
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3e/1c/1b/3e1c1bea-a55a-c8d4-b161-8640f66c945f/199538224092.jpg/600x600bb.jpg",
