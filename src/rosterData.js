@@ -15,7 +15,7 @@ const roster = [
     name: "Ethel",
     slug: "ethel",
     bio: "Ethel blends dreamy alt-pop and intimate vocals with experimental textures, creating soundscapes that are both fragile and powerful.",
-    image: "https://is1-ssl.mzstatic.com/image/thumb/AMCArtistImages221/v4/97/c3/7c/97c37cea-bb2b-8810-f212-aefd2776a60f/ami-identity-0f1b16c6ef8b615b90d8f8518116958d-2025-04-26T10-15-25.457Z_cropped.png/1000x1000bb.jpg",
+    image: "https://iili.io/F4WKPzg.png",
     releasesLink: "/releases?artist=Ethel",
     socials: {
       instagram: "https://instagram.com/ethel_superstarbaby",
@@ -27,7 +27,7 @@ const roster = [
     name: "Kizels",
     slug: "kizels",
     bio: "Kizels creates lo-fi rap and ambient soundscapes, combining streetwise lyrics with dreamy, minimal production.",
-    image: "https://is1-ssl.mzstatic.com/image/thumb/Features114/v4/93/f2/75/93f275c2-e4f4-b420-c8a8-b15710884242/mzl.kliamxbb.jpg/1000x1000bb.jpg",
+    image: "https://iili.io/F4VyakJ.md.jpg",
     releasesLink: "/releases?artist=Kizels",
     socials: {
       instagram: "https://instagram.com/kizels",
