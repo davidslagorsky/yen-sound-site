@@ -225,6 +225,22 @@ const releases = [
     cover: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/da/17/85/da178586-fdc7-db90-335c-581f8fb903ef/197509158292.jpg/600x600bb.jpg",
     date: "2023-01-05"
   },
+    {
+    title: "להבות",
+    artist: "Shower",
+    type: "Single",
+    smartLink: "https://ffm.to/lehavot",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3e/1c/1b/3e1c1bea-a55a-c8d4-b161-8640f66c945f/199538224092.jpg/600x600bb.jpg",
+    date: "2025-07-30"
+  },
+      {
+    title: "כיוונים שונים",
+    artist: "Ethel, Sighdafekt, Gangsburg",
+    type: "Single",
+    smartLink: "https://ffm.to/kivunimshonim",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e6/4b/40/e64b407e-59f7-04ee-09c4-b3514efd0a8f/199538224252.jpg/600x600bb.jpg",
+    date: "2025-07-31"
+  },
 ];
 
 export default releases;
