@@ -8,7 +8,8 @@ const passwords = {
   sighmadethissite: 'sigh',
   royroyroy: 'roy',
   sgulothaifa: 'sgulot',
-  stikiwiththestick: 'stiki'
+  stikiwiththestick: 'stiki',
+  yalifromtheblock: 'yali'
 };
 
 export default function ArtistLogin() {

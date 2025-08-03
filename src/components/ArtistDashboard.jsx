@@ -11,7 +11,8 @@ export default function ArtistDashboard() {
     sigh: 'https://drive.google.com/drive/folders/1ExzeNkW5aCpWGQYpa0V4jtPZEBh1VFyB',
     roy: 'https://drive.google.com/drive/folders/1UZm61m2oY6WL_C_cSliKf7IsuvKEYZ5D',
     sgulot: 'https://drive.google.com/drive/folders/1A4q1Ye3WEjE05HBhFKv4vGb_cWdOX0yp',
-    stiki: 'https://drive.google.com/drive/folders/1zZI3YqR2jxc6dHGWst5Yh3fRfsKtCAiD?usp=sharing'
+    stiki: 'https://drive.google.com/drive/folders/1zZI3YqR2jxc6dHGWst5Yh3fRfsKtCAiD?usp=sharing',
+    yali: 'https://drive.google.com/drive/folders/1IBW6jSvoeU40ZvGB3euhCca--4YlAiDx?usp=sharing'
   };
 
   const displayName = artistId.charAt(0).toUpperCase() + artistId.slice(1);
