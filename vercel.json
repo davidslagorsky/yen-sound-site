@@ -1,29 +1,8 @@
-cp vercel.json vercel.json.bak  # backup, just in case
-
-cat > vercel.json <<'JSON'
 {
-  "redirects": [
-    {
-      "source": "/releaseform",
-      "destination": "https://www.jotform.com/sign/251511470415043/invite/01jwn0x05n3e3c96cc7ac49f67",
-      "permanent": true
-    },
-    {
-      "source": "/releasesubmit",
-      "destination": "https://jx4omz1zr14.typeform.com/to/aar28BMm",
-      "permanent": true
-    },
-    {
-      "source": "/shower",
-      "destination": "https://ffm.to/showerbitch",
-      "permanent": true
-    }
-  ],
   "rewrites": [
     {
-      "source": "/:slug((?!releases|release|artist|artist-login|artist-dashboard|artists|roster|contact|about|ipod|coverflow|admin|login|api|assets|static|favicon\\.ico|manifest\\.json|sitemap\\.xml|robots\\.txt|site\\.webmanifest|apple-touch-icon\\.png|android-chrome-192x192\\.png|android-chrome-512x512\\.png)[^/]+)",
+      "source": "/:slug((?!(releases|release|artist|artist-login|artist-dashboard|artists|roster|contact|about|ipod|coverflow|admin|login|api)$)[a-z0-9-]+)",
       "destination": "/release/:slug"
     }
   ]
 }
-JSON
