@@ -14,11 +14,12 @@
       "source": "/shower",
       "destination": "https://ffm.to/showerbitch",
       "permanent": true
-    },
-     {
-      "source": "/home",
-      "destination": "https://yensound.com/",
-      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!(releases|release|artist|artists|roster|contact|about|ipod|coverflow|admin|login|api|assets|static|favicon\\.ico|manifest\\.json)).+)$",
+      "destination": "/release/$1"
     }
   ]
 }
