@@ -555,24 +555,26 @@ function App() {
 
   return (
     <>
-      <Routes>
-        <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
-        <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} /></div>} />
-        <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
-        <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
-        <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
-        <Route path="/contact" element={<div style={{ paddingBottom: "100px" }}><Contact /></div>} />
-        <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
-        <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
-        <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
-        <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
-        <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
-        <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
-        <Route path="/:shortlink" element={<Redirector />} />
-      </Routes>
+<Routes>
+  <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
+  <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} /></div>} />
+  <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
 
-      {/* ✅ Only show footer when NOT on release page */}
-    {!currentLocation.pathname.startsWith("/release/") && <Footer />}
+  {/* Release short links are handled by Vercel rewrite */}
+  <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
+
+  <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
+  <Route path="/contact" element={<div style={{ paddingBottom: "100px" }}><Contact /></div>} />
+  <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
+  <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
+  <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
+  <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
+  <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
+  <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
+</Routes>
+
+{/* ✅ Only show footer when NOT on release page */}
+{!currentLocation.pathname.startsWith("/release/") && <Footer />}
     </>
   );
 }
