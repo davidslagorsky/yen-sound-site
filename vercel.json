@@ -18,8 +18,8 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!(releases|release|artist|artists|roster|contact|about|ipod|coverflow|admin|login|api|assets|static|favicon\\.ico|manifest\\.json)).+)$",
-      "destination": "/release/$1"
+      "source": "/:slug((?!releases|release|artist|artist-login|artist-dashboard|artists|roster|contact|about|ipod|coverflow|admin|login|api|assets|static|favicon\\.ico|manifest\\.json|sitemap\\.xml|robots\\.txt|site\\.webmanifest|apple-touch-icon\\.png|android-chrome-192x192\\.png|android-chrome-512x512\\.png)[^/]+)",
+      "destination": "/release/:slug"
     }
   ]
 }
