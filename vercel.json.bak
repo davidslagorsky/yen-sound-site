@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/:slug((?!(releases|release|artist|artist-login|artist-dashboard|artists|roster|contact|about|ipod|coverflow|admin|login|api)$)[a-z0-9-]+)",
+      "destination": "/release/:slug"
+    }
+  ]
+}

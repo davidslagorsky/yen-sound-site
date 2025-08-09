@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import releases from "./releases";
 
 /* ---------- helpers ---------- */
@@ -32,7 +32,23 @@ function buildYouTubeEmbedSrc(id, origin) {
   return `${base}?${params.toString()}`;
 }
 
-/* ---------- monochrome white icons (inherit currentColor) ---------- */
+// Normalize a slug-ish string: lower, trim, collapse spaces/punct to '-'
+function normalizeSlug(s = "") {
+  return s
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[_~!@#$%^&*()+={}\[\]|\\:;"'<>,.?/]+/g, " ")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+// Treat only non-empty, non-"PLACEHOLDER" strings as real links
+function isReal(v) {
+  return typeof v === "string" && v.trim().length > 0 && v.trim().toUpperCase() !== "PLACEHOLDER";
+}
+
+/* ---------- monochrome white icons ---------- */
 const IconSpotify = (props) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden {...props}>
     <path d="M12 1.5A10.5 10.5 0 1 0 22.5 12 10.513 10.513 0 0 0 12 1.5Zm4.6 14.9a.75.75 0 0 1-1.03.26 11.9 11.9 0 0 0-6.14-1.32 15.5 15.5 0 0 0-3.6.47.75.75 0 1 1-.36-1.45c4.12-1.01 8.4-.55 10.34.58a.75.75 0 0 1 .39.52.74.74 0 0 1-.3.8Zm1.35-3.12a.9.9 0 0 1-1.24.31c-2.34-1.45-6.69-1.88-9.74-1.02a.9.9 0 1 1-.48-1.73c3.54-.97 8.37-.5 11.12 1.22a.9.9 0 0 1 .34 1.22Zm.1-3.19a1 1 0 0 1-1.37.34c-2.7-1.62-7.51-1.98-10.8-1.06A1 1 0 0 1 5.4 6.6c3.82-1.05 9.05-.65 12.2 1.22a1 1 0 0 1 .49 1.37Z"/>
@@ -52,16 +68,26 @@ const IconYouTube = (props) => (
 );
 
 export default function ReleasePage({ theme }) {
-  const { slug } = useParams(); // expects ASCII slug like "lehavot"
+  const { slug: rawSlugParam } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
 
-  // 1) Primary: match by explicit release.slug
-  // 2) Legacy fallback: match by normalized title ("title-to-kebab")
-  const normalizedSlug = (s = "") => s.toLowerCase().trim().replace(/\s+/g, "-");
-  const release =
-    releases.find((r) => r.slug === slug) ||
-    releases.find((r) => normalizedSlug(r.title) === slug) ||
-    null;
+  // Resolve the slug robustly
+  const decodedSegment = useMemo(() => {
+    const last = location.pathname.split("/").filter(Boolean).pop() || "";
+    return decodeURIComponent(rawSlugParam ?? last ?? "");
+  }, [rawSlugParam, location.pathname]);
+
+  const candidate = useMemo(() => normalizeSlug(decodedSegment), [decodedSegment]);
+
+  const release = useMemo(() => {
+    return (
+      releases.find((r) => r.slug && (r.slug === decodedSegment || r.slug === candidate)) ||
+      releases.find((r) => r.slug && normalizeSlug(r.slug) === candidate) ||
+      releases.find((r) => normalizeSlug(r.title || "") === candidate) ||
+      null
+    );
+  }, [decodedSegment, candidate]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -79,26 +105,50 @@ export default function ReleasePage({ theme }) {
     };
   }, []);
 
-  if (!release) return <p style={{ textAlign: "center" }}>Release not found</p>;
+  if (!release) {
+    return (
+      <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "#fff", background: "#000", padding: 24 }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>Release not found</div>
+          <div style={{ opacity: 0.7, marginBottom: 16 }}>Tried: “{decodedSegment}”</div>
+          <button
+            onClick={() => navigate("/releases")}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 10,
+              border: "1px solid #444",
+              background: "#111",
+              color: "#fff",
+              cursor: "pointer"
+            }}
+          >
+            ← Back to all releases
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const bg = theme === "dark" ? "#000" : "#fff";
   const fg = theme === "dark" ? "#fff" : "#000";
-  const isReal = (v) => v && v !== "PLACEHOLDER";
 
-  // YouTube priority
-  const youtubeId = isReal(release.embedYoutubeId)
-    ? release.embedYoutubeId
-    : (isReal(release.youtubeUrl) ? extractYouTubeId(release.youtubeUrl) : null);
+  // Real platform links only (ignore PLACEHOLDER/empty)
+  const hasSpotify = isReal(release.spotifyUrl);
+  const hasApple = isReal(release.appleUrl);
+  const hasYouTubeLink = isReal(release.youtubeUrl);
+  const hasAnyPlatforms = hasSpotify || hasApple || hasYouTubeLink;
 
+  // Embeds (respect PLACEHOLDER too)
+  const embedSpotify = isReal(release.embedSpotify) ? release.embedSpotify : null;
+  const embedYoutubeId = isReal(release.embedYoutubeId) ? release.embedYoutubeId : null;
+  const youtubeId = embedYoutubeId || (hasYouTubeLink ? extractYouTubeId(release.youtubeUrl) : null);
   const ytSrc = youtubeId
     ? buildYouTubeEmbedSrc(
         youtubeId,
         typeof window !== "undefined" ? window.location.origin : undefined
       )
     : null;
-
   const haveYT = !!youtubeId;
-  const haveSpotifyEmbed = isReal(release.embedSpotify);
 
   // Buttons
   const btnBase = {
@@ -113,6 +163,8 @@ export default function ReleasePage({ theme }) {
     textDecoration: "none",
     cursor: "pointer",
     transition: "transform 0.15s ease",
+    width: "100%",
+    boxSizing: "border-box"
   };
 
   const iconBtn = {
@@ -121,12 +173,14 @@ export default function ReleasePage({ theme }) {
     justifyContent: "center",
     gap: "10px",
     width: "100%",
+    minHeight: 44,
     padding: "12px 14px",
     backgroundColor: "#000",
     color: "#fff",
     border: "2px solid #fff",
     borderRadius: "10px",
     textDecoration: "none",
+    boxSizing: "border-box"
   };
 
   const iconStyle = { width: 18, height: 18, display: "inline-block" };
@@ -139,13 +193,13 @@ export default function ReleasePage({ theme }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "40px",
+      padding: "40px 16px",
       fontFamily: "Arial, sans-serif",
       position: "relative"
     }}>
       {/* Bottom Center Back Arrow */}
       <div
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/releases")}
         style={{
           position: "fixed",
           bottom: "24px",
@@ -163,16 +217,29 @@ export default function ReleasePage({ theme }) {
 
       {/* Modal box */}
       <div style={{
-        maxWidth: "480px",
+        maxWidth: "520px",
         width: "100%",
         backgroundColor: theme === "dark" ? "#111" : "#f9f9f9",
         borderRadius: "16px",
-        padding: "32px 24px",
-        boxShadow: theme === "dark"
-          ? "0 0 30px rgba(255, 255, 255, 0.05)"
-          : "0 0 30px rgba(0, 0, 0, 0.05)",
-        textAlign: "center"
+        padding: "28px 22px",
+        border: theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
+        textAlign: "center",
+        boxSizing: "border-box"
       }}>
+        {/* Title ABOVE art if a video exists */}
+        {haveYT && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
+              {release.title}
+            </div>
+            {release.artist && (
+              <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
+                {release.artist}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Cover Image */}
         <img
           src={release.cover}
@@ -181,22 +248,40 @@ export default function ReleasePage({ theme }) {
             width: "100%",
             borderRadius: "12px",
             display: "block",
-            marginBottom: "24px"
+            marginBottom: "18px",
+            border: theme === "dark" ? "1px solid #222" : "1px solid #ddd",
+            boxSizing: "border-box"
           }}
           loading="eager"
           decoding="async"
         />
 
-        {/* Embed: YouTube priority, else Spotify (both match width; YT is responsive 16:9) */}
+        {/* If no video: Title under art */}
+        {!haveYT && (
+          <div style={{ marginTop: 4, marginBottom: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
+              {release.title}
+            </div>
+            {release.artist && (
+              <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
+                {release.artist}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Embeds: YouTube priority, else Spotify */}
         {haveYT ? (
-          <div style={{ marginBottom: "24px" }}>
+          <div style={{ marginBottom: "18px" }}>
             <div style={{
               position: "relative",
               width: "100%",
               paddingTop: "56.25%", // 16:9
               borderRadius: "12px",
               overflow: "hidden",
-              background: "#000"
+              background: "#000",
+              border: theme === "dark" ? "1px solid #222" : "1px solid #ddd",
+              boxSizing: "border-box"
             }}>
               <iframe
                 src={ytSrc}
@@ -215,123 +300,121 @@ export default function ReleasePage({ theme }) {
               />
             </div>
           </div>
-        ) : haveSpotifyEmbed ? (
-          <div style={{ marginBottom: "24px" }}>
+        ) : embedSpotify ? (
+          <div style={{ marginBottom: "18px" }}>
             <iframe
-              src={release.embedSpotify}
+              src={embedSpotify}
               width="100%"
               height="152"
               frameBorder="0"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
               title={`${release.title} on Spotify`}
-              style={{ borderRadius: "12px" }}
+              style={{ borderRadius: "12px", border: theme === "dark" ? "1px solid #222" : "1px solid #ddd" }}
             />
           </div>
         ) : null}
 
-        {/* Main button -> dropdown menu */}
-        <div style={{ marginBottom: "24px" }} ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen(v => !v)}
-            style={btnBase}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-          >
-            Listen on All Platforms
-          </button>
+        {/* Primary action:
+            - If any real platform links: show dropdown trigger
+            - Else (no platform links): direct SmartLink button (if present)
+        */}
+        <div style={{ marginBottom: "18px" }} ref={menuRef}>
+          {hasAnyPlatforms ? (
+            <>
+              <button
+                onClick={() => setMenuOpen(v => !v)}
+                style={btnBase}
+                onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
+                onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+              >
+                Listen on All Platforms
+              </button>
 
-          {menuOpen && (
-            <div
-              role="menu"
-              style={{
-                marginTop: 12,
-                background: theme === "dark" ? "#111" : "#fff",
-                border: "1px solid " + (theme === "dark" ? "#222" : "#e6e6e6"),
-                borderRadius: "12px",
-                boxShadow: theme === "dark"
-                  ? "0 10px 24px rgba(0,0,0,0.45)"
-                  : "0 10px 24px rgba(0,0,0,0.1)",
-                padding: "10px",
-                maxWidth: 420,
-                marginLeft: "auto",
-                marginRight: "auto",
-                textAlign: "left"
-              }}
-            >
-              {/* Spotify */}
-              {isReal(release.spotifyUrl) && (
-                <a
-                  href={release.spotifyUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ ...iconBtn, marginBottom: 8 }}
-                  onClick={() => setMenuOpen(false)}
+              {menuOpen && (
+                <div
+                  role="menu"
+                  style={{
+                    marginTop: 12,
+                    background: theme === "dark" ? "#111" : "#fff",
+                    border: "1px solid " + (theme === "dark" ? "#222" : "#e6e6e6"),
+                    borderRadius: "12px",
+                    boxShadow: theme === "dark"
+                      ? "0 10px 24px rgba(0,0,0,0.45)"
+                      : "0 10px 24px rgba(0,0,0,0.1)",
+                    padding: "10px",
+                    maxWidth: 480,
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                    textAlign: "left",
+                    boxSizing: "border-box"
+                  }}
                 >
-                  <IconSpotify style={iconStyle} />
-                  <span>Spotify</span>
-                </a>
-              )}
+                  {hasSpotify && (
+                    <a
+                      href={release.spotifyUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ ...iconBtn, marginBottom: 8 }}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <IconSpotify style={iconStyle} />
+                      <span>Spotify</span>
+                    </a>
+                  )}
 
-              {/* Apple */}
-              {isReal(release.appleUrl) && (
-                <a
-                  href={release.appleUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ ...iconBtn, marginBottom: 8 }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <IconApple style={iconStyle} />
-                  <span>Apple Music</span>
-                </a>
-              )}
+                  {hasApple && (
+                    <a
+                      href={release.appleUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ ...iconBtn, marginBottom: 8 }}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <IconApple style={iconStyle} />
+                      <span>Apple Music</span>
+                    </a>
+                  )}
 
-              {/* YouTube */}
-              {isReal(release.youtubeUrl) && (
-                <a
-                  href={release.youtubeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={iconBtn}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <IconYouTube style={iconStyle} />
-                  <span>YouTube</span>
-                </a>
+                  {hasYouTubeLink && (
+                    <a
+                      href={release.youtubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={iconBtn}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <IconYouTube style={iconStyle} />
+                      <span>YouTube</span>
+                    </a>
+                  )}
+                </div>
               )}
-
-              {/* SmartLink fallback */}
-              {!isReal(release.spotifyUrl) && !isReal(release.appleUrl) && !isReal(release.youtubeUrl) && isReal(release.smartLink) && (
-                <a
-                  href={release.smartLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ ...iconBtn, marginTop: 8 }}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span>Open SmartLink</span>
-                </a>
-              )}
-            </div>
+            </>
+          ) : (
+            isReal(release.smartLink) && (
+              <a
+                href={release.smartLink}
+                target="_blank"
+                rel="noreferrer"
+                style={btnBase}
+              >
+                Listen on All Platforms
+              </a>
+            )
           )}
-        </div>
-
-        {/* Artist + Title */}
-        <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>
-          {release.artist} — {release.title}
         </div>
 
         {/* Distributed by + spinning Yen logo */}
         <div style={{
           textAlign: "center",
-          marginTop: "20px",
-          opacity: 0.6,
+          marginTop: "8px",
+          opacity: 0.65,
           fontStyle: "italic",
-          fontSize: "0.9rem"
+          fontSize: "0.95rem"
         }}>
           <div>הופץ ע״י YEN SOUND</div>
           <img
