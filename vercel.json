@@ -1,3 +1,6 @@
+cp vercel.json vercel.json.bak  # backup, just in case
+
+cat > vercel.json <<'JSON'
 {
   "redirects": [
     {
@@ -23,3 +26,4 @@
     }
   ]
 }
+JSON
