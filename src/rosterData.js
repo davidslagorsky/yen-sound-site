@@ -11,6 +11,18 @@ const roster = [
       appleMusic: "https://music.apple.com/il/artist/adam-in-the-shower/1463446987?l=he"
     }
   },
+   {
+    name: "Alon Mylo",
+    slug: "alonmylo",
+    bio: "Alon Mylo is a genre-defying artist whose music bridges alt-pop, hip-hop, and electronic soundscapes. Guided by his synesthetic perception of sound as color, he crafts immersive works that invite audiences into a vibrant, boundary-breaking world.",
+    image: "https://i.imgur.com/CqaN85O.jpeg",
+    releasesLink: "/releases?artist=Alon Mylo",
+    socials: {
+      instagram: "https://www.instagram.com/alonmylo/",
+      spotify: "https://open.spotify.com/artist/7eA0BzIcfh0boxSZkHivNM?si=zjB6UfAvSsGN3NUxl9px9A",
+      appleMusic: "https://music.apple.com/il/artist/alon-mylo/1629238483?l=he"
+    }
+  },
   {
     name: "Ethel",
     slug: "ethel",

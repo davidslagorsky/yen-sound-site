@@ -19,6 +19,20 @@ const releases = [
     embedSpotify: "PLACEHOLDER",
     slug: "spitzerflip"
   },
+    {
+    title: "iLoveYou",
+    artist: "Sighdafekt, Alon Mylo",
+    type: "Single",
+    smartLink: "https://open.spotify.com/track/6KnWM7TXRhE7WMNEtBLF1w?si=b0d9ba4aae224a12",
+    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/4e/28/74/4e287490-7812-00fd-897c-6f94b91732b3/053000128694_cover.jpg/600x600bb.jpg",
+    date: "2020-09-01",
+    spotifyUrl: "https://open.spotify.com/track/6KnWM7TXRhE7WMNEtBLF1w?si=b0d9ba4aae224a12",
+    appleUrl: "https://music.apple.com/il/album/iloveyou-single/1533892218?l=he",
+    youtubeUrl: "PLACEHOLDER",
+    embedYoutubeId: "PLACEHOLDER",
+    embedSpotify: "PLACEHOLDER",
+    slug: "iloveyou"
+  },
   {
     title: "ילדה רעה",
     artist: "שלומי לקאו, Guyku, Sighdafekt",
