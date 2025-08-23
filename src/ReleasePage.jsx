@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import releases from "./releases";
+import { FaInstagram, FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaBandcamp, FaGlobe } from "react-icons/fa";
+import { SiTiktok } from "react-icons/si";
+import { FiShare2, FiCheck } from "react-icons/fi";
 
 /* ---------- helpers ---------- */
 function extractYouTubeId(youtubeUrl = "") {
@@ -48,7 +51,7 @@ function isReal(v) {
   return typeof v === "string" && v.trim().length > 0 && v.trim().toUpperCase() !== "PLACEHOLDER";
 }
 
-/* ---------- monochrome white icons ---------- */
+/* ---------- monochrome white platform icons (for dropdown) ---------- */
 const IconSpotify = (props) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden {...props}>
     <path d="M12 1.5A10.5 10.5 0 1 0 22.5 12 10.513 10.513 0 0 0 12 1.5Zm4.6 14.9a.75.75 0 0 1-1.03.26 11.9 11.9 0 0 0-6.14-1.32 15.5 15.5 0 0 0-3.6.47.75.75 0 1 1-.36-1.45c4.12-1.01 8.4-.55 10.34.58a.75.75 0 0 1 .39.52.74.74 0 0 1-.3.8Zm1.35-3.12a.9.9 0 0 1-1.24.31c-2.34-1.45-6.69-1.88-9.74-1.02a.9.9 0 1 1-.48-1.73c3.54-.97 8.37-.5 11.12 1.22a.9.9 0 0 1 .34 1.22Zm.1-3.19a1 1 0 0 1-1.37.34c-2.7-1.62-7.51-1.98-10.8-1.06A1 1 0 0 1 5.4 6.6c3.82-1.05 9.05-.65 12.2 1.22a1 1 0 0 1 .49 1.37Z"/>
@@ -66,6 +69,209 @@ const IconYouTube = (props) => (
     <path d="M23.5 7.1s-.23-1.66-.94-2.39c-.9-.95-1.9-.96-2.36-1.02-3.3-.24-8.24-.24-8.24-.24h-.01s-4.95 0-8.24.24c-.46.06-1.46.07-2.36 1.02C.73 5.45.5 7.1.5 7.1S.27 9.1.27 11.1v1.78c0 2 .23 4 .23 4s.23 1.66.94 2.39c.9.95 2.08.92 2.61 1.03 1.89.18 8.05.24 8.05.24s4.96-.01 8.26-.25c.46-.06 1.46-.07 2.36-1.02.71-.73.94-2.39.94-2.39s.23-2 .23-4v-1.78c0-2-.23-4-.23-4ZM9.84 13.88V8.1l5.67 2.9-5.67 2.88Z"/>
   </svg>
 );
+
+/* ---------- social icon component (per release) ---------- */
+const SOCIAL_ICON_MAP = {
+  instagram: FaInstagram,
+  spotify: FaSpotify,
+  appleMusic: FaApple, // for Apple artist pages in "socials"
+  youtube: FaYoutube,
+  tiktok: SiTiktok,
+  soundcloud: FaSoundcloud,
+  bandcamp: FaBandcamp,
+  website: FaGlobe,
+  share: FiShare2 // special key: renders Web Share / clipboard
+};
+
+function SocialRow({ socials = {}, color = "#fff", shareDefault }) {
+  const [copied, setCopied] = React.useState(false);
+
+  // normalize entries (allow known keys; allow share even if value is true/empty)
+  let entries = Object.entries(socials).filter(
+    ([k, v]) => SOCIAL_ICON_MAP[k] && (k === "share" || isReal(v))
+  );
+
+  // Always show Share icon universally, at the end (no per-release config)
+  if (!entries.find(([k]) => k === "share")) {
+    entries = [...entries, ["share", true]];
+  }
+
+  if (!entries.length) return null;
+
+  async function handleShare(title, url) {
+    const shareUrl =
+      url ||
+      shareDefault?.url ||
+      (typeof window !== "undefined" ? window.location.href : "");
+    const shareTitle = title || shareDefault?.title || "";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: shareTitle, url: shareUrl });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    } catch { /* ignore cancel/unsupported */ }
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "14px",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: "12px",
+        flexWrap: "wrap"
+      }}
+      aria-label="Artist social links"
+    >
+      {entries.map(([key, val]) => {
+        const Icon = SOCIAL_ICON_MAP[key];
+
+        if (key === "share") {
+          // val may be true or an object; we prioritize explicit socials.{title,url} if present
+          const title = socials.title;
+          const url = socials.url;
+          return (
+            <button
+              key="share"
+              onClick={() => handleShare(title, url)}
+              aria-label="Share"
+              title="Share"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "38px",
+                height: "38px",
+                borderRadius: "999px",
+                border: `1px solid ${color}`,
+                background: "transparent",
+                color,
+                cursor: "pointer",
+                opacity: 0.9,
+                transition: "opacity 0.2s ease, transform 0.15s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = 1;
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = 0.9;
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              {copied ? <FiCheck size={18} /> : <Icon size={18} />}
+            </button>
+          );
+        }
+
+        return (
+          <a
+            key={key}
+            href={val}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={key}
+            title={key}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "38px",
+              height: "38px",
+              borderRadius: "999px",
+              border: `1px solid ${color}`,
+              color,
+              textDecoration: "none",
+              opacity: 0.9,
+              transition: "opacity 0.2s ease, transform 0.15s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = 1;
+              e.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = 0.9;
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            <Icon size={18} />
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+function SocialSection({ release, color = "#fff", borderColor = "rgba(255,255,255,0.15)" }) {
+  const hasPerArtist = Array.isArray(release.socialsByArtist) && release.socialsByArtist.length > 0;
+  const hasPerRelease = release.socials && Object.keys(release.socials).length > 0;
+
+  // We’ll show the share icon even if no socials are set, so we still render the section.
+  if (!hasPerArtist && !hasPerRelease && !release) return null;
+
+  const shareDefault = {
+    title: `${release.title} – ${release.artist || ""}`.trim(),
+    // UNIVERSAL SIMPLE WAY: prefer SmartLink for robust previews
+    url: isReal(release.smartLink) ? release.smartLink : undefined
+  };
+
+  return (
+    <section
+      style={{
+        maxWidth: 1000,
+        margin: "32px auto 0",
+        padding: "18px 16px 8px",
+        borderTop: `1px solid ${borderColor}`
+      }}
+    >
+      {hasPerArtist ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ fontSize: 14, letterSpacing: 0.6, opacity: 0.75, marginBottom: 2 }}>
+            
+          </div>
+          {release.socialsByArtist.map((row, idx) => {
+            const valid = row && typeof row === "object";
+            if (!valid) return null;
+            return (
+              <div
+                key={(row.name || "") + idx}
+                style={{
+                  padding: "10px 0",
+                  borderBottom: `1px dashed ${borderColor}`
+                }}
+              >
+                {row.name && (
+                  <div style={{ fontWeight: 600, letterSpacing: 0.5, marginBottom: 6 }}>
+                    {row.name}
+                  </div>
+                )}
+                {/* For per-artist rows, we don't auto-add the Share icon to each row */}
+                <SocialRow socials={row.socials || {}} color={color} />
+              </div>
+            );
+          })}
+          {/* Add one global socials row under per-artist section that includes the Share icon */}
+          <SocialRow socials={release.socials || {}} color={color} shareDefault={shareDefault} />
+        </div>
+      ) : (
+        <>
+          <div style={{ fontSize: 14, letterSpacing: 0.6, opacity: 0.75, marginBottom: 1 }}>
+          </div>
+          <SocialRow
+            socials={release.socials || {}}
+            color={color}
+            shareDefault={shareDefault}
+          />
+        </>
+      )}
+    </section>
+  );
+}
 
 export default function ReleasePage({ theme }) {
   const { slug: rawSlugParam } = useParams();
@@ -319,7 +525,7 @@ export default function ReleasePage({ theme }) {
             - If any real platform links: show dropdown trigger
             - Else (no platform links): direct SmartLink button (if present)
         */}
-        <div style={{ marginBottom: "18px" }} ref={menuRef}>
+        <div style={{ marginBottom: 12 }} ref={menuRef}>
           {hasAnyPlatforms ? (
             <>
               <button
@@ -408,10 +614,17 @@ export default function ReleasePage({ theme }) {
           )}
         </div>
 
+        {/* Social icons (Share included automatically, using SmartLink if present) */}
+        <SocialSection
+          release={release}
+          color={fg}
+          borderColor={theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"}
+        />
+
         {/* Distributed by + spinning Yen logo */}
         <div style={{
           textAlign: "center",
-          marginTop: "8px",
+          marginTop: "10px",
           opacity: 0.65,
           fontStyle: "italic",
           fontSize: "0.95rem"

@@ -411,20 +411,27 @@ const releases = [
     embedSpotify: "PLACEHOLDER",
     slug: "shlavhabatim"
   },
-  {
-    title: "להבות",
-    artist: "SHOWER",
-    type: "Single",
-    smartLink: "https://ffm.to/lehavot",
-    cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3e/1c/1b/3e1c1bea-a55a-c8d4-b161-8640f66c945f/199538224092.jpg/600x600bb.jpg",
-    date: "2025-07-30",
-    spotifyUrl: "https://open.spotify.com/track/6gzk6QWr7GNoYEf6z3LCCr?si=56e383c2f3c44831",
-    appleUrl: "https://music.apple.com/il/album/%D7%9C%D7%94%D7%91%D7%95%D7%AA-single/1825659035?l=he",
-    youtubeUrl: "https://www.youtube.com/watch?v=te-mOJCANt4",
-    embedYoutubeId: "PLACEHOLDER",
-    embedSpotify: "PLACEHOLDER",
-    slug: "lehavot"
-  },
+{
+  title: "להבות",
+  artist: "SHOWER",
+  type: "Single",
+  smartLink: "https://ffm.to/lehavot",
+  cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3e/1c/1b/3e1c1bea-a55a-c8d4-b161-8640f66c945f/199538224092.jpg/600x600bb.jpg",
+  date: "2025-07-30",
+  spotifyUrl: "https://open.spotify.com/track/6gzk6QWr7GNoYEf6z3LCCr?si=56e383c2f3c44831",
+  appleUrl: "https://music.apple.com/il/album/%D7%9C%D7%94%D7%91%D7%95%D7%AA-single/1825659035?l=he",
+  youtubeUrl: "https://www.youtube.com/watch?v=te-mOJCANt4",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "lehavot",
+  socials: {
+    instagram: "https://www.instagram.com/showerbitch",
+    tiktok: "https://www.tiktok.com/@showerbih",
+    website: "https://www.yensound.com/artist/shower",
+    youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
+  }
+},
+
   {
     title: "כיוונים שונים",
     artist: "Ethel, Sighdafekt, Gangsburg",
