@@ -18,6 +18,8 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 import Redirector from "./Redirector";
 import AdminDashboard from "./AdminDashboard";
 import HiddenSplash from "./HiddenSplash";
+import { useAnalytics } from "./hooks/useAnalytics";
+
 
 /* ---------------- Home ---------------- */
 const Home = ({ theme /*, toggleTheme*/ }) => {
@@ -542,7 +544,8 @@ function App() {
       document.removeEventListener("contextmenu", disableRightClick);
     };
   }, []);
-
+function App() {
+  useAnalytics(); }
   return (
     <>
       <Routes>
