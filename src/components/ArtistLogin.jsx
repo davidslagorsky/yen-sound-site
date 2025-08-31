@@ -9,7 +9,10 @@ const passwords = {
   royroyroy: 'roy',
   sgulothaifa: 'sgulot',
   stikiwiththestick: 'stiki',
-  yalifromtheblock: 'yali'
+  yalifromtheblock: 'yali',
+  guykuguykumusic: 'guyku',
+  romirothromiroth: 'Romi',
+  bigrigshi2025: 'RIGSHI'
 };
 
 export default function ArtistLogin() {

@@ -12,7 +12,10 @@ export default function ArtistDashboard() {
     roy: 'https://drive.google.com/drive/folders/1UZm61m2oY6WL_C_cSliKf7IsuvKEYZ5D',
     sgulot: 'https://drive.google.com/drive/folders/1A4q1Ye3WEjE05HBhFKv4vGb_cWdOX0yp',
     stiki: 'https://drive.google.com/drive/folders/1zZI3YqR2jxc6dHGWst5Yh3fRfsKtCAiD?usp=sharing',
-    yali: 'https://drive.google.com/drive/folders/1IBW6jSvoeU40ZvGB3euhCca--4YlAiDx?usp=sharing'
+    yali: 'https://drive.google.com/drive/folders/1IBW6jSvoeU40ZvGB3euhCca--4YlAiDx?usp=sharing',
+    guyku: 'https://drive.google.com/drive/folders/1_Y89A4rp6TShNH-6_d8hxCNrevWs95I_?usp=share_link',
+    Romi: 'https://drive.google.com/drive/folders/1kzMJpdL8nfEPO1wUsGwSw0mWJa0e5r6n?usp=share_link',
+    RIGSHI: 'https://drive.google.com/drive/folders/16W8SGZX_tUOJVwdGVL3xD1iRhTfVHGrZ?usp=share_link'
   };
 
   const displayName = artistId.charAt(0).toUpperCase() + artistId.slice(1);
