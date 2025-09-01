@@ -431,6 +431,26 @@ const releases = [
     youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
   }
 },
+{
+  title: "?מה הקטע",
+  artist: "רומי רוט",
+  type: "Single",
+  smartLink: "https://ffm.to/mahaketa",
+  cover: "https://i.postimg.cc/RZSP64zh/temp-Image-URNKLI.avif",
+  date: "2025-09-01",
+  spotifyUrl: "https://open.spotify.com/album/5LH93x61xY006eZQbItr4A",
+  appleUrl: "https://geo.music.apple.com/au/album/%D7%9E%D7%94-%D7%94%D7%A7%D7%98%D7%A2-single/1835259398?app=music&ls=1",
+  youtubeUrl: "https://www.youtube.com/watch?v=wP9pbuR13Ew",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "MaHaketa",
+  socials: {
+    instagram: "https://www.instagram.com/romi_roth/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@romi_roth"
+  }
+},
 
   {
     title: "כיוונים שונים",
