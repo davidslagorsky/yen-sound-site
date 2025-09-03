@@ -451,7 +451,26 @@ const releases = [
     youtube: "https://www.youtube.com/@romi_roth"
   }
 },
-
+{
+  title: "PURPLE",
+  artist: "Kizels",
+  type: "Album",
+  smartLink: "https://ffm.to/kizels",
+  cover: "https://i.postimg.cc/SR8L5PcL/temp-Imagexc0a6t.avif",
+  date: "2025-09-04",
+  spotifyUrl: "https://open.spotify.com/album/24CmY9HcCL7TLY1EyNHV0t?si=yLY-uv2KQqeBZnTs0C_LFg",
+  appleUrl: "https://music.apple.com/il/album/purple-ep/1831627106?l=he",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "purple",
+  socials: {
+    instagram: "https://www.instagram.com/kizels/",
+    tiktok: "https://www.tiktok.com/@kizels?_t=ZS-8vugUgcCKAC&_r=1",
+    website: "https://www.yensound.com/artist/kizels",
+    youtube: "https://www.youtube.com/channel/UC7ma1m68GZoy7STYPAwgmYQ"
+  }
+},
   {
     title: "כיוונים שונים",
     artist: "Ethel, Sighdafekt, Gangsburg",
