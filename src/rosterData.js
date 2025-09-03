@@ -11,40 +11,16 @@ const roster = [
       appleMusic: "https://music.apple.com/il/artist/adam-in-the-shower/1463446987?l=he"
     }
   },
-   {
-    name: "Alon Mylo",
-    slug: "alonmylo",
-    bio: "Alon Mylo is a genre-defying artist whose music bridges alt-pop, hip-hop, and electronic soundscapes. Guided by his synesthetic perception of sound as color, he crafts immersive works that invite audiences into a vibrant, boundary-breaking world.",
-    image: "https://i.imgur.com/CqaN85O.jpeg",
-    releasesLink: "/releases?artist=Alon Mylo",
+    {
+    name: "YALi",
+    slug: "yali",
+    bio: "YALi (יהלי) is a singer-songwriter blending hip-hop, pop, and electronic sounds with Mediterranean and global influences.",
+    image: "https://i.postimg.cc/BZ1q4xQM/temp-Imagen-QRo-Pk.avif",
+    releasesLink: "/releases?artist=YALi",
     socials: {
-      instagram: "https://www.instagram.com/alonmylo/",
-      spotify: "https://open.spotify.com/artist/7eA0BzIcfh0boxSZkHivNM?si=zjB6UfAvSsGN3NUxl9px9A",
-      appleMusic: "https://music.apple.com/il/artist/alon-mylo/1629238483?l=he"
-    }
-  },
-  {
-    name: "Ethel",
-    slug: "ethel",
-    bio: "Ethel blends dreamy alt-pop and intimate vocals with experimental textures, creating soundscapes that are both fragile and powerful.",
-    image: "https://iili.io/F4WKPzg.png",
-    releasesLink: "/releases?artist=Ethel",
-    socials: {
-      instagram: "https://instagram.com/ethel_superstarbaby",
-      spotify: "https://open.spotify.com/artist/1PkYjaCMjQO2A4Jotcar2V?si=yd6uZJmxQhCytO6jMKUwrw",
-      appleMusic: "https://music.apple.com/il/artist/%D7%90%D7%AA%D7%9C/1492747095?l=he"
-    }
-  },
-  {
-    name: "Kizels",
-    slug: "kizels",
-    bio: "Kizels creates lo-fi rap and ambient soundscapes, combining streetwise lyrics with dreamy, minimal production.",
-    image: "https://iili.io/F4VyakJ.md.jpg",
-    releasesLink: "/releases?artist=Kizels",
-    socials: {
-      instagram: "https://instagram.com/kizels",
-      spotify: "https://open.spotify.com/artist/0ZxV3yaIkex9CDaP43WhuY?si=4PhYoLG2R7-9fimeGRJs7Q",
-      appleMusic: "https://music.apple.com/il/artist/kizels/1257722331?l=he"
+      instagram: "https://www.instagram.com/yalzzii/",
+      spotify: "PLACEHOLDER",
+      appleMusic: "PLACEHOLDER"
     }
   },
   {
@@ -59,6 +35,44 @@ const roster = [
       appleMusic: "https://music.apple.com/il/artist/sighdafekt/692853131?l=he"
     }
   },
+  
+  {
+    name: "Ethel",
+    slug: "ethel",
+    bio: "Ethel blends dreamy alt-pop and intimate vocals with experimental textures, creating soundscapes that are both fragile and powerful.",
+    image: "https://iili.io/F4WKPzg.png",
+    releasesLink: "/releases?artist=Ethel",
+    socials: {
+      instagram: "https://instagram.com/ethel_superstarbaby",
+      spotify: "https://open.spotify.com/artist/1PkYjaCMjQO2A4Jotcar2V?si=yd6uZJmxQhCytO6jMKUwrw",
+      appleMusic: "https://music.apple.com/il/artist/%D7%90%D7%AA%D7%9C/1492747095?l=he"
+    }
+  },
+   {
+    name: "Alon Mylo",
+    slug: "alonmylo",
+    bio: "Alon Mylo is a genre-defying artist whose music bridges alt-pop, hip-hop, and electronic soundscapes. Guided by his synesthetic perception of sound as color, he crafts immersive works that invite audiences into a vibrant, boundary-breaking world.",
+    image: "https://i.imgur.com/CqaN85O.jpeg",
+    releasesLink: "/releases?artist=Alon Mylo",
+    socials: {
+      instagram: "https://www.instagram.com/alonmylo/",
+      spotify: "https://open.spotify.com/artist/7eA0BzIcfh0boxSZkHivNM?si=zjB6UfAvSsGN3NUxl9px9A",
+      appleMusic: "https://music.apple.com/il/artist/alon-mylo/1629238483?l=he"
+    }
+  },
+  {
+    name: "Kizels",
+    slug: "kizels",
+    bio: "Kizels creates lo-fi rap and ambient soundscapes, combining streetwise lyrics with dreamy, minimal production.",
+    image: "https://iili.io/F4VyakJ.md.jpg",
+    releasesLink: "/releases?artist=Kizels",
+    socials: {
+      instagram: "https://instagram.com/kizels",
+      spotify: "https://open.spotify.com/artist/0ZxV3yaIkex9CDaP43WhuY?si=4PhYoLG2R7-9fimeGRJs7Q",
+      appleMusic: "https://music.apple.com/il/artist/kizels/1257722331?l=he"
+    }
+  },
+  
   {
     name: "רוי ניסמו",
     slug: "roynismo",
