@@ -471,6 +471,26 @@ const releases = [
     youtube: "https://www.youtube.com/channel/UC7ma1m68GZoy7STYPAwgmYQ"
   }
 },
+{
+  title: "בראשית",
+  artist: "יהלי",
+  type: "Single",
+  smartLink: "https://ffm.to/bereshit",
+  cover: "https://i.postimg.cc/dV9zGKT2/temp-Imageu-Pezzj.avif",
+  date: "2025-09-14",
+  spotifyUrl: "https://open.spotify.com/album/4Q6mWlHshr8zSSurzNUyHY?si=2tnnvCBDRK-oGjKLBK3zMQ",
+  appleUrl: "https://music.apple.com/il/album/%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA-single/1838307735?l=he",
+  youtubeUrl: "https://youtu.be/hRo2y0U-N_k",
+  embedYoutubeId: "https://youtu.be/hRo2y0U-N_k",
+  embedSpotify: "PLACEHOLDER",
+  slug: "bereshit",
+  socials: {
+    instagram: "https://www.instagram.com/yalzzii/",
+    tiktok: "https://www.tiktok.com/@yalzzii",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@Yalzzii"
+  }
+},
   {
     title: "כיוונים שונים",
     artist: "Ethel, Sighdafekt, Gangsburg",
