@@ -480,8 +480,8 @@ const releases = [
   date: "2025-09-14",
   spotifyUrl: "https://open.spotify.com/album/4Q6mWlHshr8zSSurzNUyHY?si=2tnnvCBDRK-oGjKLBK3zMQ",
   appleUrl: "https://music.apple.com/il/album/%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA-single/1838307735?l=he",
-  youtubeUrl: "https://youtu.be/hRo2y0U-N_k",
-  embedYoutubeId: "https://youtu.be/hRo2y0U-N_k",
+  youtubeUrl: "https://www.youtube.com/watch?v=hRo2y0U-N_k",
+  embedYoutubeId: "PLACEHOLDER",
   embedSpotify: "PLACEHOLDER",
   slug: "bereshit",
   socials: {
