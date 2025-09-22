@@ -338,6 +338,27 @@ export default function ReleasePage({ theme }) {
   const bg = theme === "dark" ? "#000" : "#fff";
   const fg = theme === "dark" ? "#fff" : "#000";
 
+  /* ---------- NEW: per-release background config ---------- */
+  const bgCfg = release.background || {}; // optional object in releases.js
+  const bgUrl = isReal(bgCfg.url) ? bgCfg.url : null;
+  const opacity = typeof bgCfg.opacity === "number" ? bgCfg.opacity : 0.22;
+  const blur = typeof bgCfg.blur === "number" ? bgCfg.blur : 0;
+  const darken = typeof bgCfg.darken === "number" ? bgCfg.darken : 0; // 0..1 black overlay
+  const attachment = bgCfg.attachment || "fixed"; // "fixed" | "scroll"
+  const size = bgCfg.size || "cover";
+  const position = bgCfg.position || "center";
+  const repeat = bgCfg.repeat || "no-repeat";
+  const respectReducedMotion = bgCfg.respectReducedMotion !== false; // default true
+
+  // Respect reduced motion: if true and user prefers reduced motion, hide animated GIFs
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const isGif = bgUrl ? /\.gif($|\?)/i.test(bgUrl) : false;
+  const showBackground = !!(bgUrl && !(respectReducedMotion && prefersReducedMotion && isGif));
+
   // Real platform links only (ignore PLACEHOLDER/empty)
   const hasSpotify = isReal(release.spotifyUrl);
   const hasApple = isReal(release.appleUrl);
@@ -392,17 +413,55 @@ export default function ReleasePage({ theme }) {
   const iconStyle = { width: 18, height: 18, display: "inline-block" };
 
   return (
-    <div style={{
-      backgroundColor: bg,
-      color: fg,
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "40px 16px",
-      fontFamily: "Arial, sans-serif",
-      position: "relative"
-    }}>
+    <div
+      style={{
+        backgroundColor: bg,
+        color: fg,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 16px",
+        fontFamily: "Arial, sans-serif",
+        position: "relative",
+        overflow: "hidden",
+        isolation: "isolate" // keep overlays behind content
+      }}
+    >
+      {/* ---------- NEW: Background layer ---------- */}
+      {showBackground && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: attachment === "fixed" ? "fixed" : "absolute",
+            inset: 0,
+            zIndex: -2,
+            pointerEvents: "none",
+            backgroundImage: `url("${bgUrl}")`,
+            backgroundSize: size,
+            backgroundPosition: position,
+            backgroundRepeat: repeat,
+            opacity,
+            filter: blur ? `blur(${blur}px)` : undefined,
+            transform: "translateZ(0)", // perf hint
+            willChange: "transform, opacity, filter"
+          }}
+        />
+      )}
+      {showBackground && darken > 0 && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: -1,
+            pointerEvents: "none",
+            background: "#000",
+            opacity: Math.min(Math.max(darken, 0), 1)
+          }}
+        />
+      )}
+
       {/* Bottom Center Back Arrow */}
       <div
         onClick={() => navigate("/releases")}
@@ -422,16 +481,20 @@ export default function ReleasePage({ theme }) {
       </div>
 
       {/* Modal box */}
-      <div style={{
-        maxWidth: "520px",
-        width: "100%",
-        backgroundColor: theme === "dark" ? "#111" : "#f9f9f9",
-        borderRadius: "16px",
-        padding: "28px 22px",
-        border: theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
-        textAlign: "center",
-        boxSizing: "border-box"
-      }}>
+      <div
+        style={{
+          maxWidth: "520px",
+          width: "100%",
+          backgroundColor: theme === "dark" ? "#111" : "#f9f9f9",
+          borderRadius: "16px",
+          padding: "28px 22px",
+          border: theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
+          textAlign: "center",
+          boxSizing: "border-box",
+          position: "relative",
+          zIndex: 1 // ensure above bg/overlay
+        }}
+      >
         {/* Title ABOVE art if a video exists */}
         {haveYT && (
           <div style={{ marginBottom: 14 }}>
@@ -479,16 +542,18 @@ export default function ReleasePage({ theme }) {
         {/* Embeds: YouTube priority, else Spotify */}
         {haveYT ? (
           <div style={{ marginBottom: "18px" }}>
-            <div style={{
-              position: "relative",
-              width: "100%",
-              paddingTop: "56.25%", // 16:9
-              borderRadius: "12px",
-              overflow: "hidden",
-              background: "#000",
-              border: theme === "dark" ? "1px solid #222" : "1px solid #ddd",
-              boxSizing: "border-box"
-            }}>
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                paddingTop: "56.25%", // 16:9
+                borderRadius: "12px",
+                overflow: "hidden",
+                background: "#000",
+                border: theme === "dark" ? "1px solid #222" : "1px solid #ddd",
+                boxSizing: "border-box"
+              }}
+            >
               <iframe
                 src={ytSrc}
                 title={release.title}
@@ -531,9 +596,9 @@ export default function ReleasePage({ theme }) {
               <button
                 onClick={() => setMenuOpen(v => !v)}
                 style={btnBase}
-                onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-                onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                onMouseDown={e => (e.currentTarget.style.transform = "scale(0.98)")}
+                onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
@@ -548,9 +613,10 @@ export default function ReleasePage({ theme }) {
                     background: theme === "dark" ? "#111" : "#fff",
                     border: "1px solid " + (theme === "dark" ? "#222" : "#e6e6e6"),
                     borderRadius: "12px",
-                    boxShadow: theme === "dark"
-                      ? "0 10px 24px rgba(0,0,0,0.45)"
-                      : "0 10px 24px rgba(0,0,0,0.1)",
+                    boxShadow:
+                      theme === "dark"
+                        ? "0 10px 24px rgba(0,0,0,0.45)"
+                        : "0 10px 24px rgba(0,0,0,0.1)",
                     padding: "10px",
                     maxWidth: 480,
                     marginLeft: "auto",
@@ -602,12 +668,7 @@ export default function ReleasePage({ theme }) {
             </>
           ) : (
             isReal(release.smartLink) && (
-              <a
-                href={release.smartLink}
-                target="_blank"
-                rel="noreferrer"
-                style={btnBase}
-              >
+              <a href={release.smartLink} target="_blank" rel="noreferrer" style={btnBase}>
                 Listen on All Platforms
               </a>
             )
@@ -622,19 +683,17 @@ export default function ReleasePage({ theme }) {
         />
 
         {/* Distributed by + spinning Yen logo */}
-        <div style={{
-          textAlign: "center",
-          marginTop: "10px",
-          opacity: 0.65,
-          fontStyle: "italic",
-          fontSize: "0.95rem"
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "10px",
+            opacity: 0.65,
+            fontStyle: "italic",
+            fontSize: "0.95rem"
+          }}
+        >
           <div>הופץ ע״י YEN SOUND</div>
-          <img
-            src="/yen-logo.gif"
-            alt="Yen Sound Animated Logo"
-            style={{ width: "40px", marginTop: "10px" }}
-          />
+          <img src="/yen-logo.gif" alt="Yen Sound Animated Logo" style={{ width: "40px", marginTop: "10px" }} />
         </div>
       </div>
     </div>

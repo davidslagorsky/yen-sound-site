@@ -19,6 +19,8 @@ import Redirector from "./Redirector";
 import AdminDashboard from "./AdminDashboard";
 import HiddenSplash from "./HiddenSplash";
 import { useAnalytics } from "./hooks/useAnalytics";
+import RigshiFamRelease from "./RigshiFamRelease";
+
 
 
 /* ---------------- Home ---------------- */
@@ -565,6 +567,7 @@ function App() {
         <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
         <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
         <Route path="/enter-shower" element={<HiddenSplash />} />
+        <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
 
         {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
         <Route path="/:maybeSlug" element={<SlugRedirect />} />

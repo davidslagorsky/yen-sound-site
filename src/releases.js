@@ -491,6 +491,27 @@ const releases = [
     youtube: "https://www.youtube.com/@Yalzzii"
   }
 },
+{
+  title: "עכביש",
+  artist: "SHOWER",
+  type: "Single",
+  smartLink: "https://ffm.to/akavish",
+  cover: "https://i.postimg.cc/448vq9mf/temp-Imagez-Mda-N5.avif",
+  date: "2025-09-25",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "akavish",
+  background: { url: "https://i.imgur.com/PTi17HP.gif", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/showerbitch",
+    tiktok: "https://www.tiktok.com/@showerbih",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
+  }
+},
   {
     title: "כיוונים שונים",
     artist: "Ethel, Sighdafekt, Gangsburg",

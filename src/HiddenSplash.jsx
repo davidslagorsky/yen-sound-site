@@ -57,7 +57,7 @@ export default function HiddenSplash() {
       >
         {/* ENTER button (narrow, minimalist) */}
         <a
-          href="https://www.yensound.com/release/להבות"
+          href="https://www.yensound.com/release/akavish"
           style={{
             display: "inline-block",
             padding: "10px 22px",
