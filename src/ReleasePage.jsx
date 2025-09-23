@@ -1,9 +1,65 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import releases from "./releases";
 import { FaInstagram, FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaBandcamp, FaGlobe } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 import { FiShare2, FiCheck } from "react-icons/fi";
+
+// ---- COMING SOON helpers ----
+function __toLocalMidnightSafe(dateStr) {
+  // If you ALREADY have toLocalMidnight, use it; otherwise this fallback is used.
+  try {
+    if (typeof toLocalMidnight === "function") return toLocalMidnight(dateStr);
+  } catch (_) {}
+  // Fallback: treat dateStr as local midnight (YYYY-MM-DD)
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function isComingSoonFromDateStr(releaseAt) {
+  if (!releaseAt) return false; // if missing, treat as released
+  const targetAt = __toLocalMidnightSafe(releaseAt);
+  return Date.now() < targetAt.getTime();
+}
+
+// --- local-midnight countdown helpers ---
+function toLocalMidnight(dateStr) {
+  if (!dateStr) return null;
+  return new Date(`${dateStr}T00:00:00`);
+}
+function getCountdownParts(target) {
+  const now = new Date();
+  if (!target || now >= target) return { days:0, hours:0, minutes:0, seconds:0, isOver:true };
+  const s = Math.floor((target - now) / 1000);
+  return {
+    days: Math.floor(s / 86400),
+    hours: Math.floor((s % 86400) / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+    isOver: false
+  };
+}
+function isValidLink(url) {
+  return typeof url === "string" && url.trim() && !/PLACEHOLDER/i.test(url);
+}
+
+function formatCountdown({ days, hours, minutes, seconds }) {
+  const pad = n => String(n).padStart(2, "0");
+  return days > 0
+    ? `${days}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+    : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+// 1s ticker so the countdown updates live
+function useSecondTicker(enabled = true) {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!enabled) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [enabled]);
+}
+
 
 /* ---------- helpers ---------- */
 function extractYouTubeId(youtubeUrl = "") {
@@ -20,6 +76,8 @@ function extractYouTubeId(youtubeUrl = "") {
   }
   return null;
 }
+
+
 
 function buildYouTubeEmbedSrc(id, origin) {
   if (!id) return null;
@@ -273,6 +331,8 @@ function SocialSection({ release, color = "#fff", borderColor = "rgba(255,255,25
   );
 }
 
+
+
 export default function ReleasePage({ theme }) {
   const { slug: rawSlugParam } = useParams();
   const location = useLocation();
@@ -311,6 +371,129 @@ export default function ReleasePage({ theme }) {
     };
   }, []);
 
+    // ---- compute lock + call ticker (UNCONDITIONALLY for lint safety) ----
+const unlockAt = release.releaseAt ? toLocalMidnight(release.releaseAt) : null;
+const isLocked = !!(unlockAt && new Date() < unlockAt);
+useSecondTicker(isLocked);
+// ----------------------------------------------------------------------
+
+if (isLocked) {
+  const parts = getCountdownParts(unlockAt);
+
+  // Background styling if provided (same as live page)
+  const bgStyle = release.background?.url
+    ? {
+        backgroundImage: `url(${release.background.url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        position: "relative",
+      }
+    : {};
+
+  // Optional darken overlay if you set background.darken (0..1)
+  const darken =
+    typeof release.background?.darken === "number"
+      ? Math.min(Math.max(release.background.darken, 0), 1)
+      : 0;
+
+  return (
+    <div
+      style={{
+        backgroundColor: theme === "dark" ? "#000" : "#fff",
+        color: theme === "dark" ? "#fff" : "#000",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 16px",
+        fontFamily: "Arial, sans-serif",
+        textAlign: "center",
+        ...bgStyle,
+      }}
+    >
+      {/* darken overlay over background image */}
+      {release.background?.url && darken > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `rgba(0,0,0,${darken})`,
+          }}
+        />
+      )}
+
+      {/* content card */}
+      <div
+        style={{
+          position: "relative",
+          maxWidth: 520,
+          width: "100%",
+          background: theme === "dark" ? "#111" : "rgba(249,249,249,0.96)",
+          border: theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
+          borderRadius: 16,
+          padding: "28px 22px",
+        }}
+      >
+        <img
+          src={release.cover}
+          alt={release.title}
+          style={{
+            width: "100%",
+            borderRadius: 12,
+            display: "block",
+            marginBottom: 18,
+            border: theme === "dark" ? "1px solid #222" : "1px solid #ddd",
+          }}
+        />
+        <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
+          {release.title}
+        </div>
+        {release.artist && (
+          <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
+            {release.artist}
+          </div>
+        )}
+
+        <div style={{ marginTop: 10, opacity: 0.75, letterSpacing: 0.6, fontSize: 14 }}>
+          Unlocks at 00:00 (local time)
+        </div>
+        <div style={{ marginTop: 6, fontFamily: "monospace", fontSize: 24 }}>
+          {formatCountdown(parts)}
+        </div>
+
+        {/* PRE-SAVE (SmartLink) — ALL CAPS — only if valid */}
+        {isValidLink(release.smartLink) && (
+          <a
+            href={release.smartLink}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: "inline-block",
+              padding: "14px 28px",
+              fontSize: "0.95rem",
+              fontWeight: 800,
+              letterSpacing: 1.2,
+              backgroundColor: "#000",
+              color: "#fff",
+              border: "2px solid #fff",
+              borderRadius: 10,
+              textDecoration: "none",
+              width: "100%",
+              boxSizing: "border-box",
+              marginTop: 16,
+            }}
+          >
+            PRE-SAVE
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
+
   if (!release) {
     return (
       <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "#fff", background: "#000", padding: 24 }}>
@@ -334,6 +517,8 @@ export default function ReleasePage({ theme }) {
       </div>
     );
   }
+
+  
 
   const bg = theme === "dark" ? "#000" : "#fff";
   const fg = theme === "dark" ? "#fff" : "#000";

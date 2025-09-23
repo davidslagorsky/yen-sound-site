@@ -498,6 +498,7 @@ const releases = [
   smartLink: "https://ffm.to/akavish",
   cover: "https://i.postimg.cc/448vq9mf/temp-Imagez-Mda-N5.avif",
   date: "2025-09-25",
+  releaseAt: "2025-09-25",
   spotifyUrl: "PLACEHOLDER",
   appleUrl: "PLACEHOLDER",
   youtubeUrl: "PLACEHOLDER",
@@ -512,6 +513,52 @@ const releases = [
     youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
   }
 },
+
+{
+  title: "מהופנט",
+  artist: "Guyku, דור3",
+  type: "Single",
+  smartLink: "https://ffm.to/mehupnat",
+  cover: "https://i.postimg.cc/VkSvxXy8/Guyku-Music.jpg",
+  date: "2024-10-02",
+  releaseAt: "2025-09-29",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "mehupnat",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/guykumusic",
+    tiktok: "https://www.tiktok.com/@guykumusic",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UC4br3D4m3YoLySDKdU1mWGQ"
+  }
+},
+{
+  title: "RIGSHI VOL #1",
+  artist: "RIGSHI",
+  type: "Album",
+  smartLink: "https://ffm.to/rigshi",
+  cover: "https://i.postimg.cc/25QZtnv5/temp-Imageskyard.avif",
+  date: "2025-09-28",
+  releaseAt: "2025-09-28",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "rigshivol1",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/rig.shi_fam/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@RIGSHI"
+  }
+},
+
   {
     title: "כיוונים שונים",
     artist: "Ethel, Sighdafekt, Gangsburg",

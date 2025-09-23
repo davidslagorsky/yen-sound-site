@@ -22,6 +22,90 @@ import { useAnalytics } from "./hooks/useAnalytics";
 import RigshiFamRelease from "./RigshiFamRelease";
 
 
+/* ===== Countdown helpers (local midnight) ===== */
+function toLocalMidnight(dateStr) {
+  if (!dateStr) return null;
+  return new Date(`${dateStr}T00:00:00`);
+}
+function getCountdownParts(target) {
+  const now = new Date();
+  if (!target || now >= target) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isOver: true };
+  }
+  const diff = Math.floor((target - now) / 1000);
+  const days = Math.floor(diff / 86400);
+  const hours = Math.floor((diff % 86400) / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  const seconds = diff % 60;
+  return { days, hours, minutes, seconds, isOver: false };
+}
+function formatCountdown({ days, hours, minutes, seconds }) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return days > 0
+    ? `${days}:${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+    : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+function useSecondTicker(enabled = true) {
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!enabled) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [enabled]);
+}
+
+/* ===== Page gate shown BEFORE release time (no links) ===== */
+function ReleaseCountdownGate({ cover, title, artist, releaseAt }) {
+  const target = toLocalMidnight(releaseAt);
+  const locked = !!(target && new Date() < target);
+  useSecondTicker(locked);
+
+  if (!locked) return null;
+
+  const parts = getCountdownParts(target);
+  return (
+    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6">
+      {cover && (
+        <img
+          src={cover}
+          alt={title || "Cover"}
+          className="w-40 h-40 md:w-56 md:h-56 rounded-2xl object-cover mb-6"
+        />
+      )}
+      {title && <div className="text-xl font-semibold mb-1">{title}</div>}
+      {artist && <div className="opacity-70 mb-4">{artist}</div>}
+      <div className="uppercase tracking-widest text-sm opacity-70 mb-1">
+        Unlocks at 00:00 (local time)
+      </div>
+      <div className="text-3xl font-mono">{formatCountdown(parts)}</div>
+      {/* No streaming/download links here */}
+    </div>
+  );
+}
+
+/* ===== Route wrapper: if unreleased → show countdown; else → real page ===== */
+function ReleaseRouteGate({ theme }) {
+  const { slug } = useParams();
+  const rel = releases.find((r) => r.slug === slug);
+  if (!rel) return <div className="p-6">Release not found.</div>;
+
+  const target = toLocalMidnight(rel.releaseAt);
+  const locked = !!(target && new Date() < target);
+
+  if (locked) {
+    return (
+      <ReleaseCountdownGate
+        cover={rel.cover}
+        title={rel.title}
+        artist={rel.artist}
+        releaseAt={rel.releaseAt}
+      />
+    );
+  }
+  // live: render your existing ReleasePage normally
+  return <ReleasePage theme={theme} />;
+}
+
 
 /* ---------------- Home ---------------- */
 const Home = ({ theme /*, toggleTheme*/ }) => {
@@ -568,6 +652,8 @@ function App() {
         <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
         <Route path="/enter-shower" element={<HiddenSplash />} />
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
+        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
+
 
         {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
         <Route path="/:maybeSlug" element={<SlugRedirect />} />
