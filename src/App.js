@@ -654,7 +654,7 @@ function App() {
         <Route path="/enter-shower" element={<HiddenSplash />} />
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
         <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
-        <Route path="/sorsvp" element={<RSVP />} />
+        <Route path="/rsvp" element={<RSVP />} />
 
 
 
