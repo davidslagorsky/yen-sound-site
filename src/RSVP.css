@@ -1,0 +1,227 @@
+/* ===== Base dark page ===== */
+.rsvp-page.dark {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000; /* black all around */
+  padding: 40px 20px;
+  color: #fff;
+}
+
+.rsvp-card.dark {
+  width: 100%;
+  max-width: 560px;
+  background: #000; /* pure black card */
+  border: 1px solid #2a2a2a; /* subtle frame */
+  border-radius: 20px;
+  padding: 28px 22px 36px;
+}
+
+/* ===== Header / Title ===== */
+.rsvp-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.rsvp-title {
+  font-family: "Playfair Display", Georgia, "Times New Roman", Times, serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: clamp(32px, 9vw, 56px);
+  line-height: 1;
+  margin: 0 0 14px 0;
+  color: #fff;
+}
+
+/* ===== Details block (centered) ===== */
+.rsvp-details {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rsvp-details .lines {
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: #e9e9e9;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.rsvp-details .note {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 0.88rem;
+  color: #cfcfcf;
+  opacity: 0.9;
+}
+
+/* spacing between EN and HE blocks */
+.rsvp-details .en {
+  margin-bottom: 2px;
+}
+
+/* ===== Form ===== */
+.rsvp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.rsvp-grid {
+  width: clamp(260px, 92vw, 420px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rsvp-grid label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rsvp-grid label span {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cfcfcf;
+}
+
+/* ===== Input + Select shared styles ===== */
+.rsvp-grid input,
+.rsvp-grid select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  background: #000;
+  color: #fff;
+  outline: none;
+  caret-color: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.rsvp-grid input::placeholder {
+  color: #9b9b9b;
+}
+
+.rsvp-grid input:focus,
+.rsvp-grid select:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
+}
+
+/* ===== Custom white chevron for <select> ===== */
+.rsvp-grid select::-ms-expand {
+  display: none;
+}
+
+.rsvp-grid label::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ===== Button ===== */
+.rsvp-btn {
+  margin-top: 8px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  padding: 16px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+  width: clamp(260px, 92vw, 420px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rsvp-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.rsvp-btn:active {
+  transform: translateY(0);
+  opacity: 0.9;
+}
+
+/* ===== Success state ===== */
+.rsvp-success {
+  text-align: center;
+  padding: 40px 10px;
+}
+
+.rsvp-success h2 {
+  font-family: "Playfair Display", Georgia, "Times New Roman", Times, serif;
+  font-size: 1.6rem;
+  margin: 0 0 8px 0;
+  color: #fff;
+}
+
+.rsvp-success p {
+  color: #dcdcdc;
+}
+
+/* ===== Honeypot ===== */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+}
+
+/* ===== Mobile adjustments ===== */
+@media (max-width: 420px) {
+  .rsvp-card.dark {
+    padding: 22px 16px 28px;
+  }
+
+  .rsvp-grid label {
+    gap: 4px;
+  }
+
+  .rsvp-grid input,
+  .rsvp-grid select {
+    padding: 12px 12px;
+  }
+
+  .rsvp-title {
+    font-size: 1.8rem;
+  }
+
+  .rsvp-details .lines {
+    font-size: 0.9rem;
+  }
+}
+
+/* ===== Autofill fix ===== */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  transition: background-color 5000s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px #000 inset;
+}
