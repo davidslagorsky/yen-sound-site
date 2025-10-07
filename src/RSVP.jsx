@@ -14,8 +14,8 @@ export default function RSVP() {
         submittingRef.current = false;
       }
     };
-    iframe.addEventListener("load", onLoad);
-    return () => iframe.removeEventListener("load", onLoad);
+    if (iframe) iframe.addEventListener("load", onLoad);
+    return () => iframe && iframe.removeEventListener("load", onLoad);
   }, []);
 
   return (
@@ -24,7 +24,7 @@ export default function RSVP() {
         {!submitted ? (
           <>
             <header className="rsvp-header">
-              <h1 className="rsvp-title">Summer’s Over</h1>
+              <h1 className="rsvp-title">SUMMER'S OVER</h1>
 
               {/* Details block (centered) */}
               <div className="rsvp-details">
@@ -63,6 +63,7 @@ export default function RSVP() {
               method="POST"
               target="hidden_rsvp_iframe"
               onSubmit={() => (submittingRef.current = true)}
+              acceptCharset="utf-8"
             >
               {/* Honeypot anti-spam */}
               <input
@@ -78,7 +79,7 @@ export default function RSVP() {
                 <label>
                   <span>First Name *</span>
                   <input
-                    name="entry.1197522948"
+                    name="entry.1864820461" // ✅ correct ID
                     type="text"
                     required
                     placeholder="Your first name"
@@ -89,7 +90,7 @@ export default function RSVP() {
                 <label>
                   <span>Last Name *</span>
                   <input
-                    name="entry.389714833"
+                    name="entry.429598730" // ✅ correct ID
                     type="text"
                     required
                     placeholder="Your last name"
@@ -100,7 +101,7 @@ export default function RSVP() {
                 <label>
                   <span>Email *</span>
                   <input
-                    name="entry.2033489547"
+                    name="entry.218426401" // ✅ correct ID
                     type="email"
                     required
                     placeholder="you@example.com"
@@ -111,24 +112,33 @@ export default function RSVP() {
                 <label>
                   <span>Phone *</span>
                   <input
-                    name="entry.955682927"
+                    name="entry.711459920" // ✅ correct ID
                     type="tel"
                     required
                     placeholder="+972 50 000 0000"
                     inputMode="tel"
-                    pattern="[0-9+\\-\\s]{7,}"
+                    pattern="[0-9+\-\s]{7,}"
                   />
                 </label>
 
                 <label>
                   <span>Guests *</span>
-                  <select name="entry.360914287" required defaultValue="">
+                  <select
+                    name="entry.1950966565" // ✅ correct ID
+                    required
+                    defaultValue=""
+                  >
                     <option value="" disabled>
                       Choose…
                     </option>
-                    {[...Array(10)].map((_, i) => (
-                      <option key={i + 1}>{i + 1}</option>
-                    ))}
+                    {[...Array(10)].map((_, i) => {
+                      const v = String(i + 1);
+                      return (
+                        <option key={v} value={v}>
+                          {v}
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
               </div>
