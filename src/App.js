@@ -656,7 +656,7 @@ function App() {
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
         <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
         <Route path="/rsvp" element={<RSVP />} />
-        <Route path="/001capsule" element={<Capsule001 />} />
+        <Route path="/001" element={<Capsule001 />} />
 
 
 

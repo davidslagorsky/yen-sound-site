@@ -23,26 +23,27 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;   /* ADD THIS */
-  width: 100%;           /* ADD THIS */
+  align-items: center;
+  width: 100%;
 }
 
+/* Title block (unlocked view only) */
 
 .capsule-title {
   padding: 2rem 1rem 0.25rem;
+  text-align: center;
+  user-select: none;
 }
 
-
-
 .capsule-title h1 {
-  font-size: clamp(2rem, 4vw, 2.8rem); /* smaller */
+  font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .capsule-subtext {
-  margin-top: 0.05rem;   /* near-zero spacing */
+  margin-top: 0.05rem;
   font-size: 0.82rem;
   opacity: 0.75;
   text-align: center;
@@ -50,10 +51,7 @@
   line-height: 1.3;
 }
 
-
-
-
-
+/* Main layout */
 
 .capsule-main {
   flex: 1;
@@ -126,10 +124,9 @@
 }
 
 .card-img--single {
-  width: 460px;      /* Bigger keycard */
-  max-width: 95vw;   /* Safe on mobile */
+  width: 460px;      /* bigger keycard */
+  max-width: 95vw;   /* safe on mobile */
 }
-
 
 .card-meta {
   display: flex;
@@ -155,6 +152,8 @@
   letter-spacing: 0.25em;
   opacity: 0.5;
 }
+
+/* keycard’s own password (inside product) */
 
 .password-wrapper {
   margin-top: 0.5rem;
@@ -190,10 +189,68 @@
 .shop-link:hover {
   opacity: 1;
 }
+
+/* Gate screen (page-level lock) */
+
+.capsule-gate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 0 1.5rem 4rem;
+}
+
+.capsule-countdown {
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.capsule-countdown--large {
+  font-size: 1rem;
+}
+
+.capsule-countdown span {
+  font-variant-numeric: tabular-nums;
+}
+
+.capsule-password-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.capsule-password-input {
+  background: transparent;
+  border: none;                /* no pill, no underline */
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  outline: none;
+  width: 14rem;
+}
+
+.capsule-password-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+
+.capsule-password-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 /* Mobile responsiveness */
+
 @media (max-width: 600px) {
   .capsule-title {
-    padding: 2.5rem 1rem 2rem;
+    padding: 1.75rem 1rem 0.25rem;
   }
 
   .capsule-title h1 {
@@ -207,7 +264,7 @@
   }
 
   .card-img {
-    width: 85vw;            /* images fit nicely on mobile */
+    width: 85vw;
   }
 
   .card-img--single {
@@ -215,12 +272,26 @@
   }
 
   .grid-row {
-    flex-direction: column; /* stack shirt + bandana vertically */
+    flex-direction: column;
     gap: 3rem;
   }
 
   .keycard-wrapper {
-    margin-bottom: 3rem;    /* slightly tighter triangle on mobile */
+    margin-bottom: 3rem;
+  }
+
+  .capsule-gate {
+    gap: 1.5rem;
+    padding-bottom: 3rem;
+  }
+
+  .capsule-countdown--large {
+    font-size: 0.9rem;
+  }
+
+  .capsule-password-input {
+    width: 80vw;
+    max-width: 18rem;
+    font-size: 0.75rem;
   }
 }
-
