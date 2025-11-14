@@ -21,6 +21,7 @@ import HiddenSplash from "./HiddenSplash";
 import { useAnalytics } from "./hooks/useAnalytics";
 import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
+import Capsule001 from "./pages/Capsule001";
 
 
 /* ===== Countdown helpers (local midnight) ===== */
@@ -655,6 +656,8 @@ function App() {
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
         <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
         <Route path="/rsvp" element={<RSVP />} />
+        <Route path="/001capsule" element={<Capsule001 />} />
+
 
 
 
