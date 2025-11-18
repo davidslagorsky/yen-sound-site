@@ -12,7 +12,7 @@
   position: fixed;
   inset: 0;
   z-index: 0;
-  opacity: 0.5;
+  opacity: 0.3;
   background-size: cover;
   background-repeat: repeat;
 }
@@ -114,6 +114,13 @@
   display: flex;
   justify-content: center;
 }
+
+.card-img--shower {
+  width: 180px;
+  max-width: 70vw;
+}
+
+
 
 .card-img {
   width: 320px;

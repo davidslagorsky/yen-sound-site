@@ -22,6 +22,8 @@ import { useAnalytics } from "./hooks/useAnalytics";
 import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
+import Header from "./Header";
+
 
 
 /* ===== Countdown helpers (local midnight) ===== */
@@ -616,15 +618,18 @@ function SlugRedirect() {
 }
 
 /* ---------------- App ---------------- */
+/* ---------------- App ---------------- */
 function App() {
   const currentLocation = useLocation();
   const theme = "dark"; // force dark theme
 
+  // global body styling
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
     document.body.style.color = "#fff";
   }, []);
 
+  // disable right–click (as you had before)
   useEffect(() => {
     const disableRightClick = (e) => e.preventDefault();
     document.addEventListener("contextmenu", disableRightClick);
@@ -632,34 +637,147 @@ function App() {
       document.removeEventListener("contextmenu", disableRightClick);
     };
   }, []);
-function App() {
-  useAnalytics(); }
+
+  // Vercel / custom analytics
+  useAnalytics();
+
   return (
     <>
+          <Header />
+
       <Routes>
-        <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
-        <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} /></div>} />
-        <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
+        {/* Home */}
+        <Route
+          path="/"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <Home theme={theme} />
+            </div>
+          }
+        />
 
-        {/* Primary Release route */}
-        <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
+        {/* Releases */}
+        <Route
+          path="/releases"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <Releases theme={theme} />
+            </div>
+          }
+        />
 
-        <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
-        <Route path="/contact" element={<div style={{ paddingBottom: "100px" }}><Contact /></div>} />
-        <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
-        <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
-        <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
-        <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
-        <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
-        <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
+        {/* About */}
+        <Route
+          path="/about"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <About theme={theme} />
+            </div>
+          }
+        />
+
+        {/* iPod / Cover Flow */}
+        <Route
+          path="/ipod"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <CoverFlowFrame />
+            </div>
+          }
+        />
+
+        {/* Contact */}
+        <Route
+          path="/contact"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <Contact />
+            </div>
+          }
+        />
+
+        {/* Roster */}
+        <Route
+          path="/roster"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <Roster />
+            </div>
+          }
+        />
+
+        {/* Artist page */}
+        <Route
+          path="/artist/:slug"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <ArtistPage theme={theme} />
+            </div>
+          }
+        />
+
+        {/* Artist login */}
+        <Route
+          path="/artist-login"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <ArtistLogin />
+            </div>
+          }
+        />
+
+        {/* Artist dashboard */}
+        <Route
+          path="/artist-dashboard/:artistId"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <ArtistDashboard />
+            </div>
+          }
+        />
+
+        {/* Artist submit form */}
+        <Route
+          path="/artist-dashboard/submit"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <SubmitForm />
+            </div>
+          }
+        />
+
+        {/* Admin */}
+        <Route
+          path="/admin"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <AdminDashboard />
+            </div>
+          }
+        />
+
+        {/* Hidden / special routes */}
         <Route path="/enter-shower" element={<HiddenSplash />} />
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
-        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
-        <Route path="/rsvp" element={<RSVP />} />
+
+        {/* Merch – points to your Capsule001 merch page */}
+        <Route
+          path="/merch"
+          element={
+            <div style={{ paddingBottom: "100px" }}>
+              <Capsule001 />
+            </div>
+          }
+        />
+
+        {/* Capsule 001 direct route (for QR / old links) */}
         <Route path="/001" element={<Capsule001 />} />
 
+        {/* Release route with countdown gate */}
+        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
 
-
+        {/* RSVP */}
+        <Route path="/rsvp" element={<RSVP />} />
 
         {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
         <Route path="/:maybeSlug" element={<SlugRedirect />} />
@@ -672,3 +790,4 @@ function App() {
 }
 
 export default App;
+

@@ -47,21 +47,28 @@ const CATALOG = [
   {
     id: "tee",
     name: "ASHDOD SHIRT 001",
-    price: 80,
+    price: 119,
     shopify: "https://sighbarbie.myshopify.com/products/ashdod-shirt-001",
     images: [
-      "https://i.postimg.cc/L5txcZw7/mens-champion-t-shirt-black-front-69160d5b0435f.png",
-      "https://i.postimg.cc/Z5RLcgYv/mens-champion-t-shirt-black-zoomed-in-69160d9b29197.png",
+      "https://i.postimg.cc/XvLVfL8y/SHIRT1-optimize.gif",
     ],
   },
   {
     id: "bandanna",
     name: "ASHDOD BANDANA 001",
-    price: 50,
+    price: 59,
     shopify: "https://sighbarbie.myshopify.com/products/ashdod-bandana-001",
     images: [
-      "https://i.postimg.cc/SRhrfxRZ/all-over-print-bandana-white-m-front-69160f30957a3.png",
-      "https://i.postimg.cc/sxsYZH0r/all-over-print-bandana-white-m-product-details-69160f3095f6e.png",
+      "https://i.postimg.cc/85dLBqY1/BANDANA1-optimize.gif",
+    ],
+  },
+  {
+    id: "shower-bandana",
+    name: "SHOWER BANDANA 001",
+    price: 59,
+    shopify: "https://sighbarbie.myshopify.com/products/shower-bandana-001",
+    images: [
+      "https://i.postimg.cc/PfYwgpdC/pasley3.png",
     ],
   },
 ];
@@ -183,14 +190,21 @@ export default function Capsule001() {
 
         {/* Triangle layout */}
         <main className="capsule-main">
+          {/* Top: Keycard */}
           <div className="keycard-wrapper">
             <Card product={KEYCARD} variant="single" />
           </div>
 
+          {/* Bottom row: Shirt + Ashdod Bandana */}
           <div className="grid-row">
-            {CATALOG.map((p) => (
+            {CATALOG.slice(0, 2).map((p) => (
               <Card key={p.id} product={p} variant="grid" />
             ))}
+          </div>
+
+          {/* Second row: Shower Bandana centered */}
+          <div className="grid-row" style={{ marginTop: "4rem" }}>
+            <Card product={CATALOG[2]} variant="grid" />
           </div>
         </main>
 
@@ -227,8 +241,13 @@ function Card({ product, variant }) {
   const showShopLink =
     product.shopify && (!isPassworded || (isPassworded && unlocked));
 
+  // smaller image for SHOWER BANDANA 001
   const imgClass =
-    variant === "single" ? "card-img card-img--single" : "card-img";
+    product.id === "shower-bandana"
+      ? "card-img card-img--shower"
+      : variant === "single"
+      ? "card-img card-img--single"
+      : "card-img";
 
   return (
     <div
