@@ -87,16 +87,7 @@ const Header = () => {
             MERCH
           </NavLink>
 
-          <NavLink
-            to="/contact"
-            style={({ isActive }) => ({
-              textDecoration: "none",
-              color: "#fff",
-              opacity: isActive ? 1 : 0.7,
-            })}
-          >
-            CONTACT
-          </NavLink>
+         
 
           <NavLink
   to="/artist-login"

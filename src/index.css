@@ -1,20 +1,27 @@
+/* Global minimalist font */
+* {
+  font-family: "Inter Tight", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  letter-spacing: 0.3px;
+}
+
 body {
   transition: background-color 0.4s ease, color 0.4s ease;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Keep monospace for code blocks */
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
 html {
   scroll-behavior: smooth;
 }
+
 /* Vinyl gloss overlay on hover */
 .release-cover-wrapper {
   position: relative;
@@ -29,14 +36,16 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 60%
+  );
   pointer-events: none;
   border-radius: 10px;
   z-index: 2;
 }
-html {
-  scroll-behavior: smooth;
-}
+
 /* Subtle zoom for cards or images */
 .hover-zoom {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -55,7 +64,3 @@ html {
 .hover-button:hover {
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
-
-
-
-

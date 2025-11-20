@@ -44,12 +44,9 @@ const About = ({ theme, toggleTheme }) => (
         <p>
           For contact:
           <br />
-          pr@yensound.com 
-          <br />
-          For technichal / legal matters:
-          <br />
           office@yensound.com 
           <br />
+        
           <a
             href="https://instagram.com/yen.sound"
             target="_blank"
@@ -79,10 +76,10 @@ const About = ({ theme, toggleTheme }) => (
         <button
           onClick={toggleTheme}
           style={{
-            width: "18px",
-            height: "18px",
-            borderRadius: "50%",
-            border: "2px solid",
+            width: "1px",
+            height: "1px",
+            borderRadius: "1%",
+            border: "1px solid",
             borderColor: theme === "dark" ? "#fff" : "#000",
             backgroundColor: theme === "dark" ? "#fff" : "#000",
             cursor: "pointer",
