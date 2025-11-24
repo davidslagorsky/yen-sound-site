@@ -710,7 +710,7 @@ function App() {
         <Route path="/001" element={<Capsule001 />} />
 
         {/* Release route with countdown gate */}
-        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
+        <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
 
         {/* RSVP */}
         <Route path="/rsvp" element={<RSVP />} />

@@ -558,6 +558,29 @@ const releases = [
     youtube: "https://www.youtube.com/@RIGSHI"
   }
 },
+{
+  title: "אמסטרדם",
+  artist: "Roy Nismo",
+  type: "Single",
+  smartLink: "https://ffm.to/royamsterdam",
+  cover: "https://i.postimg.cc/0jdtZG9j/'mstrdm-q'br-'rt-rwy-'whnh.jpg",
+  date: "2025-11-27",
+  releaseAt: "2025-11-27",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "royamsterdam",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/roynismo_ ",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UC67NJc8bfMYQNFnM7UTYBgA"
+  }
+},
+
 
   {
     title: "כיוונים שונים",
