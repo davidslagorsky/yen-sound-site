@@ -580,6 +580,75 @@ const releases = [
     youtube: "https://www.youtube.com/channel/UC67NJc8bfMYQNFnM7UTYBgA"
   }
 },
+{
+  title: "פילטרים 5.3 (REMIX)",
+  artist: "SHOWER, אלוני, מוזס",
+  type: "Single",
+  smartLink: "https://ffm.to/FilterimRemix",
+  cover: "https://i.postimg.cc/4x7jYQjb/5-3-q'brswpy-'dm-glnz.png",
+  date: "2025-12-25",
+  releaseAt: "2025-12-25",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "https://www.youtube.com/watch?v=hp7cVCsok1w",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "filterim53remix",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/showerbitch",
+    tiktok: "https://www.tiktok.com/@showerbih",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
+  }
+},
+
+{
+  title: "ראשקט",
+  artist: "אלוני",
+  type: "Single",
+  smartLink: "https://ffm.to/Roshaket",
+  cover: "https://i.postimg.cc/pLsYMwsw/IMG-2797-'ytmr-'lwny.jpg",
+  date: "2026-01-04",
+  releaseAt: "2026-01-04",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "roshaketsingle",
+ background: { url: "https://i.postimg.cc/tgTg8fcc/ROSHSHAKET2-ezgif-com-crop-(1).gif", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/_al0ni/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@aloni-n9d/videos"
+  }
+},
+
+
+{
+  title: "ראשקט",
+  artist: "אלוני",
+  type: "Album",
+  smartLink: "https://ffm.to/AloniAlbum",
+  cover: "https://i.postimg.cc/BQGjYmBT/IMG-2805-'ytmr-'lwny.jpg",
+  date: "2026-01-18",
+  releaseAt: "2026-01-18",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "roshaketalbum",
+  background: { url: "https://i.postimg.cc/tgTg8fcc/ROSHSHAKET2-ezgif-com-crop-(1).gif", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/_al0ni/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@aloni-n9d/videos"
+  }
+},
 
 
   {
