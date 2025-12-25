@@ -10,7 +10,7 @@ function fmt(n) {
 }
 
 // launch time: Jan 1, 2026 at 10:00 (Israel, UTC+2)
-const LAUNCH_TIME = new Date("2026-01-01T10:00:00+02:00");
+const LAUNCH_TIME = new Date("2026-02-01T10:00:00+02:00");
 
 // countdown helper
 function getRemaining(target, now) {
