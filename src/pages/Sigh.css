@@ -5,14 +5,15 @@
   --fg: #f2f2f2;
 
   --border: rgba(255, 255, 255, 0.12);
-  --border-strong: rgba(255, 255, 255, 0.18);
-
-  --glassTop: rgba(255, 255, 255, 0.08);
-  --glassBottom: rgba(0, 0, 0, 0.62);
+  --border-strong: rgba(255, 255, 255, 0.22);
 
   --page-pad: 22px;
   --page-pad-lg: 30px;
   --maxw: 720px;
+
+  /* unify typography (iOS-safe) */
+  --ui-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .sigh {
@@ -21,6 +22,25 @@
   color: var(--fg);
   position: relative;
   overflow-x: hidden;
+  font-family: var(--ui-font);
+}
+
+/* hard reset interactive typography so <a> and <button> match */
+.sigh button,
+.sigh a {
+  font-family: inherit;
+  font-kerning: normal;
+  -webkit-text-size-adjust: 100%;
+}
+
+.sigh button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
 }
 
 /* Scroll fade */
@@ -45,27 +65,41 @@
   animation: grainMove 7s steps(2) infinite;
 }
 @keyframes grainMove {
-  0% { transform: translate3d(0, 0, 0); }
-  25% { transform: translate3d(-1.5%, 1%, 0); }
-  50% { transform: translate3d(1.5%, -1%, 0); }
-  75% { transform: translate3d(-1%, -1.5%, 0); }
-  100% { transform: translate3d(0, 0, 0); }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-1.5%, 1%, 0);
+  }
+  50% {
+    transform: translate3d(1.5%, -1%, 0);
+  }
+  75% {
+    transform: translate3d(-1%, -1.5%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
 }
 .sigh-vignette {
   position: fixed;
   inset: 0;
   z-index: -9;
   pointer-events: none;
-  background: radial-gradient(1200px 720px at 50% 0%, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.92));
+  background: radial-gradient(
+    1200px 720px at 50% 0%,
+    rgba(0, 0, 0, 0.18),
+    rgba(0, 0, 0, 0.92)
+  );
 }
 
-/* Sticky mini-header (FIX: keep within bounds) */
+/* Sticky mini-header */
 .sigh-sticky {
   position: fixed;
   top: 10px;
   left: 0;
   right: 0;
-  z-index: 60; /* above embeds */
+  z-index: 60;
   pointer-events: none;
   opacity: 0;
   transform: translateY(-8px);
@@ -88,7 +122,6 @@
   box-sizing: border-box;
 }
 
-/* prevent button from pushing out */
 .sigh-stickyTitle {
   min-width: 0;
   font-size: 12px;
@@ -98,22 +131,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .sigh-stickyListen {
   flex: 0 0 auto;
   height: 36px;
   padding: 0 14px;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.14);
-  color: var(--fg);
-  background: rgba(0,0,0,0.52);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-  font-weight: 700;
-  letter-spacing: 0.10em;
+
+  /* glass, no gradients */
+  background: rgba(16, 16, 16, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  font-weight: 650;
+  letter-spacing: 0.1em;
   font-size: 11px;
   cursor: pointer;
-  max-width: 40vw; /* hard stop on tiny screens */
+  max-width: 40vw;
 }
 
 /* HERO */
@@ -126,6 +164,34 @@
   background-repeat: no-repeat;
   filter: brightness(1.12) contrast(1.03);
 }
+
+/* hidden preload img (forces high-priority fetch) */
+.sigh-preloadHero {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  left: -9999px;
+  top: -9999px;
+}
+
+/* hero skeleton while gif loads */
+.sigh-heroSkeleton {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    900px 520px at 55% 25%,
+    rgba(255, 255, 255, 0.06),
+    rgba(0, 0, 0, 0.65)
+  );
+  opacity: 1;
+  transition: opacity 280ms ease;
+}
+.sigh-hero.is-loaded .sigh-heroSkeleton {
+  opacity: 0;
+}
+
 .sigh-heroOverlay {
   position: absolute;
   inset: 0;
@@ -136,6 +202,7 @@
     rgba(0, 0, 0, 0.7) 100%
   );
 }
+
 .sigh-heroContent {
   position: absolute;
   left: 0;
@@ -151,6 +218,7 @@
   padding-right: var(--page-pad);
   box-sizing: border-box;
 }
+
 .sigh-title {
   margin: 0;
   font-size: clamp(30px, 7vw, 44px);
@@ -179,60 +247,79 @@
   display: grid;
   gap: 14px;
 }
+
 .sigh-btn {
   width: 100%;
   height: 58px;
   border-radius: 20px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-decoration: none;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  -webkit-tap-highlight-color: transparent;
+
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-decoration: none;
   cursor: pointer;
+  box-sizing: border-box;
 
-  background: linear-gradient(to bottom, var(--glassTop), var(--glassBottom));
-  border: 1px solid var(--border);
-  color: var(--fg);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  /* TRUE glass (no gradients) */
+  background: rgba(20, 20, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
 
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
 
-  transition: transform 180ms ease, border-color 220ms ease, background 220ms ease,
-    box-shadow 220ms ease, filter 180ms ease;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+
+  transition: transform 180ms ease, box-shadow 220ms ease,
+    border-color 220ms ease, background 220ms ease, filter 180ms ease;
 }
+
 .sigh-btn:hover {
   transform: translateY(-1px);
-  border-color: var(--border-strong);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.75));
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* Primary button */
+/* Primary button (WHITE LISTEN) */
 .sigh-btnPrimary {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.96);
   color: #0b0b0c;
   border: none;
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
-}
-.sigh-btnPrimary:hover {
-  background: rgba(255, 255, 255, 1);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-/* Ultra-subtle "haptic" press */
+.sigh-btnPrimary:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Press / "haptic" illusion */
 .ios-press {
   position: relative;
   will-change: transform;
   transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
 }
+
 .ios-press:active {
-  transform: translateY(0) scale(0.972);
-  filter: brightness(0.985);
+  transform: scale(0.97);
+  filter: brightness(0.96);
 }
+
 .ios-press::after {
   content: "";
   position: absolute;
@@ -243,12 +330,12 @@
   transition: opacity 120ms ease;
   background: radial-gradient(
     120px 60px at 50% 25%,
-    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.14),
     transparent 70%
   );
 }
 .ios-press:active::after {
-  opacity: 1;
+  opacity: 0.9;
 }
 
 /* Links press */
@@ -265,6 +352,7 @@
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .sigh-sectionHeader {
   display: flex;
   align-items: baseline;
@@ -272,20 +360,25 @@
   gap: 12px;
   margin-bottom: 10px;
 }
+
+/* Header glass pill */
 .sigh-sectionHeaderBlur {
   padding: 10px 12px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.34);
-  border: 1px solid rgba(255,255,255,0.10);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(16, 16, 16, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
+
 .sigh-h2 {
   margin: 0;
   font-size: 12px;
   letter-spacing: 0.26em;
   opacity: 0.75;
 }
+
 .sigh-microLink {
   font-size: 12px;
   opacity: 0.78;
@@ -301,27 +394,31 @@
 .sigh-card {
   border-radius: 24px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.44);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
   position: relative;
 }
+
+/* Keep "no sheen" truly minimal */
 .sigh-cardNoSheen::before {
   display: none !important;
 }
 
-/* Skeletons */
+/* Skeletons for embeds */
 .sigh-frameWrap {
   position: relative;
 }
+
 .sigh-skeleton {
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
+
 .sigh-skeleton::before {
   content: "";
   position: absolute;
@@ -330,29 +427,37 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255,255,255,0.10),
+    rgba(255, 255, 255, 0.1),
     transparent
   );
   animation: shimmer 1.1s infinite;
 }
+
 @keyframes shimmer {
-  0% { transform: translateX(-60%); }
-  100% { transform: translateX(60%); }
+  0% {
+    transform: translateX(-60%);
+  }
+  100% {
+    transform: translateX(60%);
+  }
 }
+
 .sigh-frameWrap iframe {
   opacity: 0;
   transition: opacity 220ms ease;
 }
+
 .sigh-frameWrap iframe.is-loaded {
   opacity: 1;
 }
 
-/* Videos (square) */
+/* Videos (square on mobile) */
 .sigh-videos {
   margin-top: 10px;
   display: grid;
   gap: 12px;
 }
+
 .sigh-videoCard iframe {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -360,6 +465,7 @@
   border: 0;
   display: block;
 }
+
 @media (min-width: 760px) {
   .sigh-videoCard iframe {
     aspect-ratio: 4 / 3;
@@ -371,62 +477,86 @@
   height: 18px;
 }
 
-/* Modal */
+/* Modal (FIX: prevent overflow on iOS + safe areas) */
 .sigh-modal {
   position: fixed;
   inset: 0;
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: calc(18px + env(safe-area-inset-top))
+    calc(18px + env(safe-area-inset-right))
+    calc(18px + env(safe-area-inset-bottom))
+    calc(18px + env(safe-area-inset-left));
+  box-sizing: border-box;
 }
+
 .sigh-modalBackdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   border: none;
 }
+
 .sigh-modalCard {
   position: relative;
-  width: min(440px, 92vw);
+  width: min(440px, calc(100vw - 36px));
+  max-width: 100%;
   border-radius: 24px;
   padding: 16px;
-  background: rgba(20, 20, 20, 0.72);
+  box-sizing: border-box;
+
+  /* glass card, no gradients */
+  background: rgba(18, 18, 18, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
+
 .sigh-modalTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
+
 .sigh-modalTitle {
   letter-spacing: 0.26em;
   font-size: 12px;
   opacity: 0.85;
-  font-weight: 750;
+  font-weight: 650;
 }
+
 .sigh-modalClose {
   width: 40px;
   height: 40px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  background: rgba(16, 16, 16, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
   color: var(--fg);
   font-size: 22px;
   line-height: 0;
   cursor: pointer;
+  display: grid;
+  place-items: center;
 }
 
-/* Icon grid (logos back) */
+/* Icon grid (logos) */
 .sigh-modalGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
+
 .sigh-modalIconItem {
   display: grid;
   place-items: center;
@@ -435,28 +565,42 @@
   border-radius: 20px;
   text-decoration: none;
   color: var(--fg);
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: transform 180ms ease, background 220ms ease, border-color 220ms ease;
+
+  background: rgba(25, 25, 25, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  transition: transform 180ms ease, background 220ms ease,
+    border-color 220ms ease, filter 180ms ease;
+  box-sizing: border-box;
 }
+
 .sigh-modalIconItem:hover {
   transform: translateY(-1px);
-  background: rgba(0, 0, 0, 0.78);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(30, 30, 30, 0.7);
+  border-color: rgba(255, 255, 255, 0.26);
 }
+
 .sigh-modalIconItem:active {
-  transform: translateY(0) scale(0.985);
+  transform: scale(0.975);
+  filter: brightness(0.96);
 }
+
 .sigh-modalIcon {
   width: 22px;
   height: 22px;
 }
+
 .sigh-modalLabel {
   font-size: 11px;
   letter-spacing: 0.04em;
   opacity: 0.88;
 }
+
 .sigh-modalHint {
   margin-top: 12px;
   font-size: 12px;
@@ -478,4 +622,31 @@
     padding-left: var(--page-pad-lg);
     padding-right: var(--page-pad-lg);
   }
+  /* --- FIX: force button/link typography + prevent purple visited links --- */
+a.sigh-btn,
+a.sigh-btn:visited,
+a.sigh-btn:hover,
+a.sigh-btn:active {
+  color: var(--fg) !important;
+  text-decoration: none !important;
+}
+
+/* Make sure button text color is correct too */
+button.sigh-btn {
+  color: var(--fg);
+}
+
+/* --- FIX: hard-lock primary LISTEN to white --- */
+.sigh-btn.sigh-btnPrimary {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0b0b0c !important;
+  border: none !important;
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+.sigh-btn.sigh-btnPrimary:hover {
+  background: rgba(255, 255, 255, 1) !important;
+}
+
 }

@@ -65,6 +65,9 @@ export default function Sigh() {
   const [listenOpen, setListenOpen] = useState(false);
   const [sticky, setSticky] = useState(false);
 
+  // HERO preload (CSS bg images can load “late” on mobile Safari)
+  const [heroLoaded, setHeroLoaded] = useState(false);
+
   // iframe skeletons
   const [loaded, setLoaded] = useState({
     spotify: false,
@@ -89,6 +92,15 @@ export default function Sigh() {
     setMetaDescription(
       "SIGHDAFEKT — Artist & Producer at YEN SOUND. Listen, watch videos, booking & inquiries."
     );
+  }, []);
+
+  // Preload hero GIF early + only apply bg after it’s loaded (feels much faster)
+  useEffect(() => {
+    const img = new Image();
+    img.src = HERO_IMG;
+    img.decoding = "async";
+    img.onload = () => setHeroLoaded(true);
+    img.onerror = () => setHeroLoaded(true); // fail open
   }, []);
 
   // Scroll fade
@@ -135,6 +147,17 @@ export default function Sigh() {
       <div className="sigh-grain" aria-hidden="true" />
       <div className="sigh-vignette" aria-hidden="true" />
 
+      {/* Preload the hero asset with high priority (helps iOS Safari a lot) */}
+      <img
+        className="sigh-preloadHero"
+        src={HERO_IMG}
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
+      />
+
       {/* Sticky mini-header */}
       <div className={`sigh-sticky ${sticky ? "is-on" : ""}`} role="banner">
         <div className="sigh-stickyInner">
@@ -152,10 +175,12 @@ export default function Sigh() {
       {/* HERO */}
       <section
         ref={heroRef}
-        className="sigh-hero"
-        style={{ backgroundImage: `url(${HERO_IMG})` }}
+        className={`sigh-hero ${heroLoaded ? "is-loaded" : ""}`}
+        style={heroLoaded ? { backgroundImage: `url(${HERO_IMG})` } : undefined}
       >
         <div className="sigh-heroOverlay" />
+        {!heroLoaded && <div className="sigh-heroSkeleton" aria-hidden="true" />}
+
         <div className="sigh-heroContent">
           <div className="sigh-heroContentInner">
             <h1 className="sigh-title">SIGHDAFEKT</h1>
