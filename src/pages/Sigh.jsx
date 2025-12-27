@@ -94,13 +94,13 @@ export default function Sigh() {
     );
   }, []);
 
-  // Preload hero GIF early + only apply bg after it’s loaded (feels much faster)
+  // Preload hero GIF early + only apply bg after it’s loaded
   useEffect(() => {
     const img = new Image();
     img.src = HERO_IMG;
     img.decoding = "async";
     img.onload = () => setHeroLoaded(true);
-    img.onerror = () => setHeroLoaded(true); // fail open
+    img.onerror = () => setHeroLoaded(true);
   }, []);
 
   // Scroll fade
@@ -147,7 +147,7 @@ export default function Sigh() {
       <div className="sigh-grain" aria-hidden="true" />
       <div className="sigh-vignette" aria-hidden="true" />
 
-      {/* Preload the hero asset with high priority (helps iOS Safari a lot) */}
+      {/* Preload asset with high priority */}
       <img
         className="sigh-preloadHero"
         src={HERO_IMG}
@@ -265,50 +265,25 @@ export default function Sigh() {
 
           {/* VIDEOS (square + skeletons) */}
           <div className="sigh-videos" data-reveal>
-            <div className="sigh-card sigh-videoCard sigh-cardNoSheen">
-              <div className="sigh-frameWrap">
-                {!loaded.yt1 && <div className="sigh-skeleton" aria-hidden="true" />}
-                <iframe
-                  title="Video 1"
-                  src={ytEmbed(YT_1)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  loading="lazy"
-                  onLoad={() => setLoaded((p) => ({ ...p, yt1: true }))}
-                  className={loaded.yt1 ? "is-loaded" : ""}
-                />
-              </div>
-            </div>
-
-            <div className="sigh-card sigh-videoCard sigh-cardNoSheen">
-              <div className="sigh-frameWrap">
-                {!loaded.yt2 && <div className="sigh-skeleton" aria-hidden="true" />}
-                <iframe
-                  title="Video 2"
-                  src={ytEmbed(YT_2)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  loading="lazy"
-                  onLoad={() => setLoaded((p) => ({ ...p, yt2: true }))}
-                  className={loaded.yt2 ? "is-loaded" : ""}
-                />
-              </div>
-            </div>
-
-            <div className="sigh-card sigh-videoCard sigh-cardNoSheen">
-              <div className="sigh-frameWrap">
-                {!loaded.yt3 && <div className="sigh-skeleton" aria-hidden="true" />}
-                <iframe
-                  title="Video 3"
-                  src={ytEmbed(YT_3)}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  loading="lazy"
-                  onLoad={() => setLoaded((p) => ({ ...p, yt3: true }))}
-                  className={loaded.yt3 ? "is-loaded" : ""}
-                />
-              </div>
-            </div>
+            {[YT_1, YT_2, YT_3].map((id, idx) => {
+              const key = idx === 0 ? "yt1" : idx === 1 ? "yt2" : "yt3";
+              return (
+                <div key={id} className="sigh-card sigh-videoCard sigh-cardNoSheen">
+                  <div className="sigh-frameWrap">
+                    {!loaded[key] && <div className="sigh-skeleton" aria-hidden="true" />}
+                    <iframe
+                      title={`Video ${idx + 1}`}
+                      src={ytEmbed(id)}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      onLoad={() => setLoaded((p) => ({ ...p, [key]: true }))}
+                      className={loaded[key] ? "is-loaded" : ""}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="sigh-afterEmbedsSpace" />
@@ -327,7 +302,7 @@ export default function Sigh() {
         </section>
       </section>
 
-      {/* LISTEN MENU MODAL (icons back) */}
+      {/* LISTEN MENU MODAL */}
       {listenOpen && (
         <div className="sigh-modal" role="dialog" aria-modal="true" aria-label="Listen menu">
           <button
