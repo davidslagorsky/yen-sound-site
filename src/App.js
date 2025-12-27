@@ -22,6 +22,8 @@ import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
+import Sigh from "./pages/Sigh";
+
 
 
 
@@ -717,6 +719,7 @@ function App() {
 
         {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
         <Route path="/:maybeSlug" element={<SlugRedirect />} />
+        <Route path="/sigh" element={<Sigh />} />
       </Routes>
 
       {/* Footer hidden on release pages */}
