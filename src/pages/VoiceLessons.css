@@ -524,7 +524,7 @@
   text-align: center;
 }
 
-/* Carousel */
+/* ===== Photo carousel wrapper (keeps your original size + vibe) ===== */
 .vfPhotoWrap{
   margin: 16px auto 0;
   width: min(420px, 88vw);
@@ -544,22 +544,43 @@
   0%,100%{ transform: translateY(0); }
   50%{ transform: translateY(-5px); }
 }
-.vfPhoto{
+
+/* ===== Scroll-snap carousel (mobile swipe works) ===== */
+.vfCarouselScroll{
   position: absolute;
   inset: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  /* the key for mobile gesture */
+  touch-action: pan-x;
+
+  /* no scrollbar */
+  scrollbar-width: none;
+}
+.vfCarouselScroll::-webkit-scrollbar{ display:none; }
+
+.vfCarouselSlide{
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  position: relative;
+}
+
+.vfCarouselImg{
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  opacity: 0;
-  transform: scale(1.03);
-  transition: opacity .55s ease, transform 2.6s ease;
   filter: saturate(1.02) contrast(1.04);
 }
-.vfPhoto.active{
-  opacity: 1;
-  transform: scale(1.01);
-}
+
+/* overlays: MUST NOT block touch */
 .vfPhotoTint{
   position: absolute;
   inset: 0;
@@ -578,23 +599,32 @@
   background: radial-gradient(70% 70% at 50% 40%, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%);
   pointer-events: none;
 }
+
+/* Dots */
 .vfPhotoDots{
   position: absolute;
   left: 50%;
   bottom: 10px;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: 8px;
   z-index: 3;
 }
-.vfDot{
-  width: 6px;
-  height: 6px;
+.vfDotBtn{
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
-  background: rgba(255,255,255,.32);
+  background: rgba(255,255,255,.30);
   border: 1px solid rgba(255,255,255,.18);
+  padding: 0;
+  cursor: pointer;
+  transition: transform .12s ease, opacity .12s ease, background .2s ease;
 }
-.vfDot.on{ background: rgba(255,255,255,.80); }
+.vfDotBtn.on{
+  background: rgba(255,255,255,.82);
+  transform: scale(1.06);
+}
+.vfDotBtn:active{ transform: scale(.95); }
 
 /* IG glass banner */
 .vfIgBanner{

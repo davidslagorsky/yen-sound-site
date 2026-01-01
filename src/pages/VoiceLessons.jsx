@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import "./VoiceLessons.css";
 import { voiceContent } from "../content/voiceLessonsContent";
 
@@ -75,9 +75,7 @@ function useSnapHint(sectionId, hintId) {
         const e = entries[0];
         if (!e?.isIntersecting) return;
 
-        // restart pulse
         hint.classList.remove("pulse");
-        // force reflow so the animation restarts reliably
         // eslint-disable-next-line no-unused-expressions
         hint.offsetHeight;
         hint.classList.add("pulse");
@@ -138,8 +136,19 @@ function FaqItem({ q, a }) {
   );
 }
 
+/**
+ * Mobile-friendly scroll-snap carousel:
+ * - swipe/scroll works on iOS/Android
+ * - auto-advance (does not block manual scroll)
+ * - dots reflect current slide
+ * - preloads images in background
+ */
 function EthelCarousel({ alt = "Ethel" }) {
   const [idx, setIdx] = useState(0);
+  const scrollerRef = useRef(null);
+  const slideWidthRef = useRef(0);
+  const userInteractingRef = useRef(false);
+  const userTimeoutRef = useRef(null);
 
   // Preload all carousel images (background, no blocking)
   useEffect(() => {
@@ -149,40 +158,142 @@ function EthelCarousel({ alt = "Ethel" }) {
     });
   }, []);
 
-  useEffect(() => {
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const measure = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    slideWidthRef.current = el.clientWidth || 0;
+  }, []);
+
+  useEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  const scrollToIndex = useCallback((nextIdx, behavior = "smooth") => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const w = slideWidthRef.current || el.clientWidth || 0;
+    if (!w) return;
+    el.scrollTo({ left: nextIdx * w, behavior });
+  }, []);
+
+  // Update idx based on scroll position (so dots stay accurate on swipe)
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    let raf = null;
+
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const w = slideWidthRef.current || el.clientWidth || 0;
+        if (!w) return;
+        const next = Math.round(el.scrollLeft / w);
+        const clamped = Math.max(0, Math.min(ETHEL_PHOTOS.length - 1, next));
+        setIdx(clamped);
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  // Mark "user interacting" to avoid fighting auto-scroll while swiping
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const markUser = () => {
+      userInteractingRef.current = true;
+      if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
+      userTimeoutRef.current = setTimeout(() => {
+        userInteractingRef.current = false;
+      }, 1600);
+    };
+
+    el.addEventListener("touchstart", markUser, { passive: true });
+    el.addEventListener("touchmove", markUser, { passive: true });
+    el.addEventListener("mousedown", markUser);
+    el.addEventListener("mousemove", markUser);
+
+    return () => {
+      if (userTimeoutRef.current) clearTimeout(userTimeoutRef.current);
+      el.removeEventListener("touchstart", markUser);
+      el.removeEventListener("touchmove", markUser);
+      el.removeEventListener("mousedown", markUser);
+      el.removeEventListener("mousemove", markUser);
+    };
+  }, []);
+
+  // Auto-advance (keeps swipe working)
+  useEffect(() => {
     if (reduceMotion) return;
 
     const t = setInterval(() => {
-      setIdx((v) => (v + 1) % ETHEL_PHOTOS.length);
-    }, 3600);
+      if (userInteractingRef.current) return;
+      const next = (idx + 1) % ETHEL_PHOTOS.length;
+      setIdx(next);
+      scrollToIndex(next, "smooth");
+    }, 4200);
 
     return () => clearInterval(t);
+  }, [idx, reduceMotion, scrollToIndex]);
+
+  // If idx changes (e.g., user clicked a dot), scroll to it.
+  useEffect(() => {
+    if (reduceMotion) return;
+    scrollToIndex(idx, "smooth");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="vfPhotoWrap" aria-label="Ethel photo carousel">
-      {ETHEL_PHOTOS.map((src, i) => (
-        <img
-          key={src}
-          className={`vfPhoto ${i === idx ? "active" : ""}`}
-          src={src}
-          alt={alt}
-          loading={i === 0 ? "eager" : "lazy"}
-          decoding="async"
-        />
-      ))}
+      <div
+        ref={scrollerRef}
+        className="vfCarouselScroll"
+        role="group"
+        aria-roledescription="carousel"
+        aria-label="Ethel photos"
+      >
+        {ETHEL_PHOTOS.map((src, i) => (
+          <div className="vfCarouselSlide" key={src}>
+            <img
+              className="vfCarouselImg"
+              src={src}
+              alt={alt}
+              draggable={false}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          </div>
+        ))}
+      </div>
 
       <div className="vfPhotoTint" aria-hidden="true" />
       <div className="vfPhotoVignette" aria-hidden="true" />
 
       <div className="vfPhotoDots" aria-hidden="true">
         {ETHEL_PHOTOS.map((_, i) => (
-          <span key={i} className={`vfDot ${i === idx ? "on" : ""}`} />
+          <button
+            key={i}
+            type="button"
+            className={`vfDotBtn ${i === idx ? "on" : ""}`}
+            onClick={() => {
+              setIdx(i);
+              scrollToIndex(i, "smooth");
+            }}
+            aria-label={`Go to photo ${i + 1}`}
+          />
         ))}
       </div>
     </div>
