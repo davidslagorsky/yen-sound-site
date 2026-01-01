@@ -23,6 +23,8 @@ import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
 import Sigh from "./pages/Sigh";
+import VoiceLessons from "./pages/VoiceLessons";
+
 
 
 
@@ -720,6 +722,8 @@ function App() {
         {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
         <Route path="/:maybeSlug" element={<SlugRedirect />} />
         <Route path="/sigh" element={<Sigh />} />
+        <Route path="/voice" element={<VoiceLessons />} />
+
       </Routes>
 
       {/* Footer hidden on release pages */}

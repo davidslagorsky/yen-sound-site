@@ -1,0 +1,552 @@
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800;900&display=swap");
+
+:root{
+  --bg: #07060b;
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.70);
+  --line: rgba(255,255,255,.10);
+
+  /* poster colors */
+  --pink: rgba(208, 88, 146, .85);
+  --purple: rgba(140, 92, 210, .78);
+  --blue: rgba(70, 120, 255, .62);
+
+  --stickyH: 74px;
+}
+
+/* Base */
+.voiceFunnel{
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Rubik", system-ui, -apple-system, Arial, sans-serif;
+
+  position: relative;
+  isolation: isolate; /* important for grain stacking */
+}
+
+.voiceFunnel.rtl{ direction: rtl; }
+.voiceFunnel.ltr{ direction: ltr; }
+
+/* ===== Luxury film grain overlay (visible + premium) ===== */
+.voiceFunnel::after{
+  content: "";
+  position: fixed;
+  inset: -60%;
+  pointer-events: none;
+  z-index: 999;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+
+  opacity: 0.07;
+  mix-blend-mode: soft-light;
+  filter: contrast(130%) brightness(110%);
+
+  animation: grainShift 8s steps(2) infinite;
+}
+
+@keyframes grainShift{
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-2%, -1%); }
+  50%  { transform: translate(1%, 2%); }
+  75%  { transform: translate(-1%, 1%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* keep content above grain */
+.vfTop, .vfHeroShelf, .vfWrap, .vfSticky{
+  position: relative;
+  z-index: 1000;
+}
+
+/* Top bar */
+.vfTop{
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  background: rgba(7,6,11,.78);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+.vfLang{ display:flex; align-items:center; gap:10px; }
+.vfLangBtn{
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,.65);
+  font-size: 14px;
+  padding: 6px 6px;
+}
+.vfLangBtn.active{
+  color: rgba(255,255,255,.95);
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.vfSep{ color: rgba(255,255,255,.25); }
+
+.vfTopCta{
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.92);
+  color: rgba(0,0,0,.92);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Hero */
+.vfHero{
+  position: relative;
+  height: 82vh;
+  min-height: 620px;
+  overflow: hidden;
+}
+
+.vfHeroImg{
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.03);
+  filter: saturate(1.05) contrast(1.08);
+}
+
+.vfHeroOverlay{
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(980px 720px at 12% 14%, var(--pink), rgba(0,0,0,0) 62%),
+    radial-gradient(980px 720px at 86% 78%, var(--purple), rgba(0,0,0,0) 62%),
+    radial-gradient(900px 620px at 92% 18%, var(--blue), rgba(0,0,0,0) 56%),
+    linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.55) 52%, rgba(0,0,0,.92) 100%);
+  will-change: transform;
+  animation: overlayDrift 14s ease-in-out infinite;
+}
+
+@keyframes overlayDrift{
+  0%,100%{ transform: translate3d(0,0,0); }
+  50%{ transform: translate3d(0,-10px,0); }
+}
+
+/* Bottom shelf */
+.vfHeroShelf{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  padding: 18px 18px 22px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.62) 55%, rgba(0,0,0,.88) 100%);
+}
+
+.heroEnter{
+  animation: heroEnter 700ms cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes heroEnter{
+  from{ opacity: 0; transform: translateY(18px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+.vfTitleImg{
+  width: min(520px, 84vw); /* slightly smaller + more padding feel */
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 14px 40px rgba(0,0,0,.35));
+}
+
+.vfSubtitle{
+  margin: 0;
+  color: rgba(255,255,255,.86);
+  font-size: 18px;
+  line-height: 1.6;
+  text-align: center;
+  max-width: 46ch;
+}
+
+/* Russian title text (used instead of image) */
+.vfTitleText{
+  margin: 0;
+  width: min(620px, 86vw);
+  text-align: center;
+  font-weight: 900;
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: -0.6px;
+  color: rgba(255,255,255,.96);
+  text-shadow: 0 14px 40px rgba(0,0,0,.40);
+}
+
+@media (max-width: 420px){
+  .vfTitleText{ font-size: 38px; }
+}
+
+
+.vfPills{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.vfPill{
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.04);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255,255,255,.86);
+
+  animation: pillFloat 6s ease-in-out infinite;
+}
+.vfPill:nth-child(2){ animation-delay: .7s; }
+.vfPill:nth-child(3){ animation-delay: 1.4s; }
+
+@keyframes pillFloat{
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-4px); }
+}
+
+.vfHeroBtns{
+  display:flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* Buttons — premium feel */
+.vfBtnPrimary, .vfBtnGhost, .vfStickyBtn, .vfTopCta{
+  transition: transform .12s ease, opacity .12s ease, box-shadow .25s ease;
+}
+
+.vfBtnPrimary{
+  border: none;
+  background: rgba(255,255,255,.92);
+  color: rgba(0,0,0,.92);
+  border-radius: 18px;
+  padding: 14px 18px;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+}
+.vfBtnPrimary:hover{ box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+
+.vfBtnGhost{
+  border: 1px solid rgba(255,255,255,.18);
+  background: transparent;
+  color: rgba(255,255,255,.92);
+  border-radius: 18px;
+  padding: 14px 18px;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.vfBtnPrimary:active,
+.vfBtnGhost:active,
+.vfStickyBtn:active,
+.vfTopCta:active{
+  transform: scale(.985);
+  opacity: .92;
+}
+
+/* Scroll hint */
+.vfScrollHint{
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  z-index: 3;
+  opacity: .7;
+  pointer-events: none;
+}
+.vfScrollDot{
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.75);
+  animation: vfBounce 1.3s ease-in-out infinite;
+}
+@keyframes vfBounce{
+  0%,100%{ transform: translateY(0); opacity:.55; }
+  50%{ transform: translateY(-8px); opacity:1; }
+}
+
+/* Content wrap — prevents overlap with sticky CTA */
+.vfWrap{
+  width: min(980px, 92vw);
+  margin: 0 auto;
+  padding: 28px 0;
+  padding-bottom: calc(var(--stickyH) + 34px + env(safe-area-inset-bottom));
+}
+
+/* Sections + reveal */
+.vfSection{
+  margin-top: 36px;
+  padding-top: 12px;
+  position: relative;
+
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2,.9,.2,1);
+}
+.vfSection.isVisible{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.vfSection + .vfSection{
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-top: 34px;
+}
+
+/* Color glow accents behind sections */
+.accentPink::after,
+.accentPurple::after,
+.accentBlue::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top: 4px;
+  transform: translateX(-50%);
+  width: min(760px, 94vw);
+  height: 170px;
+  pointer-events:none;
+  opacity: .22;
+  filter: blur(0px);
+}
+.accentPink::after{
+  background: radial-gradient(560px 170px at 50% 0%, rgba(208,88,146,.55), rgba(0,0,0,0) 72%);
+}
+.accentPurple::after{
+  background: radial-gradient(560px 170px at 50% 0%, rgba(140,92,210,.55), rgba(0,0,0,0) 72%);
+}
+.accentBlue::after{
+  background: radial-gradient(560px 170px at 50% 0%, rgba(70,120,255,.45), rgba(0,0,0,0) 72%);
+}
+
+/* Kicker */
+.vfKicker{
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 10px;
+}
+
+/* Gradient titles */
+.vfH2{
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  text-align: center;
+  line-height: 1.08;
+}
+
+.gradientTitle{
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  position: relative;
+  text-shadow: 0 10px 30px rgba(0,0,0,.35);
+  animation: titleShimmer 7s ease-in-out infinite;
+}
+
+@keyframes titleShimmer{
+  0%,100%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+}
+
+.accentPink .gradientTitle{
+  background-image: linear-gradient(90deg, rgba(255,255,255,.95), rgba(208,88,146,.95), rgba(255,255,255,.95));
+}
+.accentPurple .gradientTitle{
+  background-image: linear-gradient(90deg, rgba(255,255,255,.95), rgba(140,92,210,.95), rgba(255,255,255,.95));
+}
+.accentBlue .gradientTitle{
+  background-image: linear-gradient(90deg, rgba(255,255,255,.95), rgba(70,120,255,.92), rgba(255,255,255,.95));
+}
+
+/* Body text */
+.vfText{
+  margin: 0 auto;
+  max-width: 60ch;
+  color: rgba(255,255,255,.84);
+  font-size: 18px;
+  line-height: 1.9;
+  text-align: center;
+}
+.preline{ white-space: pre-line; }
+
+/* List */
+.vfList{
+  margin: 18px auto 0;
+  padding: 0;
+  list-style: none;
+  max-width: 64ch;
+  display: grid;
+  gap: 10px;
+}
+.vfList li{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  padding: 16px 16px;
+  font-size: 17px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+/* Steps */
+.vfSteps{
+  margin: 18px auto 0;
+  max-width: 64ch;
+  display: grid;
+  gap: 12px;
+}
+.vfStep{
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 20px;
+  padding: 18px 18px;
+  background: rgba(255,255,255,.04);
+  text-align: center;
+}
+.vfStepNum{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.92);
+  color: rgba(0,0,0,.92);
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+.vfStepTitle{
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.vfStepText{
+  color: rgba(255,255,255,.82);
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+/* About */
+.vfAboutName{
+  font-weight: 900;
+  font-size: 20px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+/* FAQ */
+.vfFaq{
+  margin: 18px auto 0;
+  max-width: 64ch;
+  display: grid;
+  gap: 10px;
+}
+.vfFaqItem{
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  border-radius: 20px;
+  padding: 14px 14px;
+}
+.vfFaqQ{
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 17px;
+  text-align: center;
+}
+.vfFaqA{
+  margin-top: 10px;
+  color: rgba(255,255,255,.82);
+  font-size: 17px;
+  line-height: 1.85;
+  text-align: center;
+}
+
+/* Typeform placeholder */
+.vfTypeformBox{
+  margin: 18px auto 0;
+  max-width: 64ch;
+  min-height: 460px;
+  border-radius: 24px;
+  border: 1px dashed rgba(255,255,255,.18);
+  background:
+    radial-gradient(700px 320px at 20% 20%, rgba(208,88,146,.22), rgba(0,0,0,0) 62%),
+    radial-gradient(700px 320px at 85% 80%, rgba(140,92,210,.22), rgba(0,0,0,0) 62%),
+    radial-gradient(700px 320px at 85% 20%, rgba(70,120,255,.16), rgba(0,0,0,0) 62%),
+    rgba(255,255,255,.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.vfTypeformNote{
+  margin: 0;
+  color: rgba(255,255,255,.72);
+  font-size: 17px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* Footer */
+.vfFooter{
+  margin-top: 34px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
+}
+
+/* Sticky CTA (safe) */
+.vfSticky{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: var(--stickyH);
+  padding: 10px 12px 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: rgba(7,6,11,.82);
+  border-top: 1px solid rgba(255,255,255,.10);
+  z-index: 1200;
+}
+
+.vfStickyBtn{
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255,255,255,.92);
+  color: rgba(0,0,0,.92);
+  font-weight: 900;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+@media (min-width: 860px){
+  .vfHeroShelf{ padding-left: 22px; padding-right: 22px; }
+  .vfH2{ font-size: 30px; }
+  .vfText{ font-size: 19px; }
+}
