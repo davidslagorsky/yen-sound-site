@@ -725,23 +725,33 @@
   text-align: center;
 }
 
-/* Typeform placeholder */
+/* Typeform embed box (real) */
 .vfTypeformBox{
   margin: 18px auto 0;
   max-width: 64ch;
-  min-height: 460px;
+  min-height: 560px;
   border-radius: 24px;
-  border: 1px dashed rgba(255,255,255,.18);
+
+  /* more premium than "placeholder dashed" */
+  border: 1px solid rgba(255,255,255,.12);
+
   background:
     radial-gradient(700px 320px at 20% 20%, rgba(208,88,146,.22), rgba(0,0,0,0) 62%),
     radial-gradient(700px 320px at 85% 80%, rgba(140,92,210,.22), rgba(0,0,0,0) 62%),
     radial-gradient(700px 320px at 85% 20%, rgba(70,120,255,.16), rgba(0,0,0,0) 62%),
     rgba(255,255,255,.03);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+
+  overflow: hidden;
+  padding: 0;
+  display: block;
 }
+
+/* Ensure the live embed fills the container */
+.vfTypeformBox [data-tf-live]{
+  width: 100%;
+  min-height: 560px;
+}
+
 .vfTypeformNote{
   margin: 0;
   color: rgba(255,255,255,.72);

@@ -15,6 +15,9 @@ const ETHEL_PHOTOS = [
   "https://i.postimg.cc/52vG0T0K/IMG-6936.avif",
 ];
 
+// ✅ Typeform live embed id
+const TYPEFORM_LIVE_ID = "01KDYWFAKKPV4FAMMZFVX8TH2M";
+
 function useRevealOnScroll() {
   const ref = useRef(null);
 
@@ -321,6 +324,18 @@ export default function VoiceLessons() {
     img.src = HERO_IMG;
   }, []);
 
+  // ✅ Load Typeform embed script once (React-safe)
+  useEffect(() => {
+    const scriptId = "typeform-embed-next";
+    if (document.getElementById(scriptId)) return;
+
+    const s = document.createElement("script");
+    s.id = scriptId;
+    s.src = "//embed.typeform.com/next/embed.js";
+    s.async = true;
+    document.body.appendChild(s);
+  }, []);
+
   // Reveal refs
   const r1 = useRevealOnScroll();
   const r2 = useRevealOnScroll();
@@ -494,11 +509,13 @@ export default function VoiceLessons() {
 
         <div className="vfSnapHint" id="hint-5" aria-hidden="true" />
 
+        {/* ✅ TYPEFORM */}
         <section ref={r6} className="vfSection accentBlue" id="typeform-area">
           <div className="vfKicker">{t.kicker6}</div>
           <h2 className="vfH2 gradientTitle">{t.formTitle}</h2>
-          <div className="vfTypeformBox">
-            <p className="vfTypeformNote">{t.formNote}</p>
+
+          <div className="vfTypeformBox" aria-label="Typeform embed">
+            <div data-tf-live={TYPEFORM_LIVE_ID}></div>
           </div>
         </section>
 
