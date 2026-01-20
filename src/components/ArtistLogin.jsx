@@ -12,7 +12,8 @@ const passwords = {
   yalifromtheblock: 'yali',
   guykuguykumusic: 'guyku',
   romirothromiroth: 'Romi',
-  bigrigshi2025: 'RIGSHI'
+  bigrigshi2025: 'RIGSHI',
+  bendanlegend: 'BenDan'
 };
 
 export default function ArtistLogin() {

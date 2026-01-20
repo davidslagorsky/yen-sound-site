@@ -15,7 +15,8 @@ export default function ArtistDashboard() {
     yali: 'https://drive.google.com/drive/folders/1IBW6jSvoeU40ZvGB3euhCca--4YlAiDx?usp=sharing',
     guyku: 'https://drive.google.com/drive/folders/1_Y89A4rp6TShNH-6_d8hxCNrevWs95I_?usp=share_link',
     Romi: 'https://drive.google.com/drive/folders/1kzMJpdL8nfEPO1wUsGwSw0mWJa0e5r6n?usp=share_link',
-    RIGSHI: 'https://drive.google.com/drive/folders/16W8SGZX_tUOJVwdGVL3xD1iRhTfVHGrZ?usp=share_link'
+    RIGSHI: 'https://drive.google.com/drive/folders/16W8SGZX_tUOJVwdGVL3xD1iRhTfVHGrZ?usp=share_link',
+    BenDan: 'https://drive.google.com/drive/folders/1KM-dHnySbbdyGw1CZL_pe6qcF1WxXVfj?usp=sharing'
   };
 
   const displayName = artistId.charAt(0).toUpperCase() + artistId.slice(1);
