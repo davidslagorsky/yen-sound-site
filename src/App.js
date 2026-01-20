@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect, useRef, useState as useReactState } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
+
 import releases from "./releases";
 import About from "./About";
 import Footer from "./Footer";
 import "./index.css";
 import ReleasePage from "./ReleasePage";
-import IpodFrame from "./components/ipod/IpodFrame";
 import CoverFlowFrame from "./components/ipod/CoverFlowFrame";
 import Roster from "./Roster";
 import ArtistPage from "./ArtistPage";
@@ -14,7 +14,6 @@ import ArtistLogin from "./components/ArtistLogin";
 import ArtistDashboard from "./components/ArtistDashboard";
 import SubmitForm from "./components/SubmitForm";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import Redirector from "./Redirector";
 import AdminDashboard from "./AdminDashboard";
 import HiddenSplash from "./HiddenSplash";
 import { useAnalytics } from "./hooks/useAnalytics";
@@ -24,10 +23,6 @@ import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
 import Sigh from "./pages/Sigh";
 import VoiceLessons from "./pages/VoiceLessons";
-
-
-
-
 
 /* ===== Countdown helpers (local midnight) ===== */
 function toLocalMidnight(dateStr) {
@@ -53,8 +48,8 @@ function formatCountdown({ days, hours, minutes, seconds }) {
     : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 function useSecondTicker(enabled = true) {
-  const [, setTick] = React.useState(0);
-  React.useEffect(() => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
     if (!enabled) return;
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
@@ -85,7 +80,6 @@ function ReleaseCountdownGate({ cover, title, artist, releaseAt }) {
         Unlocks at 00:00 (local time)
       </div>
       <div className="text-3xl font-mono">{formatCountdown(parts)}</div>
-      {/* No streaming/download links here */}
     </div>
   );
 }
@@ -109,19 +103,17 @@ function ReleaseRouteGate({ theme }) {
       />
     );
   }
-  // live: render your existing ReleasePage normally
   return <ReleasePage theme={theme} />;
 }
 
-
 /* ---------------- Home ---------------- */
-const Home = ({ theme /*, toggleTheme*/ }) => {
+const Home = ({ theme }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      video.muted = true; // enforce mute for iOS autoplay
+      video.muted = true;
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => console.warn("Autoplay failed:", err));
@@ -182,14 +174,6 @@ const Home = ({ theme /*, toggleTheme*/ }) => {
         Based in Tel Aviv
       </p>
 
-      <div
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", marginBottom: "30px" }}
-      >
-      
-
-       
-      </div>
-
       <div style={{ marginTop: "30px" }}>
         <Link
           to="/about"
@@ -207,12 +191,12 @@ const Home = ({ theme /*, toggleTheme*/ }) => {
 };
 
 /* ---------------- Releases ---------------- */
-const Releases = ({ theme /*, toggleTheme*/ }) => {
+const Releases = ({ theme }) => {
   const currentLocation = useLocation();
   const [filter, setFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
   const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
-  const [columns, setColumns] = useReactState(3);
+  const [columns, setColumns] = useState(3);
   const [showRoster, setShowRoster] = useState(false);
   const [filteredFromURL, setFilteredFromURL] = useState(null);
 
@@ -223,7 +207,7 @@ const Releases = ({ theme /*, toggleTheme*/ }) => {
     updateColumns();
     window.addEventListener("resize", updateColumns);
     return () => window.removeEventListener("resize", updateColumns);
-  }, []);
+  }, [setColumns]); // ✅ fixes lint
 
   const allArtists = useMemo(() => {
     const names = new Set();
@@ -233,15 +217,18 @@ const Releases = ({ theme /*, toggleTheme*/ }) => {
     return Array.from(names);
   }, []);
 
-  // Normalize URL param and match to known artist names
-  const artistNameMap = {
-    sgulot: "סגולות",
-    ethel: "Ethel",
-    sighdafekt: "Sighdafekt",
-    shower: "Shower",
-    kizels: "Kizels",
-    roynismo: "רוי ניסמו",
-  };
+  // ✅ make stable so eslint is happy in useEffect deps
+  const artistNameMap = useMemo(
+    () => ({
+      sgulot: "סגולות",
+      ethel: "Ethel",
+      sighdafekt: "Sighdafekt",
+      shower: "Shower",
+      kizels: "Kizels",
+      roynismo: "רוי ניסמו",
+    }),
+    []
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(currentLocation.search);
@@ -256,7 +243,9 @@ const Releases = ({ theme /*, toggleTheme*/ }) => {
         setFilteredFromURL(mappedName);
         setShowRoster(false);
       } else {
-        const fallback = allArtists.find((a) => a.toLowerCase().replace(/\s+/g, "") === normalized);
+        const fallback = allArtists.find(
+          (a) => a.toLowerCase().replace(/\s+/g, "") === normalized
+        );
 
         if (fallback) {
           setArtistFilter(fallback);
@@ -268,7 +257,7 @@ const Releases = ({ theme /*, toggleTheme*/ }) => {
         }
       }
     }
-  }, [currentLocation.search, allArtists]);
+  }, [currentLocation.search, allArtists, artistNameMap]); // ✅ fixes lint
 
   const sortedReleases = useMemo(() => {
     return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -460,7 +449,6 @@ const Releases = ({ theme /*, toggleTheme*/ }) => {
         </div>
       )}
 
-      {/* Conditional Roster or Release Grid */}
       {showRoster ? (
         <Roster />
       ) : (
@@ -541,18 +529,6 @@ const dropdownBtnStyle = (theme) => ({
   fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
 });
 
-const linkBtnStyle = (theme) => ({
-  display: "inline-block",
-  margin: "0 10px",
-  padding: "10px 20px",
-  border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-  borderRadius: "5px",
-  textDecoration: "none",
-  color: theme === "dark" ? "#fff" : "#000",
-  fontWeight: "bold",
-  fontSize: "clamp(1rem, 3vw, 1.2rem)",
-});
-
 /* ---------------- Slug redirect (/:maybeSlug) ---------------- */
 function SlugRedirect() {
   const { maybeSlug } = useParams();
@@ -560,23 +536,19 @@ function SlugRedirect() {
   if (match) {
     return <Navigate to={`/release/${match.slug}`} replace />;
   }
-  // If not a release slug, go home (or render 404 if you have one)
   return <Navigate to="/" replace />;
 }
 
 /* ---------------- App ---------------- */
-/* ---------------- App ---------------- */
 function App() {
   const currentLocation = useLocation();
-  const theme = "dark"; // force dark theme
+  const theme = "dark";
 
-  // global body styling
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
     document.body.style.color = "#fff";
   }, []);
 
-  // disable right–click (as you had before)
   useEffect(() => {
     const disableRightClick = (e) => e.preventDefault();
     document.addEventListener("contextmenu", disableRightClick);
@@ -585,15 +557,14 @@ function App() {
     };
   }, []);
 
-  // Vercel / custom analytics
   useAnalytics();
 
   return (
     <>
-          <Header />
+      <Header />
+      <InstallPrompt />
 
       <Routes>
-        {/* Home */}
         <Route
           path="/"
           element={
@@ -603,7 +574,6 @@ function App() {
           }
         />
 
-        {/* Releases */}
         <Route
           path="/releases"
           element={
@@ -613,7 +583,6 @@ function App() {
           }
         />
 
-        {/* About */}
         <Route
           path="/about"
           element={
@@ -623,7 +592,6 @@ function App() {
           }
         />
 
-        {/* iPod / Cover Flow */}
         <Route
           path="/ipod"
           element={
@@ -633,10 +601,6 @@ function App() {
           }
         />
 
-        
-    
-
-        {/* Roster */}
         <Route
           path="/roster"
           element={
@@ -646,7 +610,6 @@ function App() {
           }
         />
 
-        {/* Artist page */}
         <Route
           path="/artist/:slug"
           element={
@@ -656,7 +619,6 @@ function App() {
           }
         />
 
-        {/* Artist login */}
         <Route
           path="/artist-login"
           element={
@@ -666,7 +628,6 @@ function App() {
           }
         />
 
-        {/* Artist dashboard */}
         <Route
           path="/artist-dashboard/:artistId"
           element={
@@ -676,7 +637,6 @@ function App() {
           }
         />
 
-        {/* Artist submit form */}
         <Route
           path="/artist-dashboard/submit"
           element={
@@ -686,7 +646,6 @@ function App() {
           }
         />
 
-        {/* Admin */}
         <Route
           path="/admin"
           element={
@@ -696,11 +655,9 @@ function App() {
           }
         />
 
-        {/* Hidden / special routes */}
         <Route path="/enter-shower" element={<HiddenSplash />} />
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
 
-        {/* Merch – points to your Capsule001 merch page */}
         <Route
           path="/merch"
           element={
@@ -709,28 +666,24 @@ function App() {
             </div>
           }
         />
-
-        {/* Capsule 001 direct route (for QR / old links) */}
         <Route path="/001" element={<Capsule001 />} />
 
-        {/* Release route with countdown gate */}
-        <Route path="/release/:slug" element={<ReleasePage theme={theme} />} />
+        {/* ✅ Countdown gate route */}
+        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
 
-        {/* RSVP */}
         <Route path="/rsvp" element={<RSVP />} />
-
-        {/* ✅ Universal shortcut: /<slug> → /release/<slug> */}
-        <Route path="/:maybeSlug" element={<SlugRedirect />} />
         <Route path="/sigh" element={<Sigh />} />
         <Route path="/voice" element={<VoiceLessons />} />
 
+        {/* ✅ Universal shortcut */}
+        <Route path="/:maybeSlug" element={<SlugRedirect />} />
       </Routes>
 
-      {/* Footer hidden on release pages */}
       {!currentLocation.pathname.startsWith("/release/") && <Footer />}
+
+      <SpeedInsights />
     </>
   );
 }
 
 export default App;
-
