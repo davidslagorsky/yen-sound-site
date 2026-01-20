@@ -118,6 +118,7 @@ export default function ArtistPage() {
       {embedSrc && (
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "40px" }}>
           <iframe
+            title={`Spotify embed - ${artistName}`}
             style={{ borderRadius: "12px" }}
             src={embedSrc}
             width="100%"

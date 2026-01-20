@@ -5,18 +5,16 @@ import { supabase } from "./supabase";
 export default function Redirector() {
   const { shortlink } = useParams();
   const [loading, setLoading] = useState(true);
-  const [destination, setDestination] = useState(null);
 
   useEffect(() => {
     async function fetchLink() {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("links")
         .select("url")
         .eq("slug", shortlink)
         .single();
 
       if (data?.url) {
-        setDestination(data.url);
         window.location.href = data.url;
       } else {
         setLoading(false);

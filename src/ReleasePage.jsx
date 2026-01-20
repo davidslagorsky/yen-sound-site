@@ -88,10 +88,12 @@ function normalizeSlug(s = "") {
     .toString()
     .trim()
     .toLowerCase()
-    .replace(/[_~!@#$%^&*()+={}\[\]|\\:;"'<>,.?/]+/g, " ")
+    // replace anything that's NOT letters/numbers/space/hyphen with space (supports Hebrew etc.)
+    .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
+
 
 // Treat only non-empty, non-"PLACEHOLDER" strings as real links
 function isReal(v) {
