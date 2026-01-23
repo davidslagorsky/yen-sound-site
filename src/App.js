@@ -9,7 +9,6 @@ import ReleasePage from "./ReleasePage";
 import CoverFlowFrame from "./components/ipod/CoverFlowFrame";
 import Roster from "./Roster";
 import ArtistPage from "./ArtistPage";
-import InstallPrompt from "./components/InstallPrompt";
 import ArtistLogin from "./components/ArtistLogin";
 import ArtistDashboard from "./components/ArtistDashboard";
 import SubmitForm from "./components/SubmitForm";
