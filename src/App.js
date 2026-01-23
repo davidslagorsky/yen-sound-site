@@ -562,7 +562,6 @@ function App() {
   return (
     <>
       <Header />
-      <InstallPrompt />
 
       <Routes>
         <Route

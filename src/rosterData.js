@@ -8,19 +8,22 @@ const roster = [
     socials: {
       instagram: "https://www.instagram.com/showerbitch",
       spotify: "https://open.spotify.com/artist/4e3UN55UMINH761mfPBRap?si=zbTASMBgS0SpeLgHJ-MGyg",
-      appleMusic: "https://music.apple.com/il/artist/adam-in-the-shower/1463446987?l=he"
+      appleMusic: "https://music.apple.com/il/artist/adam-in-the-shower/1463446987?l=he",
+      tiktok: "https://www.tiktok.com/@showerbih",
     }
   },
     {
     name: "YALi",
     slug: "yali",
+    aliases: ["יהלי", "YALi", "YALI", "yali"],
     bio: "YALi (יהלי) is a singer-songwriter blending hip-hop, pop, and electronic sounds with Mediterranean and global influences.",
     image: "https://i.postimg.cc/BZ1q4xQM/temp-Imagen-QRo-Pk.avif",
     releasesLink: "/releases?artist=YALi",
     socials: {
       instagram: "https://www.instagram.com/yalzzii/",
-      spotify: "PLACEHOLDER",
-      appleMusic: "PLACEHOLDER"
+      spotify: "https://open.spotify.com/track/4AA6RpirW0hsRY8c4ioRi1?si=79459693b4214ff4https://open.spotify.com/artist/3mI1CyAI1IOTGRYqXfX5fT?si=WHPjGcp8RlGKf6D0PChUaQ",
+      appleMusic: "PLACEHOLDER",
+      tiktok: "https://www.tiktok.com/@yalzzii"
     }
   },
   {
@@ -32,7 +35,8 @@ const roster = [
     socials: {
       instagram: "https://instagram.com/imsigh",
       spotify: "https://open.spotify.com/artist/58luIRW1Niu35QbYozFjPj?si=jUHv2RiORH2hE4F9r2N3Fg",
-      appleMusic: "https://music.apple.com/il/artist/sighdafekt/692853131?l=he"
+      appleMusic: "https://music.apple.com/il/artist/sighdafekt/692853131?l=he",
+      tiktok: "https://www.tiktok.com/@sighdafekt"
     }
   },
   
@@ -45,9 +49,24 @@ const roster = [
     socials: {
       instagram: "https://instagram.com/ethel_superstarbaby",
       spotify: "https://open.spotify.com/artist/1PkYjaCMjQO2A4Jotcar2V?si=yd6uZJmxQhCytO6jMKUwrw",
-      appleMusic: "https://music.apple.com/il/artist/%D7%90%D7%AA%D7%9C/1492747095?l=he"
+      appleMusic: "https://music.apple.com/il/artist/%D7%90%D7%AA%D7%9C/1492747095?l=he",
+      tiktok: "https://www.tiktok.com/@ethel_superstarbaby"
     }
   },
+  {
+  name: "רומי רוט",
+  slug: "romiroth",
+  displayName: "ROMI ROTH",
+  aliases: ["רומי רוט", "Romi Roth", "ROMI ROTH"],
+  bio: "Romi Roth is an alternative rock artist blending raw emotion with melodic intensity. Her music balances grit and sensitivity, driven by honest songwriting and a modern indie edge.",
+  image: "https://i.postimg.cc/CxZ8kfrM/520820584-18509610442017331-6655838734014150963-n.jpg",
+  releasesLink: "/releases?artist=רומי רוט",
+  socials: {
+    instagram: "https://www.instagram.com/romi_roth/",
+    spotify: "https://open.spotify.com/artist/0Z8PiPMaNbBF1wIht8qmNv?si=cKmAj-u-StGBKd05tDFE0g"
+  }
+},
+
    {
     name: "Alon Mylo",
     slug: "alonmylo",
@@ -87,6 +106,21 @@ const roster = [
       appleMusic: "https://music.apple.com/il/artist/%D7%A8%D7%95%D7%99-%D7%A0%D7%99%D7%A1%D7%9E%D7%95/1774740610?l=he"
     }
   },
+  {
+  name: "אלוני",
+  slug: "aloni",
+  displayName: "ALONI",
+  aliases: ["אלוני", "ALONI", "Aloni"],
+  bio: "ALONI blends modern trap production with an effortless, confident delivery. His music lives in the space between sharp minimalism and emotional honesty, driven by atmosphere, flow, and subtle intensity.",
+  image: "https://i.postimg.cc/WbkMDH96/3f4f9b29e6ad69f0714de9c1bb8a0c6f-1000x1000x1.jpg",
+  releasesLink: "/releases?artist=אלוני",
+  socials: {
+    instagram: "https://www.instagram.com/_al0ni/",
+    spotify: "https://open.spotify.com/artist/1O9j7fwUrhSRJ0dbW9fDGV?si=vrjA6iGFSsGomwco2r5XsA",
+    tiktok: "https://www.tiktok.com/@aloni8745"
+  }
+},
+
   {
     name: "סגולות",
     displayName: "SGULOT",
