@@ -650,6 +650,29 @@ const releases = [
   }
 },
 
+{
+  title: "חצי יבש",
+  artist: "Maor Bezalel, Sighdafekt",
+  type: "Single",
+  smartLink: "https://ffm.to/halfdry",
+  cover: "https://i.postimg.cc/tg0DmF3C/hzy-ybs-bkl-hmqwmwt-lynq-bbyw.jpg",
+  date: "2026-01-29",
+  releaseAt: "2026-01-29",
+  spotifyUrl: "https://open.spotify.com/track/4rmp9kwBF0AhxUX8spPLlY?si=3c81d35a091e41d3",
+  appleUrl: "https://music.apple.com/il/album/%D7%97%D7%A6%D7%99-%D7%99%D7%91%D7%A9-feat-sighdafekt/1869877597?i=1869877598&l=he",
+  youtubeUrl: "https://www.youtube.com/watch?v=q_-iMQxxc9A",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "halfdry",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/prettybezalel/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UCKko4zNZRyDXN2shcnLY3Pg"
+  }
+},
+
 
   {
     title: "כיוונים שונים",
