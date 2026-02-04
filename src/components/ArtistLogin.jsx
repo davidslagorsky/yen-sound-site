@@ -15,6 +15,7 @@ const passwords = {
   bigrigshi2025: 'RIGSHI',
   bendanlegend: 'BenDan',
   cocofromtheblock: 'Coco',
+  eshpapi: 'Maor Bezalel',
 };
 
 export default function ArtistLogin() {
