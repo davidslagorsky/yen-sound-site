@@ -652,7 +652,7 @@ const releases = [
 
 {
   title: "חצי יבש",
-  artist: "Maor Bezalel, Sighdafekt",
+  artist: "E$H, Sighdafekt",
   type: "Single",
   smartLink: "https://ffm.to/halfdry",
   cover: "https://i.postimg.cc/tg0DmF3C/hzy-ybs-bkl-hmqwmwt-lynq-bbyw.jpg",
@@ -666,10 +666,56 @@ const releases = [
   slug: "halfdry",
   background: { url: "PLACEHOLDER", darken: 0.0 }   ,
   socials: {
-    instagram: "https://www.instagram.com/prettybezalel/",
+    instagram: "https://www.instagram.com/eshpapi_/",
     tiktok: "PLACEHOLDER",
     website: "PLACEHOLDER",
     youtube: "https://www.youtube.com/channel/UCKko4zNZRyDXN2shcnLY3Pg"
+  }
+},
+
+{
+  title: "אלבי",
+  artist: "E$H",
+  type: "Single",
+  smartLink: "https://ffm.to/eshalbi",
+  cover: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b7/d4/65/b7d4651d-6873-5add-dc99-191f79aea33d/820200337733.jpg/600x600bb.jpg",
+  date: "2026-02-12",
+  releaseAt: "2026-02-12",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "https://youtu.be/rRaE1PIF0Go?si=A5sP6Meait0zsaXx",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "albi",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/eshpapi_/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UCKko4zNZRyDXN2shcnLY3Pg"
+  }
+},
+
+{
+  title: "מה חשבת?",
+  artist: "COCO",
+  type: "Single",
+  smartLink: "https://ffm.to/MaHashavta",
+  cover: "https://i.postimg.cc/hGj769wk/Whats-App-Image-2026-02-11-at-15-06-21.jpg",
+  date: "2026-02-14",
+  releaseAt: "2026-02-14",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "MaHashavta",
+  background: { url: "PLACEHOLDER", darken: 0.0 }   ,
+  socials: {
+    instagram: "https://www.instagram.com/_itscoco__/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@its-coco-xg"
   }
 },
 

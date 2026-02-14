@@ -121,6 +121,38 @@ const roster = [
   }
 },
 
+ {
+  name: "E$H",
+  slug: "esh",
+  displayName: "E$H",
+  aliases: ["Maor Bezalel", "esh", "Bezalel"],
+  bio: "E$H (f.k.a Maor Bezalel) is a Tel Aviv producer & artist—versatile, uncompromising, and built on quality, honesty, and real-life lyricism.",
+  image: "https://i.postimg.cc/NfSFN3t8/6D79D7DC-F40B-496F-9FE2-6379C854F4B4.jpg",
+  releasesLink: "/releases?artist=E$H",
+  socials: {
+    instagram: "https://www.instagram.com/eshpapi_/",
+    spotify: "https://open.spotify.com/artist/4B7bhF9L9kqZzctMidsySA?si=QY-4XGOmQE-Su8iCiM2VPA",
+    tiktok: "https://www.tiktok.com/@eshpapichulo",
+    youtube: "https://www.youtube.com/channel/UCKko4zNZRyDXN2shcnLY3Pg"
+  }
+},
+
+{
+  name: "COCO",
+  slug: "coco",
+  displayName: "COCO",
+  aliases: ["coco, קוקו"],
+  bio: "COCO blends rap and melody into a bold signature—strong, feminine, and unapologetically honest.",
+  image: "https://i.postimg.cc/LX9jHcnT/channels4-profile.jpg",
+  releasesLink: "/releases?artist=coco",
+  socials: {
+    instagram: "https://www.instagram.com/_itscoco__/",
+    spotify: "PLACEHOLDER",
+    tiktok: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/@its-coco-x"
+  }
+},
+
   {
     name: "סגולות",
     displayName: "SGULOT",
