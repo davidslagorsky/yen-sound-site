@@ -718,13 +718,12 @@ const releases = [
     youtube: "https://www.youtube.com/@ItS-Coco-x"
   }
 },
-
- {
+{
   title: "תסתכלי עליי",
   artist: "E$H",
   type: "Single",
   smartLink: "https://ffm.to/tistaklialai",
-  cover: "PLACEHOLDER",
+  cover: "https://i.postimg.cc/7hNzXwwD/E4AFAC48_E41A_4179_A97F_8666DF568BA8_(2)_Maor_Bezalel.jpg",
   date: "2026-02-19",
   releaseAt: "2026-02-19",
   spotifyUrl: "PLACEHOLDER",
@@ -746,7 +745,7 @@ const releases = [
   artist: "Roy Nismo",
   type: "Single",
   smartLink: "https://ffm.to/oradom",
-  cover: "PLACEHOLDER",
+  cover: "https://i.postimg.cc/vTy9WcR3/אור_אדום_קאברארט_רוי_אוחנה_(רוי_ניסמו).jpg",
   date: "2026-02-25",
   releaseAt: "2026-02-25",
   spotifyUrl: "PLACEHOLDER",
@@ -768,7 +767,7 @@ const releases = [
   artist: "SHOWER",
   type: "Single",
   smartLink: "https://ffm.to/bahaimhaele",
-  cover: "PLACEHOLDER",
+  cover: "https://i.postimg.cc/bY01qHbr/צילום_מסך_2026_02_15_ב_19_33_01_jpg_אדם_גלנץ.jpg",
   date: "2026-03-01",
   releaseAt: "2026-03-01",
   spotifyUrl: "PLACEHOLDER",
@@ -790,7 +789,7 @@ const releases = [
   artist: "עופר ירקוני",
   type: "Album",
   smartLink: "https://ffm.to/beatblock2",
-  cover: "PLACEHOLDER",
+  cover: "https://i.postimg.cc/L4kjmBfJ/BEATBLOCK2_COVER_Ofer_Yarkoni.jpg",
   date: "2026-02-26",
   releaseAt: "2026-02-26",
   spotifyUrl: "PLACEHOLDER",
@@ -812,7 +811,7 @@ const releases = [
   artist: "Ethel",
   type: "Single",
   smartLink: "https://ffm.to/etheltoxic",
-  cover: "PLACEHOLDER",
+  cover: "https://i.postimg.cc/g2jhyC7Q/ARTWORK_3.png",
   date: "2026-03-08",
   releaseAt: "2026-03-08",
   spotifyUrl: "PLACEHOLDER",
