@@ -706,7 +706,7 @@ const releases = [
   releaseAt: "2026-02-14",
   spotifyUrl: "PLACEHOLDER",
   appleUrl: "PLACEHOLDER",
-  youtubeUrl: "PLACEHOLDER",
+  youtubeUrl: "https://www.youtube.com/watch?v=ziClR3W85dk",
   embedYoutubeId: "PLACEHOLDER",
   embedSpotify: "PLACEHOLDER",
   slug: "MaHashavta",
@@ -715,7 +715,118 @@ const releases = [
     instagram: "https://www.instagram.com/_itscoco__/",
     tiktok: "PLACEHOLDER",
     website: "PLACEHOLDER",
-    youtube: "https://www.youtube.com/@its-coco-xg"
+    youtube: "https://www.youtube.com/@ItS-Coco-x"
+  }
+},
+
+ {
+  title: "תסתכלי עליי",
+  artist: "E$H",
+  type: "Single",
+  smartLink: "https://ffm.to/tistaklialai",
+  cover: "PLACEHOLDER",
+  date: "2026-02-19",
+  releaseAt: "2026-02-19",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "https://www.youtube.com/watch?v=afc9yRqqDTY",
+  embedYoutubeId: "afc9yRqqDTY",
+  embedSpotify: "PLACEHOLDER",
+  slug: "tistaklialai",
+  background: { url: "PLACEHOLDER", darken: 0.0 },
+  socials: {
+    instagram: "https://www.instagram.com/eshpapi_/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UCKko4zNZRyDXN2shcnLY3Pg"
+  }
+},
+{
+  title: "אור אדום",
+  artist: "Roy Nismo",
+  type: "Single",
+  smartLink: "https://ffm.to/oradom",
+  cover: "PLACEHOLDER",
+  date: "2026-02-25",
+  releaseAt: "2026-02-25",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "oradom",
+  background: { url: "PLACEHOLDER", darken: 0.0 },
+  socials: {
+    instagram: "https://www.instagram.com/roynismo_",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UC67NJc8bfMYQNFnM7UTYBgA"
+  }
+},
+{
+  title: "בחיים האלה",
+  artist: "SHOWER",
+  type: "Single",
+  smartLink: "https://ffm.to/bahaimhaele",
+  cover: "PLACEHOLDER",
+  date: "2026-03-01",
+  releaseAt: "2026-03-01",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "bahaimhaele",
+  background: { url: "PLACEHOLDER", darken: 0.0 },
+  socials: {
+    instagram: "https://www.instagram.com/showerbitch",
+    tiktok: "https://www.tiktok.com/@showerbih",
+    website: "PLACEHOLDER",
+    youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A"
+  }
+},
+{
+  title: "ביטבלוק #2",
+  artist: "עופר ירקוני",
+  type: "Album",
+  smartLink: "https://ffm.to/beatblock2",
+  cover: "PLACEHOLDER",
+  date: "2026-02-26",
+  releaseAt: "2026-02-26",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "beatblock2",
+  background: { url: "PLACEHOLDER", darken: 0.0 },
+  socials: {
+    instagram: "https://www.instagram.com/ofer_yarkoni/",
+    tiktok: "PLACEHOLDER",
+    website: "PLACEHOLDER",
+    youtube: "PLACEHOLDER"
+  }
+},
+{
+  title: "טוקסיק",
+  artist: "Ethel",
+  type: "Single",
+  smartLink: "https://ffm.to/etheltoxic",
+  cover: "PLACEHOLDER",
+  date: "2026-03-08",
+  releaseAt: "2026-03-08",
+  spotifyUrl: "PLACEHOLDER",
+  appleUrl: "PLACEHOLDER",
+  youtubeUrl: "PLACEHOLDER",
+  embedYoutubeId: "PLACEHOLDER",
+  embedSpotify: "PLACEHOLDER",
+  slug: "etheltoxic",
+  background: { url: "PLACEHOLDER", darken: 0.0 },
+  socials: {
+    instagram: "https://www.instagram.com/ethel_superstarbaby",
+    tiktok: "https://www.tiktok.com/@ethel_superstarbaby",
+    website: "PLACEHOLDER",
+    youtube: "PLACEHOLDER"
   }
 },
 
