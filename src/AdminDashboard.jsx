@@ -13,6 +13,9 @@ export default function AdminDashboard() {
   const [copied, setCopied] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState(null);
 
+  // Releases
+  const [releases, setReleases] = useState([]);
+
   // Add release form
   const [form, setForm] = useState({
     title: "", artist: "", type: "Single", date: "", release_at: "",
@@ -28,12 +31,34 @@ export default function AdminDashboard() {
     if (localStorage.getItem("yenAdminAuthed") === "true") setAuth(true);
   }, []);
 
+  useEffect(() => {
+    if (!auth) return;
+    async function fetchReleases() {
+      const { data } = await supabase
+        .from("releases")
+        .select("id, title, artist, date")
+        .order("date", { ascending: false });
+      if (data) setReleases(data);
+    }
+    fetchReleases();
+  }, [auth]);
+
   const handleLogin = () => {
     if (password === "sighmadethissite") {
       setAuth(true);
       localStorage.setItem("yenAdminAuthed", "true");
     } else {
       setError("Incorrect password");
+    }
+  };
+
+  const handleDelete = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"?`)) return;
+    const { error } = await supabase.from("releases").delete().eq("id", id);
+    if (!error) {
+      setReleases((prev) => prev.filter((r) => r.id !== id));
+    } else {
+      alert("Error deleting: " + error.message);
     }
   };
 
@@ -95,6 +120,7 @@ export default function AdminDashboard() {
       setSubmitStatus("error:" + error.message);
     } else {
       setSubmitStatus("success");
+      setReleases((prev) => [{ id: Date.now(), title: form.title, artist: form.artist, date: form.date }, ...prev]);
       setForm({
         title: "", artist: "", type: "Single", date: "", release_at: "",
         slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "",
@@ -192,6 +218,26 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* ── All Releases ── */}
+      <h2 style={{ ...styles.title, marginTop: "60px" }}>All Releases</h2>
+      <div style={styles.list}>
+        {releases.map((r) => (
+          <div key={r.id} style={styles.row}>
+            <div style={styles.linkHeader}>
+              <span style={styles.slug}>{r.title} — {r.artist}</span>
+              <button
+                onClick={() => handleDelete(r.id, r.title)}
+                style={{ ...styles.copyButton, borderColor: "red", color: "red" }}
+              >
+                Delete
+              </button>
+            </div>
+            <span style={{ color: "#aaa", fontSize: "0.85rem" }}>{r.date}</span>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 }
