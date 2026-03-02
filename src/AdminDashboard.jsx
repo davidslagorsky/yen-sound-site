@@ -16,7 +16,7 @@ export default function AdminDashboard() {
   }, []);
 
   const handleLogin = () => {
-    if (password === "password") {
+    if (password === "sighmadethissite") {
       setAuth(true);
       localStorage.setItem("yenAdminAuthed", "true");
     } else {
