@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
 
-import releases from "./releases";
 import About from "./About";
 import Footer from "./Footer";
 import "./index.css";
@@ -22,6 +21,7 @@ import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
 import Sigh from "./pages/Sigh";
 import VoiceLessons from "./pages/VoiceLessons";
+import { useReleases } from "./hooks/useReleases";
 
 /* ===== Countdown helpers (local midnight) ===== */
 function toLocalMidnight(dateStr) {
@@ -84,7 +84,7 @@ function ReleaseCountdownGate({ cover, title, artist, releaseAt }) {
 }
 
 /* ===== Route wrapper: if unreleased → show countdown; else → real page ===== */
-function ReleaseRouteGate({ theme }) {
+function ReleaseRouteGate({ theme, releases }) {
   const { slug } = useParams();
   const rel = releases.find((r) => r.slug === slug);
   if (!rel) return <div className="p-6">Release not found.</div>;
@@ -190,7 +190,7 @@ const Home = ({ theme }) => {
 };
 
 /* ---------------- Releases ---------------- */
-const Releases = ({ theme }) => {
+const Releases = ({ theme, releases }) => {
   const currentLocation = useLocation();
   const [filter, setFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
@@ -206,7 +206,7 @@ const Releases = ({ theme }) => {
     updateColumns();
     window.addEventListener("resize", updateColumns);
     return () => window.removeEventListener("resize", updateColumns);
-  }, [setColumns]); // ✅ fixes lint
+  }, []);
 
   const allArtists = useMemo(() => {
     const names = new Set();
@@ -214,17 +214,16 @@ const Releases = ({ theme }) => {
       r.artist.split(",").forEach((name) => names.add(name.trim()));
     });
     return Array.from(names);
-  }, []);
+  }, [releases]);
 
-  // ✅ make stable so eslint is happy in useEffect deps
   const artistNameMap = useMemo(
     () => ({
       sgulot: "סגולות",
       ethel: "Ethel",
       sighdafekt: "Sighdafekt",
-      shower: "Shower",
+      shower: "SHOWER",
       kizels: "Kizels",
-      roynismo: "רוי ניסמו",
+      roynismo: "Roy Nismo",
     }),
     []
   );
@@ -245,7 +244,6 @@ const Releases = ({ theme }) => {
         const fallback = allArtists.find(
           (a) => a.toLowerCase().replace(/\s+/g, "") === normalized
         );
-
         if (fallback) {
           setArtistFilter(fallback);
           setFilteredFromURL(fallback);
@@ -256,11 +254,11 @@ const Releases = ({ theme }) => {
         }
       }
     }
-  }, [currentLocation.search, allArtists, artistNameMap]); // ✅ fixes lint
+  }, [currentLocation.search, allArtists, artistNameMap]);
 
   const sortedReleases = useMemo(() => {
     return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, []);
+  }, [releases]);
 
   const filtered = sortedReleases.filter((r) => {
     const matchesType = filter === "All" || r.type === filter;
@@ -333,7 +331,6 @@ const Releases = ({ theme }) => {
             cursor: "pointer",
             fontWeight: "bold",
             fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-            transition: "background-color 0.2s",
           }}
         >
           Artists ▾
@@ -356,7 +353,6 @@ const Releases = ({ theme }) => {
             cursor: "pointer",
             fontWeight: "bold",
             fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-            transition: "background-color 0.2s",
           }}
         >
           Roster
@@ -375,7 +371,6 @@ const Releases = ({ theme }) => {
               cursor: "pointer",
               fontWeight: "bold",
               fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-              transition: "background-color 0.2s",
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
@@ -491,7 +486,6 @@ const Releases = ({ theme }) => {
                   onMouseOut={(e) => (e.currentTarget.style.border = "2px solid transparent")}
                 />
               </div>
-
               <div
                 style={{
                   fontWeight: "bold",
@@ -529,7 +523,7 @@ const dropdownBtnStyle = (theme) => ({
 });
 
 /* ---------------- Slug redirect (/:maybeSlug) ---------------- */
-function SlugRedirect() {
+function SlugRedirect({ releases }) {
   const { maybeSlug } = useParams();
   const match = releases.find((r) => r.slug === maybeSlug);
   if (match) {
@@ -542,6 +536,7 @@ function SlugRedirect() {
 function App() {
   const currentLocation = useLocation();
   const theme = "dark";
+  const { releases, loading } = useReleases();
 
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
@@ -558,127 +553,41 @@ function App() {
 
   useAnalytics();
 
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#fff", fontFamily: "Arial, sans-serif", fontSize: "1.2rem" }}>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Header />
 
       <Routes>
-        <Route
-          path="/"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <Home theme={theme} />
-            </div>
-          }
-        />
-
-        <Route
-          path="/releases"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <Releases theme={theme} />
-            </div>
-          }
-        />
-
-        <Route
-          path="/about"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <About theme={theme} />
-            </div>
-          }
-        />
-
-        <Route
-          path="/ipod"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <CoverFlowFrame />
-            </div>
-          }
-        />
-
-        <Route
-          path="/roster"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <Roster />
-            </div>
-          }
-        />
-
-        <Route
-          path="/artist/:slug"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <ArtistPage theme={theme} />
-            </div>
-          }
-        />
-
-        <Route
-          path="/artist-login"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <ArtistLogin />
-            </div>
-          }
-        />
-
-        <Route
-          path="/artist-dashboard/:artistId"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <ArtistDashboard />
-            </div>
-          }
-        />
-
-        <Route
-          path="/artist-dashboard/submit"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <SubmitForm />
-            </div>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <AdminDashboard />
-            </div>
-          }
-        />
-
+        <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
+        <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} releases={releases} /></div>} />
+        <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
+        <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
+        <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
+        <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
+        <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
+        <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
+        <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
+        <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
         <Route path="/enter-shower" element={<HiddenSplash />} />
         <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
-
-        <Route
-          path="/merch"
-          element={
-            <div style={{ paddingBottom: "100px" }}>
-              <Capsule001 />
-            </div>
-          }
-        />
+        <Route path="/merch" element={<div style={{ paddingBottom: "100px" }}><Capsule001 /></div>} />
         <Route path="/001" element={<Capsule001 />} />
-
-        {/* ✅ Countdown gate route */}
-        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} />} />
-
+        <Route path="/release/:slug" element={<ReleaseRouteGate theme={theme} releases={releases} />} />
         <Route path="/rsvp" element={<RSVP />} />
         <Route path="/sigh" element={<Sigh />} />
         <Route path="/voice" element={<VoiceLessons />} />
-
-        {/* ✅ Universal shortcut */}
-        <Route path="/:maybeSlug" element={<SlugRedirect />} />
+        <Route path="/:maybeSlug" element={<SlugRedirect releases={releases} />} />
       </Routes>
 
       {!currentLocation.pathname.startsWith("/release/") && <Footer />}
-
       <SpeedInsights />
     </>
   );
