@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import releases from "./releases";
+import { useReleases } from "./hooks/useReleases";
 import {
   FaInstagram,
   FaSpotify,
@@ -15,13 +15,11 @@ import { FiShare2, FiCheck } from "react-icons/fi";
 
 /* ---------- helpers ---------- */
 
-// local-midnight helper for releaseAt
 function toLocalMidnight(dateStr) {
   if (!dateStr) return null;
   return new Date(`${dateStr}T00:00:00`);
 }
 
-// countdown parts
 function getCountdownParts(target) {
   const now = new Date();
   if (!target || now >= target) {
@@ -43,7 +41,6 @@ function formatCountdown({ days, hours, minutes, seconds }) {
     : `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
-// 1s ticker so the countdown updates live
 function useSecondTicker(enabled = true) {
   const [, setTick] = React.useState(0);
   React.useEffect(() => {
@@ -82,20 +79,16 @@ function buildYouTubeEmbedSrc(id, origin) {
   return `${base}?${params.toString()}`;
 }
 
-// Normalize a slug-ish string
 function normalizeSlug(s = "") {
   return s
     .toString()
     .trim()
     .toLowerCase()
-    // replace anything that's NOT letters/numbers/space/hyphen with space (supports Hebrew etc.)
     .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
 
-
-// Treat only non-empty, non-"PLACEHOLDER" strings as real links
 function isReal(v) {
   return (
     typeof v === "string" &&
@@ -104,42 +97,21 @@ function isReal(v) {
   );
 }
 
-/* ---------- monochrome platform icons for dropdown ---------- */
+/* ---------- monochrome platform icons ---------- */
 const IconSpotify = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="currentColor"
-    aria-hidden
-    {...props}
-  >
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden {...props}>
     <path d="M12 1.5A10.5 10.5 0 1 0 22.5 12 10.513 10.513 0 0 0 12 1.5Zm4.6 14.9a.75.75 0 0 1-1.03.26 11.9 11.9 0 0 0-6.14-1.32 15.5 15.5 0 0 0-3.6.47.75.75 0 1 1-.36-1.45c4.12-1.01 8.4-.55 10.34.58a.75.75 0 0 1 .39.52.74.74 0 0 1-.3.8Zm1.35-3.12a.9.9 0 0 1-1.24.31c-2.34-1.45-6.69-1.88-9.74-1.02a.9.9 0 1 1-.48-1.73c3.54-.97 8.37-.5 11.12 1.22a.9.9 0 0 1 .34 1.22Zm.1-3.19a1 1 0 0 1-1.37.34c-2.7-1.62-7.51-1.98-10.8-1.06A1 1 0 0 1 5.4 6.6c3.82-1.05 9.05-.65 12.2 1.22a1 1 0 0 1 .49 1.37Z" />
   </svg>
 );
 
 const IconApple = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="currentColor"
-    aria-hidden
-    {...props}
-  >
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden {...props}>
     <path d="M16.9 13.2c.03 3.3 2.9 4.4 2.93 4.42-.02.07-.46 1.58-1.52 3.13-.92 1.34-1.87 2.67-3.37 2.69-1.47.03-1.94-.87-3.61-.87-1.67 0-2.17.84-3.54.9-1.43.06-2.52-1.45-3.45-2.78-1.88-2.73-3.33-7.72-1.39-11.08.96-1.65 2.68-2.69 4.56-2.72 1.43-.03 2.78.96 3.61.96.83 0 2.49-1.18 4.21-1 .71.03 2.69.29 3.96 2.18-.1.06-2.36 1.38-2.38 4.37ZM14 3.4c.73-.89 1.22-2.14 1.08-3.4-1.05.04-2.36.7-3.12 1.59-.69.8-1.28 2.07-1.12 3.29 1.18.09 2.43-.6 3.16-1.48Z" />
   </svg>
 );
 
 const IconYouTube = (props) => (
-  <svg
-    viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="currentColor"
-    aria-hidden
-    {...props}
-  >
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden {...props}>
     <path d="M23.5 7.1s-.23-1.66-.94-2.39c-.9-.95-1.9-.96-2.36-1.02-3.3-.24-8.24-.24-8.24-.24h-.01s-4.95 0-8.24.24c-.46.06-1.46.07-2.36 1.02C.73 5.45.5 7.1.5 7.1S.27 9.1.27 11.1v1.78c0 2 .23 4 .23 4s.23 1.66.94 2.39c.9.95 2.08.92 2.61 1.03 1.89.18 8.05.24 8.05.24s4.96-.01 8.26-.25c.46-.06 1.46-.07 2.36-1.02.71-.73.94-2.39.94-2.39s.23-2 .23-4v-1.78c0-2-.23-4-.23-4ZM9.84 13.88V8.1l5.67 2.9-5.67 2.88Z" />
   </svg>
 );
@@ -280,14 +252,9 @@ function SocialRow({ socials = {}, color = "#fff", shareDefault }) {
   );
 }
 
-function SocialSection({
-  release,
-  color = "#fff",
-  borderColor = "rgba(255,255,255,0.15)"
-}) {
+function SocialSection({ release, color = "#fff", borderColor = "rgba(255,255,255,0.15)" }) {
   const hasPerArtist =
-    Array.isArray(release.socialsByArtist) &&
-    release.socialsByArtist.length > 0;
+    Array.isArray(release.socialsByArtist) && release.socialsByArtist.length > 0;
   const hasPerRelease =
     release.socials && Object.keys(release.socials).length > 0;
 
@@ -309,33 +276,17 @@ function SocialSection({
     >
       {hasPerArtist ? (
         <div style={{ display: "grid", gap: 12 }}>
-          <div
-            style={{
-              fontSize: 14,
-              letterSpacing: 0.6,
-              opacity: 0.75,
-              marginBottom: 2
-            }}
-          />
+          <div style={{ fontSize: 14, letterSpacing: 0.6, opacity: 0.75, marginBottom: 2 }} />
           {release.socialsByArtist.map((row, idx) => {
             const valid = row && typeof row === "object";
             if (!valid) return null;
             return (
               <div
                 key={(row.name || "") + idx}
-                style={{
-                  padding: "10px 0",
-                  borderBottom: `1px dashed ${borderColor}`
-                }}
+                style={{ padding: "10px 0", borderBottom: `1px dashed ${borderColor}` }}
               >
                 {row.name && (
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      letterSpacing: 0.5,
-                      marginBottom: 6
-                    }}
-                  >
+                  <div style={{ fontWeight: 600, letterSpacing: 0.5, marginBottom: 6 }}>
                     {row.name}
                   </div>
                 )}
@@ -351,14 +302,7 @@ function SocialSection({
         </div>
       ) : (
         <>
-          <div
-            style={{
-              fontSize: 14,
-              letterSpacing: 0.6,
-              opacity: 0.75,
-              marginBottom: 1
-            }}
-          />
+          <div style={{ fontSize: 14, letterSpacing: 0.6, opacity: 0.75, marginBottom: 1 }} />
           <SocialRow
             socials={release.socials || {}}
             color={color}
@@ -375,19 +319,16 @@ export default function ReleasePage({ theme = "dark" }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ── fetch all releases from Supabase ──
+  const { releases, loading } = useReleases();
+
   const decodedSegment = useMemo(() => {
     const last =
-      location.pathname
-        .split("/")
-        .filter(Boolean)
-        .pop() || "";
+      location.pathname.split("/").filter(Boolean).pop() || "";
     return decodeURIComponent(rawSlugParam ?? last ?? "");
   }, [rawSlugParam, location.pathname]);
 
-  const candidate = useMemo(
-    () => normalizeSlug(decodedSegment),
-    [decodedSegment]
-  );
+  const candidate = useMemo(() => normalizeSlug(decodedSegment), [decodedSegment]);
 
   const release = useMemo(() => {
     return (
@@ -398,7 +339,7 @@ export default function ReleasePage({ theme = "dark" }) {
       releases.find((r) => normalizeSlug(r.title || "") === candidate) ||
       null
     );
-  }, [decodedSegment, candidate]);
+  }, [releases, decodedSegment, candidate]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -417,14 +358,29 @@ export default function ReleasePage({ theme = "dark" }) {
     };
   }, []);
 
-  // ----- lock logic & ticker (MUST be before any return) -----
-  const unlockAt =
-    release?.releaseAt ? toLocalMidnight(release.releaseAt) : null;
+  const unlockAt = release?.releaseAt ? toLocalMidnight(release.releaseAt) : null;
   const isLocked = !!(unlockAt && new Date() < unlockAt);
   useSecondTicker(isLocked);
-  // -----------------------------------------------------------
 
-  // not found
+  // ── loading state ──
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#000",
+          display: "grid",
+          placeItems: "center"
+        }}
+      >
+        <div style={{ color: "#fff", fontFamily: "Arial, sans-serif", fontSize: "1.2rem" }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  // ── not found ──
   if (!release) {
     return (
       <div
@@ -438,17 +394,11 @@ export default function ReleasePage({ theme = "dark" }) {
         }}
       >
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 28,
-              fontWeight: 800,
-              marginBottom: 12
-            }}
-          >
+          <div style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>
             Release not found
           </div>
           <div style={{ opacity: 0.7, marginBottom: 16 }}>
-            Tried: “{decodedSegment}”
+            Tried: "{decodedSegment}"
           </div>
           <button
             onClick={() => navigate("/releases")}
@@ -468,15 +418,13 @@ export default function ReleasePage({ theme = "dark" }) {
     );
   }
 
-  // ----- PRE-RELEASE / LOCKED VIEW -----
+  // ── pre-release / locked view ──
   if (isLocked) {
     const parts = getCountdownParts(unlockAt);
-
     const bgUrl =
       release.background && isReal(release.background.url)
         ? release.background.url
         : null;
-
     const bgStyle = bgUrl
       ? {
           backgroundImage: `url(${bgUrl})`,
@@ -485,7 +433,6 @@ export default function ReleasePage({ theme = "dark" }) {
           position: "relative"
         }
       : {};
-
     const darken =
       typeof release.background?.darken === "number"
         ? Math.min(Math.max(release.background.darken, 0), 1)
@@ -508,29 +455,21 @@ export default function ReleasePage({ theme = "dark" }) {
       >
         {bgUrl && darken > 0 && (
           <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: `rgba(0,0,0,${darken})`
-            }}
+            style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${darken})` }}
           />
         )}
-
         <div
           style={{
             position: "relative",
             maxWidth: 520,
             width: "100%",
-            background:
-              theme === "dark" ? "#111" : "rgba(249,249,249,0.96)",
-            border:
-              theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
+            background: theme === "dark" ? "#111" : "rgba(249,249,249,0.96)",
+            border: theme === "dark" ? "1px solid #232323" : "1px solid #eaeaea",
             borderRadius: 16,
             padding: "28px 22px",
             boxSizing: "border-box"
           }}
         >
-          {/* DEBUG label so you know gate is active */}
           <div
             style={{
               fontSize: 12,
@@ -555,45 +494,19 @@ export default function ReleasePage({ theme = "dark" }) {
             }}
           />
 
-          <div
-            style={{
-              fontWeight: 800,
-              fontSize: "clamp(18px, 4vw, 26px)",
-              lineHeight: 1.2
-            }}
-          >
+          <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
             {release.title}
           </div>
           {release.artist && (
-            <div
-              style={{
-                opacity: 0.85,
-                marginTop: 4,
-                fontSize: "clamp(14px, 3vw, 16px)"
-              }}
-            >
+            <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
               {release.artist}
             </div>
           )}
 
-          <div
-            style={{
-              marginTop: 10,
-              opacity: 0.75,
-              letterSpacing: 0.6,
-              fontSize: 14
-            }}
-          >
+          <div style={{ marginTop: 10, opacity: 0.75, letterSpacing: 0.6, fontSize: 14 }}>
             Unlocks at 00:00 (local time)
           </div>
-
-          <div
-            style={{
-              marginTop: 6,
-              fontFamily: "monospace",
-              fontSize: 24
-            }}
-          >
+          <div style={{ marginTop: 6, fontFamily: "monospace", fontSize: 24 }}>
             {formatCountdown(parts)}
           </div>
 
@@ -621,21 +534,18 @@ export default function ReleasePage({ theme = "dark" }) {
               PRE-SAVE
             </a>
           )}
-               <SocialSection
-          release={release}
-          color={theme === "dark" ? "#fff" : "#000"}
-          borderColor={
-            theme === "dark"
-              ? "rgba(255,255,255,0.15)"
-              : "rgba(0,0,0,0.12)"
-          }
-        />
+
+          <SocialSection
+            release={release}
+            color={theme === "dark" ? "#fff" : "#000"}
+            borderColor={theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"}
+          />
         </div>
       </div>
     );
   }
 
-  // ----- NORMAL RELEASE VIEW (unchanged from your version) -----
+  // ── normal release view ──
   const bg = theme === "dark" ? "#000" : "#fff";
   const fg = theme === "dark" ? "#fff" : "#000";
 
@@ -657,8 +567,7 @@ export default function ReleasePage({ theme = "dark" }) {
 
   const isGif = bgUrl ? /\.gif($|\?)/i.test(bgUrl) : false;
   const showBackground = !!(
-    bgUrl &&
-    !(respectReducedMotion && prefersReducedMotion && isGif)
+    bgUrl && !(respectReducedMotion && prefersReducedMotion && isGif)
   );
 
   const hasSpotify = isReal(release.spotifyUrl);
@@ -667,12 +576,9 @@ export default function ReleasePage({ theme = "dark" }) {
   const hasAnyPlatforms = hasSpotify || hasApple || hasYouTubeLink;
 
   const embedSpotify = isReal(release.embedSpotify) ? release.embedSpotify : null;
-  const embedYoutubeId = isReal(release.embedYoutubeId)
-    ? release.embedYoutubeId
-    : null;
+  const embedYoutubeId = isReal(release.embedYoutubeId) ? release.embedYoutubeId : null;
   const youtubeId =
-    embedYoutubeId ||
-    (hasYouTubeLink ? extractYouTubeId(release.youtubeUrl) : null);
+    embedYoutubeId || (hasYouTubeLink ? extractYouTubeId(release.youtubeUrl) : null);
   const ytSrc = youtubeId
     ? buildYouTubeEmbedSrc(
         youtubeId,
@@ -713,11 +619,7 @@ export default function ReleasePage({ theme = "dark" }) {
     boxSizing: "border-box"
   };
 
-  const iconStyle = {
-    width: 18,
-    height: 18,
-    display: "inline-block"
-  };
+  const iconStyle = { width: 18, height: 18, display: "inline-block" };
 
   return (
     <div
@@ -801,23 +703,11 @@ export default function ReleasePage({ theme = "dark" }) {
       >
         {haveYT && (
           <div style={{ marginBottom: 14 }}>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: "clamp(18px, 4vw, 26px)",
-                lineHeight: 1.2
-              }}
-            >
+            <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
               {release.title}
             </div>
             {release.artist && (
-              <div
-                style={{
-                  opacity: 0.85,
-                  marginTop: 4,
-                  fontSize: "clamp(14px, 3vw, 16px)"
-                }}
-              >
+              <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
                 {release.artist}
               </div>
             )}
@@ -841,23 +731,11 @@ export default function ReleasePage({ theme = "dark" }) {
 
         {!haveYT && (
           <div style={{ marginTop: 4, marginBottom: 16 }}>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: "clamp(18px, 4vw, 26px)",
-                lineHeight: 1.2
-              }}
-            >
+            <div style={{ fontWeight: 800, fontSize: "clamp(18px, 4vw, 26px)", lineHeight: 1.2 }}>
               {release.title}
             </div>
             {release.artist && (
-              <div
-                style={{
-                  opacity: 0.85,
-                  marginTop: 4,
-                  fontSize: "clamp(14px, 3vw, 16px)"
-                }}
-              >
+              <div style={{ opacity: 0.85, marginTop: 4, fontSize: "clamp(14px, 3vw, 16px)" }}>
                 {release.artist}
               </div>
             )}
@@ -885,13 +763,7 @@ export default function ReleasePage({ theme = "dark" }) {
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  border: "none"
-                }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
               />
             </div>
           </div>
@@ -907,8 +779,7 @@ export default function ReleasePage({ theme = "dark" }) {
               title={`${release.title} on Spotify`}
               style={{
                 borderRadius: "12px",
-                border:
-                  theme === "dark" ? "1px solid #222" : "1px solid #ddd"
+                border: theme === "dark" ? "1px solid #222" : "1px solid #ddd"
               }}
             />
           </div>
@@ -920,15 +791,9 @@ export default function ReleasePage({ theme = "dark" }) {
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 style={btnBase}
-                onMouseDown={(e) =>
-                  (e.currentTarget.style.transform = "scale(0.98)")
-                }
-                onMouseUp={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
+                onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
@@ -941,9 +806,7 @@ export default function ReleasePage({ theme = "dark" }) {
                   style={{
                     marginTop: 12,
                     background: theme === "dark" ? "#111" : "#fff",
-                    border:
-                      "1px solid " +
-                      (theme === "dark" ? "#222" : "#e6e6e6"),
+                    border: "1px solid " + (theme === "dark" ? "#222" : "#e6e6e6"),
                     borderRadius: "12px",
                     boxShadow:
                       theme === "dark"
@@ -969,7 +832,6 @@ export default function ReleasePage({ theme = "dark" }) {
                       <span>Spotify</span>
                     </a>
                   )}
-
                   {hasApple && (
                     <a
                       href={release.appleUrl}
@@ -982,7 +844,6 @@ export default function ReleasePage({ theme = "dark" }) {
                       <span>Apple Music</span>
                     </a>
                   )}
-
                   {hasYouTubeLink && (
                     <a
                       href={release.youtubeUrl}
@@ -1000,12 +861,7 @@ export default function ReleasePage({ theme = "dark" }) {
             </>
           ) : (
             isReal(release.smartLink) && (
-              <a
-                href={release.smartLink}
-                target="_blank"
-                rel="noreferrer"
-                style={btnBase}
-              >
+              <a href={release.smartLink} target="_blank" rel="noreferrer" style={btnBase}>
                 Listen on All Platforms
               </a>
             )
@@ -1016,9 +872,7 @@ export default function ReleasePage({ theme = "dark" }) {
           release={release}
           color={fg}
           borderColor={
-            theme === "dark"
-              ? "rgba(255,255,255,0.15)"
-              : "rgba(0,0,0,0.12)"
+            theme === "dark" ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)"
           }
         />
 
