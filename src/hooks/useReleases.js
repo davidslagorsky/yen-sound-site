@@ -27,7 +27,7 @@ export function useReleases() {
           youtubeUrl: r.youtube_url,
           embedYoutubeId: r.embed_youtube_id,
           embedSpotify: r.embed_spotify,
-          background: r.background_url ? { url: r.background_url, darken: r.background_darken } : null,
+          background: r.background_url ? { url: r.background_url } : null,
           socials: r.socials,
         })));
       }
