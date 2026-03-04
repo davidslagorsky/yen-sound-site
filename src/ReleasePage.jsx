@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useReleases } from "./hooks/useReleases";
 import {
   FaInstagram,
@@ -418,6 +419,12 @@ export default function ReleasePage({ theme = "dark" }) {
     );
   }
 
+  // ── OG meta tags for social sharing ──
+  const pageUrl = `https://yensound.com/release/${release.slug}`;
+  const pageTitle = `${release.title} — ${release.artist}`;
+  const pageDescription = `Listen to ${release.title} by ${release.artist} on Yen Sound.`;
+  const pageImage = release.cover || "https://yensound.com/logo.png";
+
   // ── pre-release / locked view ──
   if (isLocked) {
     const parts = getCountdownParts(unlockAt);
@@ -453,6 +460,18 @@ export default function ReleasePage({ theme = "dark" }) {
           ...bgStyle
         }}
       >
+        <Helmet>
+          <title>{pageTitle} — Yen Sound</title>
+          <meta property="og:title" content={pageTitle} />
+          <meta property="og:description" content={pageDescription} />
+          <meta property="og:image" content={pageImage} />
+          <meta property="og:url" content={pageUrl} />
+          <meta property="og:type" content="music.song" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={pageTitle} />
+          <meta name="twitter:description" content={pageDescription} />
+          <meta name="twitter:image" content={pageImage} />
+        </Helmet>
         {bgUrl && darken > 0 && (
           <div
             style={{ position: "absolute", inset: 0, background: `rgba(0,0,0,${darken})` }}
@@ -637,6 +656,18 @@ export default function ReleasePage({ theme = "dark" }) {
         isolation: "isolate"
       }}
     >
+      <Helmet>
+        <title>{pageTitle} — Yen Sound</title>
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={pageImage} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="music.song" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={pageImage} />
+      </Helmet>
       {showBackground && (
         <div
           aria-hidden="true"
