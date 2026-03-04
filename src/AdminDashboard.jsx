@@ -16,6 +16,14 @@ export default function AdminDashboard() {
   // Releases
   const [releases, setReleases] = useState([]);
 
+  // Artists
+  const [artists, setArtists] = useState([]);
+  const [artistForm, setArtistForm] = useState({
+    id: "", password: "", display_name: "", filter_name: "", upload_url: ""
+  });
+  const [artistSubmitStatus, setArtistSubmitStatus] = useState(null);
+  const [artistSubmitting, setArtistSubmitting] = useState(false);
+
   // Add release form
   const [form, setForm] = useState({
     title: "", artist: "", type: "Single", date: "", release_at: "",
@@ -40,7 +48,15 @@ export default function AdminDashboard() {
         .order("date", { ascending: false });
       if (data) setReleases(data);
     }
+    async function fetchArtists() {
+      const { data } = await supabase
+        .from("artists")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (data) setArtists(data);
+    }
     fetchReleases();
+    fetchArtists();
   }, [auth]);
 
   const handleLogin = () => {
@@ -57,6 +73,16 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("releases").delete().eq("id", id);
     if (!error) {
       setReleases((prev) => prev.filter((r) => r.id !== id));
+    } else {
+      alert("Error deleting: " + error.message);
+    }
+  };
+
+  const handleDeleteArtist = async (id) => {
+    if (!window.confirm(`Delete artist "${id}"?`)) return;
+    const { error } = await supabase.from("artists").delete().eq("id", id);
+    if (!error) {
+      setArtists((prev) => prev.filter((a) => a.id !== id));
     } else {
       alert("Error deleting: " + error.message);
     }
@@ -80,6 +106,11 @@ export default function AdminDashboard() {
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleArtistFormChange = (e) => {
+    const { name, value } = e.target;
+    setArtistForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAddRelease = async () => {
@@ -132,6 +163,32 @@ export default function AdminDashboard() {
     setSubmitting(false);
   };
 
+  const handleAddArtist = async () => {
+    if (!artistForm.id || !artistForm.password || !artistForm.display_name) {
+      setArtistSubmitStatus("error:Please fill in ID, Password and Display Name.");
+      return;
+    }
+    setArtistSubmitting(true);
+    setArtistSubmitStatus(null);
+
+    const { error } = await supabase.from("artists").insert([{
+      id: artistForm.id.trim(),
+      password: artistForm.password.trim(),
+      display_name: artistForm.display_name.trim(),
+      filter_name: artistForm.filter_name.trim() || artistForm.display_name.trim(),
+      upload_url: artistForm.upload_url.trim() || null,
+    }]);
+
+    if (error) {
+      setArtistSubmitStatus("error:" + error.message);
+    } else {
+      setArtistSubmitStatus("success");
+      setArtists((prev) => [...prev, { ...artistForm }]);
+      setArtistForm({ id: "", password: "", display_name: "", filter_name: "", upload_url: "" });
+    }
+    setArtistSubmitting(false);
+  };
+
   if (!auth) {
     return (
       <div style={styles.container}>
@@ -182,12 +239,49 @@ export default function AdminDashboard() {
           {submitting ? "Adding..." : "Add Release"}
         </button>
 
-        {submitStatus === "success" && (
-          <p style={styles.success}>✅ Release added successfully!</p>
-        )}
-        {submitStatus?.startsWith("error:") && (
-          <p style={styles.error}>{submitStatus.replace("error:", "")}</p>
-        )}
+        {submitStatus === "success" && <p style={styles.success}>✅ Release added successfully!</p>}
+        {submitStatus?.startsWith("error:") && <p style={styles.error}>{submitStatus.replace("error:", "")}</p>}
+      </div>
+
+      {/* ── Add Artist ── */}
+      <h2 style={{ ...styles.title, marginTop: "60px" }}>Add Artist Login</h2>
+      <div style={styles.form}>
+        {[
+          { name: "id", placeholder: "Artist ID * (e.g. sigh) — used in the URL" },
+          { name: "password", placeholder: "Password *" },
+          { name: "display_name", placeholder: "Display Name * (e.g. Sigh)" },
+          { name: "filter_name", placeholder: "Filter Name — exact name in releases table (e.g. Sighdafekt)" },
+          { name: "upload_url", placeholder: "Google Drive Vault URL" },
+        ].map(({ name, placeholder }) => (
+          <input key={name} name={name} placeholder={placeholder}
+            value={artistForm[name]} onChange={handleArtistFormChange} style={styles.input} />
+        ))}
+
+        <button onClick={handleAddArtist} disabled={artistSubmitting} style={styles.button}>
+          {artistSubmitting ? "Adding..." : "Add Artist"}
+        </button>
+
+        {artistSubmitStatus === "success" && <p style={styles.success}>✅ Artist added successfully!</p>}
+        {artistSubmitStatus?.startsWith("error:") && <p style={styles.error}>{artistSubmitStatus.replace("error:", "")}</p>}
+      </div>
+
+      {/* ── All Artists ── */}
+      <h2 style={{ ...styles.title, marginTop: "60px" }}>All Artists</h2>
+      <div style={styles.list}>
+        {artists.map((a) => (
+          <div key={a.id} style={styles.row}>
+            <div style={styles.linkHeader}>
+              <span style={styles.slug}>{a.display_name} <span style={{ color: "#aaa", fontWeight: "normal" }}>({a.id})</span></span>
+              <button
+                onClick={() => handleDeleteArtist(a.id)}
+                style={{ ...styles.copyButton, borderColor: "red", color: "red" }}
+              >
+                Delete
+              </button>
+            </div>
+            <span style={{ color: "#aaa", fontSize: "0.85rem" }}>Filter: {a.filter_name}</span>
+          </div>
+        ))}
       </div>
 
       {/* ── Shortlink Generator ── */}
