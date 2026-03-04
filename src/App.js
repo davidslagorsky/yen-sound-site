@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 
 import About from "./About";
 import Footer from "./Footer";
@@ -480,7 +481,7 @@ function App() {
   }
 
   return (
-    <>
+    <HelmetProvider>
       <Header />
 
       <Routes>
@@ -507,7 +508,7 @@ function App() {
 
       {!currentLocation.pathname.startsWith("/release/") && <Footer />}
       <SpeedInsights />
-    </>
+    </HelmetProvider>
   );
 }
 
