@@ -41,19 +41,16 @@ html { scroll-behavior: smooth; }
   background: #f0ede8;
   border-radius: 1px;
 }
-/* horizontal bar */
 .yen-cursor::before {
   width: 20px; height: 1px;
   top: 50%; left: 0;
   transform: translateY(-50%);
 }
-/* vertical bar */
 .yen-cursor::after {
   width: 1px; height: 20px;
   left: 50%; top: 0;
   transform: translateX(-50%);
 }
-/* hovering interactive element */
 .yen-cursor.hovering {
   transform: translate(-50%, -50%) scale(1.5);
   opacity: 0.5;
@@ -95,7 +92,48 @@ html { scroll-behavior: smooth; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── RELEASE / ROSTER COVER HOVER — grayscale to color ── */
+/* ── HOMEPAGE HERO ── */
+.yen-hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px 48px;
+  text-align: center;
+}
+.yen-hero-media {
+  width: clamp(200px, 38vw, 460px);
+  margin-bottom: 24px;
+}
+.yen-hero-tagline {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #f0ede8;
+  opacity: 0.3;
+}
+
+/* Mobile: full-bleed */
+@media (max-width: 600px) {
+  .yen-hero {
+    padding: 0;
+    align-items: stretch;
+  }
+  .yen-hero-media {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .yen-hero-tagline {
+    padding: 20px 24px 28px;
+    text-align: center;
+    border-bottom: 1px solid #1a1a1a;
+  }
+}
+
+/* ── COVER HOVER — grayscale to color ── */
 .yen-cover img {
   filter: grayscale(0.85) brightness(0.9);
   transition: filter 0.6s ease, transform 0.6s ease;
@@ -105,7 +143,18 @@ html { scroll-behavior: smooth; }
   transform: scale(1.04);
 }
 
-/* ── MARQUEE ── */
+/* ── LATEST RELEASES MARQUEE ── */
+.yen-releases-track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marquee 24s linear infinite;
+}
+.yen-releases-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── BOTTOM TEXT MARQUEE ── */
 .yen-marquee-wrap {
   overflow: hidden;
   width: 100%;
@@ -128,9 +177,10 @@ html { scroll-behavior: smooth; }
   padding: 14px 40px;
   flex-shrink: 0;
 }
+
 @keyframes marquee {
   from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  to   { transform: translateX(-33.333%); }
 }
 
 /* ── SPINNING LOGO (release page) ── */
@@ -192,5 +242,6 @@ html { scroll-behavior: smooth; }
   .yen-grain { animation: none; }
   .yen-page  { animation: none; }
   .yen-marquee-track { animation: none; }
+  .yen-releases-track { animation: none; overflow-x: auto; }
   .yen-spin  { animation: none; }
 }
