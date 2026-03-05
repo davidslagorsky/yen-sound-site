@@ -224,15 +224,15 @@ export default function ArtistPage() {
         <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
           {embedData.type === "youtube" ? (
             <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-              <iframe src={embedData.src} frameBorder="0" allowFullScreen
+              <iframe src={embedData.src} frameBorder="0" allowFullScreen title="Video embed"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
             </div>
           ) : embedData.type === "spotify" ? (
-            <iframe src={embedData.src} width="100%" height="152" frameBorder="0"
+            <iframe src={embedData.src} width="100%" height="152" frameBorder="0" title="Music embed"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy" style={{ display: "block" }} />
           ) : embedData.type === "soundcloud" ? (
-            <iframe width="100%" height="166" frameBorder="0" src={embedData.src} style={{ display: "block" }} />
+            <iframe width="100%" height="166" frameBorder="0" src={embedData.src} title="SoundCloud embed" style={{ display: "block" }} />
           ) : null}
         </div>
       )}
