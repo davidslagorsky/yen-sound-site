@@ -25,13 +25,15 @@ const CUSTOM_ICON_MAP = {
   instagram: "◻", tiktok: "◇", soundcloud: "◉", bandcamp: "◆",
 };
 
-function buildEmbedSrc(url = "") {
-  const spotify = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
-  const youtube = url.match(/(?:v=|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
-  const sc = url.includes("soundcloud.com");
+function buildEmbedData(url = "") {
+  if (!url || !url.trim()) return null;
+  const u = url.trim();
+  const spotify = u.match(/open\.spotify\.com\/(track|album|playlist|episode|artist)\/([A-Za-z0-9]+)/);
+  const youtube = u.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
+  const sc = u.includes("soundcloud.com/");
   if (spotify) return { type: "spotify", src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
-  if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1` };
-  if (sc) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false` };
+  if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1&playsinline=1` };
+  if (sc) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true` };
   return null;
 }
 
@@ -40,7 +42,7 @@ export default function ArtistPage() {
   const navigate = useNavigate();
   const [showAllReleases, setShowAllReleases] = useState(false);
   const [pressPosts, setPressPosts] = useState([]);
-  const [pageData, setPageData] = useState(null); // from supabase artists table
+  const [pageData, setPageData] = useState(null);
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -49,17 +51,14 @@ export default function ArtistPage() {
 
   const allNames = useMemo(() => {
     if (!artist) return [];
-    return [artistName, ...(artist.aliases || [])]
-      .filter(Boolean).map((n) => n.trim().toLowerCase());
+    return [artistName, ...(artist.aliases || [])].filter(Boolean).map((n) => n.trim().toLowerCase());
   }, [artist, artistName]);
 
   const artistReleases = useMemo(() => {
     if (!artist || allNames.length === 0) return [];
     return releases
       .filter((r) => {
-        const names = Array.isArray(r.artist)
-          ? r.artist
-          : typeof r.artist === "string" ? r.artist.split(",") : [];
+        const names = Array.isArray(r.artist) ? r.artist : typeof r.artist === "string" ? r.artist.split(",") : [];
         return names.map((a) => a?.trim().toLowerCase()).some((n) => allNames.includes(n));
       })
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -67,33 +66,19 @@ export default function ArtistPage() {
 
   useEffect(() => {
     if (!artist) return;
-
     async function fetchPress() {
-      const { data } = await supabase
-        .from("press_posts")
-        .select("id, title, excerpt, cover_url, date, slug, artist")
-        .order("date", { ascending: false });
+      const { data } = await supabase.from("press_posts").select("id, title, excerpt, cover_url, date, slug, artist").order("date", { ascending: false });
       if (!data) return;
-      const names = [artistName, ...(artist.aliases || [])]
-        .filter(Boolean).map(n => n.trim().toLowerCase());
-      const matched = data.filter(p => {
+      const names = [artistName, ...(artist.aliases || [])].filter(Boolean).map(n => n.trim().toLowerCase());
+      setPressPosts(data.filter(p => {
         if (!p.artist) return false;
-        return p.artist.split(",").map(a => a.trim().toLowerCase()).some(a =>
-          names.some(n => a.includes(n) || n.includes(a))
-        );
-      });
-      setPressPosts(matched);
+        return p.artist.split(",").map(a => a.trim().toLowerCase()).some(a => names.some(n => a.includes(n) || n.includes(a)));
+      }));
     }
-
     async function fetchPageData() {
-      const { data } = await supabase
-        .from("artists")
-        .select("bio, custom_buttons, embed_url, button_order")
-        .eq("slug", slug)
-        .single();
+      const { data } = await supabase.from("artists").select("bio, custom_buttons, embed_url, button_order").eq("slug", slug).single();
       if (data) setPageData(data);
     }
-
     fetchPress();
     fetchPageData();
   }, [artist, artistName, slug]);
@@ -111,13 +96,10 @@ export default function ArtistPage() {
   const buttonOrder = pageData?.button_order?.length ? pageData.button_order : DEFAULT_ORDER;
   const bio = pageData?.bio || "";
   const customButtons = (pageData?.custom_buttons || []).filter(b => b.label && b.url);
-  const embedData = pageData?.embed_url ? buildEmbedSrc(pageData.embed_url) : null;
+  const embedData = pageData?.embed_url ? buildEmbedData(pageData.embed_url) : null;
 
-  /* build ordered platform buttons */
   const platforms = buttonOrder.map(key => {
-    if (key === "press") {
-      return pressPosts.length > 0 ? { key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
-    }
+    if (key === "press") return pressPosts.length > 0 ? { key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
     const url = socials[key];
     if (!url || url === "PLACEHOLDER") return null;
     return { key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICON[key], url, internal: false };
@@ -135,14 +117,13 @@ export default function ArtistPage() {
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
 
-      {/* ── Spinning logo + marquee ── */}
-      <div style={{ paddingTop: "36px", paddingBottom: "0" }}>
+      {/* logo + marquee */}
+      <div style={{ paddingTop: "36px" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin"
-            style={{ width: "52px", height: "52px", opacity: 0.55 }} />
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
         </div>
         <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-          <div style={{ display: "inline-flex", gap: "0", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
+          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
             {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
               <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
             ))}
@@ -150,46 +131,37 @@ export default function ArtistPage() {
         </div>
       </div>
 
-      {/* ── Full-bleed cover ── */}
+      {/* cover */}
       <div style={{ width: "100%", marginTop: "24px" }}>
-        <img src={artist.image} alt={artistName}
-          style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
+        <img src={artist.image} alt={artistName} style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
       </div>
 
-      {/* ── Name + bio ── */}
+      {/* name + bio */}
       <div style={{ padding: "28px 24px 24px", textAlign: "center" }}>
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
-        {bio && (
-          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>
-            {bio}
-          </p>
-        )}
-        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
-          Choose music service
-        </p>
+        {bio && <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>{bio}</p>}
+        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>Choose music service</p>
       </div>
 
-      {/* ── Platform buttons (ordered) ── */}
+      {/* platform + custom buttons */}
       <div style={{ padding: "24px 0 16px" }}>
         {platforms.map((p, i) =>
           p.internal ? (
             <Link key={i} to={p.url} style={btnStyle}
               onMouseOver={e => e.currentTarget.style.background = "#111"}
               onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon} {p.label}
+              {p.icon}{p.label}
             </Link>
           ) : (
             <a key={i} href={p.url} target="_blank" rel="noreferrer" style={btnStyle}
               onMouseOver={e => e.currentTarget.style.background = "#111"}
               onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon} {p.label}
+              {p.icon}{p.label}
             </a>
           )
         )}
-
-        {/* ── Custom buttons ── */}
         {customButtons.map((btn, i) => (
           <a key={`c${i}`} href={btn.url} target="_blank" rel="noreferrer" style={btnStyle}
             onMouseOver={e => e.currentTarget.style.background = "#111"}
@@ -200,12 +172,13 @@ export default function ArtistPage() {
         ))}
       </div>
 
-      {/* ── Embed ── */}
+      {/* embed */}
       {embedData && (
         <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
           {embedData.type === "youtube" ? (
             <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
               <iframe src={embedData.src} title="Video embed" frameBorder="0" allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
             </div>
           ) : embedData.type === "spotify" ? (
@@ -218,7 +191,7 @@ export default function ArtistPage() {
         </div>
       )}
 
-      {/* ── Releases ── */}
+      {/* releases */}
       {artistReleases.length > 0 && (
         <div style={{ padding: "48px 24px 24px" }}>
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
@@ -233,12 +206,8 @@ export default function ArtistPage() {
                     onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
                     onMouseOut={e => e.currentTarget.style.transform = "scale(1)"} />
                 </div>
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "2px" }}>
-                  {r.type} · {r.date?.slice(0, 4)}
-                </p>
-                <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1.2 }}>
-                  {r.title}
-                </p>
+                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "2px" }}>{r.type} · {r.date?.slice(0, 4)}</p>
+                <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1.2 }}>{r.title}</p>
               </Link>
             ))}
           </div>
@@ -255,37 +224,27 @@ export default function ArtistPage() {
         </div>
       )}
 
-      {/* ── Press posts ── */}
+      {/* press */}
       {pressPosts.length > 0 && (
         <div style={{ padding: "40px 24px 80px" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
-            Press · {pressPosts.length}
-          </p>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>Press · {pressPosts.length}</p>
           {pressPosts.map((p) => (
             <Link key={p.id} to={`/press/${p.slug}`}
               style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "16px", alignItems: "center", padding: "16px 0", borderBottom: "1px solid #1a1a1a", transition: "opacity 0.2s" }}
               onMouseOver={e => e.currentTarget.style.opacity = 0.65}
               onMouseOut={e => e.currentTarget.style.opacity = 1}>
-              {p.cover_url && (
-                <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
-                  <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                </div>
-              )}
+              {p.cover_url && <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111" }}><img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></div>}
               <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>
-                  {formatDate(p.date)}
-                </p>
+                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>{formatDate(p.date)}</p>
                 <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>{p.title}</p>
-                {p.excerpt && (
-                  <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.excerpt}</p>
-                )}
+                {p.excerpt && <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.excerpt}</p>}
               </div>
             </Link>
           ))}
         </div>
       )}
 
-      {/* ── Back ── */}
+      {/* back */}
       <div style={{ padding: "0 24px 60px", textAlign: "center" }}>
         <button onClick={() => navigate("/roster")}
           style={{ background: "none", border: "none", color: "#f0ede8", cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: 0 }}
