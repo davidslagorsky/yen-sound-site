@@ -474,7 +474,7 @@ export default function AdminDashboard() {
 
         <div style={{ marginTop: "16px" }}>
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "8px" }}>Body</p>
-          <RichEditor value={postForm.body} onChange={v => setPostForm(p => ({ ...p, body: v }))} />
+          <RichEditor key={editingPost ? postForm.id : "new"} value={postForm.body} onChange={v => setPostForm(p => ({ ...p, body: v }))} />
         </div>
 
         <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
