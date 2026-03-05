@@ -28,9 +28,64 @@ import { useReleases } from "./hooks/useReleases";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
+/* ---------------- Cursor Dot ---------------- */
+function CursorDot() {
+  const dotRef = React.useRef(null);
+  useEffect(() => {
+    const dot = dotRef.current;
+    if (!dot) return;
+    const move = (e) => {
+      dot.style.left = e.clientX + "px";
+      dot.style.top  = e.clientY + "px";
+    };
+    const over = (e) => { if (e.target.closest("a, button, [role=button]")) dot.classList.add("hovering"); };
+    const out  = () => dot.classList.remove("hovering");
+    window.addEventListener("mousemove", move);
+    document.addEventListener("mouseover", over);
+    document.addEventListener("mouseout", out);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseover", over);
+      document.removeEventListener("mouseout", out);
+    };
+  }, []);
+  return <div ref={dotRef} className="yen-cursor" aria-hidden />;
+}
+
+/* ---------------- Grain Overlay ---------------- */
+function GrainOverlay() {
+  return <div className="yen-grain" aria-hidden />;
+}
+
+/* ---------------- Page Transition ---------------- */
+function PageTransition({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="yen-page">
+      {children}
+    </div>
+  );
+}
+
+/* ---------------- Marquee ---------------- */
+const MARQUEE_TEXT = "YEN SOUND · TEL AVIV · PR & DISTRIBUTION · BOUTIQUE LABEL · ";
+function Marquee() {
+  const items = Array(8).fill(MARQUEE_TEXT);
+  return (
+    <div className="yen-marquee-wrap">
+      <div className="yen-marquee-track">
+        {items.map((t, i) => <span key={i} className="yen-marquee-item">{t}</span>)}
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- Home ---------------- */
-const Home = () => {
+const Home = ({ releases }) => {
   const videoRef = React.useRef(null);
+  const latest = releases && releases.length > 0
+    ? [...releases].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+    : null;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -42,51 +97,54 @@ const Home = () => {
   }, []);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#000",
-      padding: "40px 20px",
-      textAlign: "center",
-    }}>
-      <div style={{ marginBottom: "24px" }}>
-        <video
-          ref={videoRef}
-          id="title-video"
-          src="/YEN SOUND PR LOGO VID.mp4"
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
-          onEnded={() => {
-            const vid = document.getElementById("title-video");
-            const img = document.getElementById("title-image");
-            if (vid && img) { vid.style.display = "none"; img.style.display = "inline"; }
-          }}
-          style={{ width: "clamp(240px, 45vw, 520px)", height: "auto" }}
-        />
-        <img
-          id="title-image"
-          src="/yen sound white on black raw.png"
-          alt="Yen Sound"
-          style={{ display: "none", width: "clamp(240px, 45vw, 520px)", height: "auto" }}
-        />
+    <div style={{ minHeight: "100vh", backgroundColor: "#000", display: "flex", flexDirection: "column" }}>
+      {/* Hero */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px 40px", textAlign: "center" }}>
+        <div style={{ marginBottom: "28px" }}>
+          <video
+            ref={videoRef}
+            id="title-video"
+            src="/YEN SOUND PR LOGO VID.mp4"
+            autoPlay muted playsInline preload="auto"
+            onEnded={() => {
+              const vid = document.getElementById("title-video");
+              const img = document.getElementById("title-image");
+              if (vid && img) { vid.style.display = "none"; img.style.display = "inline"; }
+            }}
+            style={{ width: "clamp(200px, 38vw, 460px)", height: "auto" }}
+          />
+          <img id="title-image" src="/yen sound white on black raw.png" alt="Yen Sound"
+            style={{ display: "none", width: "clamp(200px, 38vw, 460px)", height: "auto" }} />
+        </div>
+        <p style={{ fontFamily: F, fontSize: "10px", fontWeight: 300, letterSpacing: "0.32em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.3 }}>
+          Boutique PR &amp; Distribution · Tel Aviv
+        </p>
       </div>
 
-      <p style={{
-        fontFamily: F,
-        fontSize: "11px",
-        fontWeight: 300,
-        letterSpacing: "0.3em",
-        textTransform: "uppercase",
-        color: "#f0ede8",
-        opacity: 0.35,
-      }}>
-        Boutique PR &amp; Distribution · Tel Aviv
-      </p>
+      {/* Latest release */}
+      {latest && (
+        <div style={{ borderTop: "1px solid #1a1a1a", padding: "32px 40px" }}>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "20px" }}>
+            Latest Release
+          </p>
+          <Link to={`/release/${latest.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "inline-flex", alignItems: "center", gap: "16px" }}>
+            <div className="yen-cover" style={{ width: "clamp(48px, 8vw, 72px)", aspectRatio: "1", overflow: "hidden", flexShrink: 0 }}>
+              <img src={latest.cover} alt={latest.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+            <div>
+              <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "3px" }}>
+                {latest.artist}
+              </p>
+              <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>
+                {latest.title}
+              </p>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* Marquee */}
+      <Marquee />
     </div>
   );
 };
@@ -152,17 +210,10 @@ const Releases = ({ releases }) => {
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
 
-      {/* Filter bar */}
       <div style={{
-        maxWidth: "1100px",
-        margin: "0 auto",
-        padding: "28px 40px",
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "6px",
-        alignItems: "center",
-        borderBottom: "1px solid #1a1a1a",
-        position: "relative",
+        maxWidth: "1100px", margin: "0 auto", padding: "28px 40px",
+        display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center",
+        borderBottom: "1px solid #1a1a1a", position: "relative",
       }}>
         {["All", "Album", "Single"].map((t) => (
           <button key={t}
@@ -171,25 +222,22 @@ const Releases = ({ releases }) => {
           >{t}</button>
         ))}
 
-        <button
-          onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
-          style={artistFilter !== "All" ? btnActive : btnBase}
-        >
+        <button onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
+          style={artistFilter !== "All" ? btnActive : btnBase}>
           {artistFilter === "All" ? "Artists ▾" : artistFilter + " ▾"}
         </button>
 
-        <button
-          onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
-          style={showRoster ? btnActive : btnBase}
-        >
+        <button onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
+          style={showRoster ? btnActive : btnBase}>
           Roster
         </button>
 
         <Link to="/artist-login" style={{ textDecoration: "none" }}>
           <button style={btnBase}
             onMouseOver={e => { e.currentTarget.style.background = "#f0ede8"; e.currentTarget.style.color = "#000"; }}
-            onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#f0ede8"; }}
-          >Artist Login</button>
+            onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#f0ede8"; }}>
+            Artist Login
+          </button>
         </Link>
 
         {artistDropdownOpen && (
@@ -220,7 +268,6 @@ const Releases = ({ releases }) => {
         </div>
       ) : (
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px 80px" }}>
-
           {filteredFromURL && (
             <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "32px" }}>
               Showing: {filteredFromURL}
@@ -234,32 +281,14 @@ const Releases = ({ releases }) => {
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div style={{
-                  width: "100%", aspectRatio: "1", overflow: "hidden",
-                  background: "#111", marginBottom: "14px",
-                }}>
-                  <img
-                    src={r.cover}
-                    alt={r.title}
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover", display: "block",
-                      transition: "transform 0.5s ease",
-                    }}
-                    onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
-                    onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
-                  />
+                <div className="yen-cover" style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "14px" }}>
+                  <img src={r.cover} alt={r.title}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </div>
-                <p style={{
-                  fontFamily: F, fontSize: "10px", letterSpacing: "0.15em",
-                  textTransform: "uppercase", opacity: 0.45, marginBottom: "4px",
-                }}>
+                <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.45, marginBottom: "4px" }}>
                   {r.artist}
                 </p>
-                <p style={{
-                  fontFamily: F, fontSize: "12px", fontWeight: 700,
-                  letterSpacing: "0.08em", textTransform: "uppercase",
-                  lineHeight: 1.3, opacity: 0.9,
-                }}>
+                <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.3, opacity: 0.9 }}>
                   {r.title}
                 </p>
               </Link>
@@ -270,15 +299,7 @@ const Releases = ({ releases }) => {
 
       <style>{`
         @media (max-width: 600px) {
-          .releases-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 32px 12px !important;
-          }
-        }
-        @media (max-width: 600px) {
-          .releases-grid > * > div:first-child {
-            margin-bottom: 10px !important;
-          }
+          .releases-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 32px 12px !important; }
         }
       `}</style>
     </div>
@@ -317,46 +338,48 @@ function App() {
 
   useAnalytics();
 
-  if (loading) {
-    return (
-      <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.4 }}>Loading</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.3 }}>Loading</p>
+    </div>
+  );
 
   const isReleasePage = currentLocation.pathname.startsWith("/release/");
   const isHomePage = currentLocation.pathname === "/";
 
   return (
     <HelmetProvider>
+      <CursorDot />
+      <GrainOverlay />
       <Header />
 
-      <main style={{ paddingTop: isHomePage ? "0" : "60px" }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/releases" element={<Releases releases={releases} />} />
-          <Route path="/about" element={<About theme="dark" />} />
-          <Route path="/ipod" element={<CoverFlowFrame />} />
-          <Route path="/roster" element={<Roster />} />
-          <Route path="/artist/:slug" element={<ArtistPage theme="dark" />} />
-          <Route path="/artist-login" element={<ArtistLogin />} />
-          <Route path="/artist-dashboard/:artistId" element={<ArtistDashboard />} />
-          <Route path="/artist-dashboard/submit" element={<SubmitForm />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/enter-shower" element={<HiddenSplash />} />
-          <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
-          <Route path="/merch" element={<Capsule001 />} />
-          <Route path="/001" element={<Capsule001 />} />
-          <Route path="/release/:slug" element={<ReleasePage theme="dark" />} />
-          <Route path="/rsvp" element={<RSVP />} />
-          <Route path="/sigh" element={<Sigh />} />
-          <Route path="/voice" element={<VoiceLessons />} />
-          <Route path="/press" element={<Press />} />
-          <Route path="/press/:slug" element={<PostPage />} />
-          <Route path="/:maybeSlug" element={<SlugRedirect releases={releases} />} />
-        </Routes>
-      </main>
+      <PageTransition>
+        <main style={{ paddingTop: isHomePage ? "0" : "60px" }}>
+          <Routes>
+            <Route path="/" element={<Home releases={releases} />} />
+            <Route path="/releases" element={<Releases releases={releases} />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/ipod" element={<CoverFlowFrame />} />
+            <Route path="/roster" element={<Roster />} />
+            <Route path="/artist/:slug" element={<ArtistPage />} />
+            <Route path="/artist-login" element={<ArtistLogin />} />
+            <Route path="/artist-dashboard/:artistId" element={<ArtistDashboard />} />
+            <Route path="/artist-dashboard/submit" element={<SubmitForm />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/enter-shower" element={<HiddenSplash />} />
+            <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
+            <Route path="/merch" element={<Capsule001 />} />
+            <Route path="/001" element={<Capsule001 />} />
+            <Route path="/release/:slug" element={<ReleasePage />} />
+            <Route path="/rsvp" element={<RSVP />} />
+            <Route path="/sigh" element={<Sigh />} />
+            <Route path="/voice" element={<VoiceLessons />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/press/:slug" element={<PostPage />} />
+            <Route path="/:maybeSlug" element={<SlugRedirect releases={releases} />} />
+          </Routes>
+        </main>
+      </PageTransition>
 
       {!isReleasePage && <Footer />}
       <SpeedInsights />
