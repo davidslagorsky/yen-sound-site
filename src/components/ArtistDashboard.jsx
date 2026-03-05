@@ -114,7 +114,7 @@ function EditorTile({ icon, label, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: '10px', padding: '24px 12px',
+      gap: '10px', padding: '28px 16px',
       border: active ? '1px solid rgba(240,237,232,0.6)' : '1px solid rgba(240,237,232,0.15)',
       background: active ? '#0d0d0d' : 'transparent', color: '#f0ede8',
       cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', width: '100%',
@@ -122,7 +122,7 @@ function EditorTile({ icon, label, active, onClick }) {
       onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.4)'; e.currentTarget.style.background = '#0a0a0a'; } }}
       onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.15)'; e.currentTarget.style.background = 'transparent'; } }}>
       <span style={{ fontSize: '20px', lineHeight: 1, opacity: 0.7 }}>{icon}</span>
-      <span style={{ fontFamily: F, fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: active ? 1 : 0.6 }}>{label}</span>
+      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: active ? 1 : 0.6 }}>{label}</span>
     </button>
   );
 }
@@ -261,8 +261,84 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
   );
 }
 
+/* ─── Touch-aware sortable hook ───────────────────────────────────
+   Desktop: standard HTML drag-and-drop
+   Mobile: long-press (400ms) activates drag mode, then touch-move reorders
+─────────────────────────────────────────────────────────────────── */
+function useTouchSort(setList) {
+  const dragIdx = useRef(null);
+  const longPressTimer = useRef(null);
+  const isDragging = useRef(false);
+  const rowRefs = useRef([]);
+  const startY = useRef(0);
+  const [activeIdx, setActiveIdx] = useState(null);
+
+  function getRowAtY(y) {
+    let closest = null, closestDist = Infinity;
+    rowRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const dist = Math.abs(y - mid);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    return closest;
+  }
+
+  function moveItem(from, to) {
+    if (from === to || from === null || to === null) return;
+    setList(prev => {
+      const a = [...prev];
+      const [m] = a.splice(from, 1);
+      a.splice(to, 0, m);
+      return a;
+    });
+    dragIdx.current = to;
+    setActiveIdx(to);
+  }
+
+  function handlers(index) {
+    return {
+      ref: el => { rowRefs.current[index] = el; },
+      draggable: true,
+      onDragStart: () => { dragIdx.current = index; setActiveIdx(index); },
+      onDragOver: e => {
+        e.preventDefault();
+        if (dragIdx.current !== null && dragIdx.current !== index) moveItem(dragIdx.current, index);
+      },
+      onDragEnd: () => { dragIdx.current = null; setActiveIdx(null); },
+      onTouchStart: e => {
+        startY.current = e.touches[0].clientY;
+        longPressTimer.current = setTimeout(() => {
+          isDragging.current = true;
+          dragIdx.current = index;
+          setActiveIdx(index);
+          if (navigator.vibrate) navigator.vibrate(30);
+        }, 400);
+      },
+      onTouchMove: e => {
+        if (!isDragging.current) {
+          if (Math.abs(e.touches[0].clientY - startY.current) > 8) clearTimeout(longPressTimer.current);
+          return;
+        }
+        e.preventDefault();
+        const target = getRowAtY(e.touches[0].clientY);
+        if (target !== null && dragIdx.current !== null && target !== dragIdx.current) moveItem(dragIdx.current, target);
+      },
+      onTouchEnd: () => {
+        clearTimeout(longPressTimer.current);
+        isDragging.current = false;
+        dragIdx.current = null;
+        setActiveIdx(null);
+      },
+    };
+  }
+
+  return { handlers, activeIdx };
+}
+
 /* ─── Order row — handles both platform keys and custom item ids ─── */
-function OrderRow({ itemKey, index, customButtons, socials, onDragStart, onDragOver, onDragEnd }) {
+function OrderRow({ itemKey, index, customButtons, socials, dragHandlers, isActive }) {
   const platform = PLATFORM_META[itemKey];
   let label, icon, dimmed = false;
 
@@ -283,14 +359,26 @@ function OrderRow({ itemKey, index, customButtons, socials, onDragStart, onDragO
     }
   }
 
+  const h = dragHandlers(index);
   return (
-    <div draggable onDragStart={() => onDragStart(index)} onDragOver={e => onDragOver(e, index)} onDragEnd={onDragEnd}
-      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', marginBottom: '6px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none', opacity: dimmed ? 0.3 : 1 }}>
-      <span style={{ fontFamily: F, fontSize: '12px', opacity: 0.3 }}>⠿</span>
+    <div ref={h.ref} draggable={h.draggable}
+      onDragStart={h.onDragStart} onDragOver={h.onDragOver} onDragEnd={h.onDragEnd}
+      onTouchStart={h.onTouchStart} onTouchMove={h.onTouchMove} onTouchEnd={h.onTouchEnd}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '12px', padding: '14px',
+        marginBottom: '6px', userSelect: 'none', touchAction: 'none',
+        border: `1px solid ${isActive ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`,
+        background: isActive ? '#111' : '#050505',
+        cursor: 'grab', opacity: dimmed ? 0.3 : 1,
+        transform: isActive ? 'scale(1.015)' : 'scale(1)',
+        transition: 'border-color 0.12s, background 0.12s, transform 0.12s',
+      }}>
+      <span style={{ fontFamily: F, fontSize: '14px', opacity: 0.3, lineHeight: 1 }}>⠿</span>
       <span style={{ display: 'flex', alignItems: 'center', minWidth: '18px' }}>{icon}</span>
       <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1 }}>{label}</span>
-      {dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
-      {!platform && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.1em', opacity: 0.25, textTransform: 'uppercase' }}>custom</span>}
+      {isActive && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.12em', opacity: 0.5, textTransform: 'uppercase' }}>moving</span>}
+      {!isActive && dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
+      {!isActive && !platform && !dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.1em', opacity: 0.25, textTransform: 'uppercase' }}>custom</span>}
       <span style={{ fontFamily: F, fontSize: '9px', opacity: 0.2 }}>#{index + 1}</span>
     </div>
   );
@@ -315,8 +403,8 @@ export default function ArtistDashboard() {
   const [resetStatus, setResetStatus] = useState('idle');
   const [saveError, setSaveError] = useState(null);
 
-  const dragCustomIdx = useRef(null);
-  const dragOrderIdx = useRef(null);
+  const { handlers: customHandlers, activeIdx: customActiveIdx } = useTouchSort(setCustomButtons);
+  const { handlers: orderHandlers, activeIdx: orderActiveIdx } = useTouchSort(setButtonOrder);
 
   const rosterArtist = artist?.slug ? roster.find(r => r.slug === artist.slug) : null;
   const socials = rosterArtist?.socials || {};
@@ -390,23 +478,9 @@ export default function ArtistDashboard() {
     setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, type: newType } : b));
   }
 
-  /* drag custom items */
-  function onCDragStart(i) { dragCustomIdx.current = i; }
-  function onCDragOver(e, i) {
-    e.preventDefault();
-    if (dragCustomIdx.current === null || dragCustomIdx.current === i) return;
-    setCustomButtons(prev => { const a = [...prev]; const [m] = a.splice(dragCustomIdx.current, 1); a.splice(i, 0, m); dragCustomIdx.current = i; return a; });
-  }
-  function onCDragEnd() { dragCustomIdx.current = null; }
+  /* custom button drag — handled by useTouchSort hook */
 
-  /* drag order */
-  function onODragStart(i) { dragOrderIdx.current = i; }
-  function onODragOver(e, i) {
-    e.preventDefault();
-    if (dragOrderIdx.current === null || dragOrderIdx.current === i) return;
-    setButtonOrder(prev => { const a = [...prev]; const [m] = a.splice(dragOrderIdx.current, 1); a.splice(i, 0, m); dragOrderIdx.current = i; return a; });
-  }
-  function onODragEnd() { dragOrderIdx.current = null; }
+  /* drag order — handled by useTouchSort hook above */
 
   if (loading) return <div style={centered}><p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.3, color: '#f0ede8' }}>Loading</p></div>;
   if (!artist) return (
@@ -494,7 +568,7 @@ export default function ArtistDashboard() {
       <div style={{ padding: '40px 24px 0' }}>
         <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>My Page</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
           {editorTiles.map(t => (
             t.id === 'preview'
               ? <EditorTile key={t.id} icon={t.icon} label={t.label} active={false} onClick={() => setShowPreview(true)} />
@@ -531,9 +605,20 @@ export default function ArtistDashboard() {
               <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', opacity: 0.25, textAlign: 'center', padding: '16px 0' }}>No items yet — add a link or embed below</p>
             )}
 
-            {customButtons.map((item, i) => (
-              <div key={item.id} draggable onDragStart={() => onCDragStart(i)} onDragOver={e => onCDragOver(e, i)} onDragEnd={onCDragEnd}
-                style={{ marginBottom: '12px', padding: '14px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none' }}>
+            {customButtons.map((item, i) => {
+              const h = customHandlers(i);
+              return (
+              <div key={item.id} ref={h.ref} draggable={h.draggable}
+                onDragStart={h.onDragStart} onDragOver={h.onDragOver} onDragEnd={h.onDragEnd}
+                onTouchStart={h.onTouchStart} onTouchMove={h.onTouchMove} onTouchEnd={h.onTouchEnd}
+                style={{
+                  marginBottom: '12px', padding: '14px',
+                  border: `1px solid ${customActiveIdx === i ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`,
+                  background: customActiveIdx === i ? '#111' : '#050505',
+                  cursor: 'grab', userSelect: 'none', touchAction: 'none',
+                  transform: customActiveIdx === i ? 'scale(1.01)' : 'scale(1)',
+                  transition: 'border-color 0.12s, background 0.12s, transform 0.12s',
+                }}>
 
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', opacity: 0.3 }}>
                   <span style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.2em' }}>⠿ Drag</span>
@@ -589,7 +674,7 @@ export default function ArtistDashboard() {
                   </button>
                 </div>
               </div>
-            ))}
+            );})}
 
             {/* add buttons */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px', marginBottom: '16px' }}>
@@ -623,7 +708,7 @@ export default function ArtistDashboard() {
             {fullOrderList.map((key, i) => (
               <OrderRow key={key} itemKey={key} index={i}
                 customButtons={customButtons} socials={socials}
-                onDragStart={onODragStart} onDragOver={onODragOver} onDragEnd={onODragEnd} />
+                dragHandlers={orderHandlers} isActive={orderActiveIdx === i} />
             ))}
             <div style={{ marginTop: '12px' }}>
               <ActionBtn onClick={saveButtons} disabled={btnStatus === 'saving'}>
