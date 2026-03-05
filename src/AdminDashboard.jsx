@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase } from "./supabaseClient";
+import { supabase } from "./supabase";
 import linkMap from "./linkMap";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
