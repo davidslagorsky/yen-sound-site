@@ -56,18 +56,6 @@ function Textarea({ value, onChange, placeholder, rows = 4 }) {
   );
 }
 
-/* ── section wrapper ── */
-function Section({ title, children }) {
-  return (
-    <div style={{ borderTop: '1px solid #1a1a1a', padding: '32px 24px' }}>
-      <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '24px', textAlign: 'center' }}>
-        {title}
-      </p>
-      {children}
-    </div>
-  );
-}
-
 /* ── save button ── */
 function SaveBtn({ onClick, status }) {
   const label = status === 'saving' ? 'Saving...' : status === 'saved' ? '✓ Saved' : status === 'error' ? 'Error' : 'Save';
@@ -383,19 +371,19 @@ function EmbedPreview({ url }) {
   if (spotify) {
     const [, type, id] = spotify;
     const src = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
-    return <iframe src={src} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style={{ display: 'block' }} />;
+    return <iframe src={src} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify embed preview" style={{ display: 'block' }} />;
   }
   if (youtube) {
     const src = `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1`;
     return (
       <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-        <iframe src={src} frameBorder="0" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <iframe src={src} frameBorder="0" allowFullScreen title="YouTube embed preview" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
       </div>
     );
   }
   if (soundcloud) {
     const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false`;
-    return <iframe width="100%" height="166" frameBorder="0" src={src} style={{ display: 'block' }} />;
+    return <iframe width="100%" height="166" frameBorder="0" src={src} title="SoundCloud embed preview" style={{ display: 'block' }} />;
   }
   return <p style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '10px', opacity: 0.4 }}>Paste a Spotify, YouTube, or SoundCloud URL to preview</p>;
 }
