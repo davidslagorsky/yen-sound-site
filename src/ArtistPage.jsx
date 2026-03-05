@@ -7,21 +7,31 @@ import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icon
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-const ICON_COMPONENTS = {
-  spotify: <FaSpotify size={17} />,
-  apple: <FaApple size={17} />,
-  youtube: <FaYoutube size={17} />,
-  instagram: <FaInstagram size={17} />,
-  tiktok: <FaTiktok size={17} />,
+const DEFAULT_ORDER = ["spotify","appleMusic","youtube","tiktok","instagram","press"];
+
+const PLATFORM_ICON = {
+  spotify:    <FaSpotify size={17} />,
+  appleMusic: <FaApple size={17} />,
+  youtube:    <FaYoutube size={17} />,
+  tiktok:     <FaTiktok size={17} />,
+  instagram:  <FaInstagram size={17} />,
+};
+const PLATFORM_LABEL = {
+  spotify: "SPOTIFY", appleMusic: "APPLE MUSIC", youtube: "YOUTUBE",
+  tiktok: "TIKTOK", instagram: "INSTAGRAM", press: "PRESS",
+};
+const CUSTOM_ICON_MAP = {
+  link: "→", spotify: "◎", apple: "◈", youtube: "▶",
+  instagram: "◻", tiktok: "◇", soundcloud: "◉", bandcamp: "◆",
 };
 
 function buildEmbedSrc(url = "") {
   const spotify = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
   const youtube = url.match(/(?:v=|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
-  const soundcloud = url.includes("soundcloud.com");
+  const sc = url.includes("soundcloud.com");
   if (spotify) return { type: "spotify", src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
   if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1` };
-  if (soundcloud) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false` };
+  if (sc) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false` };
   return null;
 }
 
@@ -30,7 +40,7 @@ export default function ArtistPage() {
   const navigate = useNavigate();
   const [showAllReleases, setShowAllReleases] = useState(false);
   const [pressPosts, setPressPosts] = useState([]);
-  const [artistPageData, setArtistPageData] = useState(null); // from supabase artists table
+  const [pageData, setPageData] = useState(null); // from supabase artists table
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -40,8 +50,7 @@ export default function ArtistPage() {
   const allNames = useMemo(() => {
     if (!artist) return [];
     return [artistName, ...(artist.aliases || [])]
-      .filter(Boolean)
-      .map((n) => n.trim().toLowerCase());
+      .filter(Boolean).map((n) => n.trim().toLowerCase());
   }, [artist, artistName]);
 
   const artistReleases = useMemo(() => {
@@ -56,7 +65,6 @@ export default function ArtistPage() {
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [artist, allNames]);
 
-  /* fetch press + supabase artist page data */
   useEffect(() => {
     if (!artist) return;
 
@@ -77,18 +85,17 @@ export default function ArtistPage() {
       setPressPosts(matched);
     }
 
-    async function fetchArtistPageData() {
-      // match by slug column in artists table
+    async function fetchPageData() {
       const { data } = await supabase
         .from("artists")
-        .select("bio, custom_buttons, embed_url, slug")
+        .select("bio, custom_buttons, embed_url, button_order")
         .eq("slug", slug)
         .single();
-      if (data) setArtistPageData(data);
+      if (data) setPageData(data);
     }
 
     fetchPress();
-    fetchArtistPageData();
+    fetchPageData();
   }, [artist, artistName, slug]);
 
   const LIMIT = 12;
@@ -101,45 +108,28 @@ export default function ArtistPage() {
   );
 
   const socials = artist.socials || {};
+  const buttonOrder = pageData?.button_order?.length ? pageData.button_order : DEFAULT_ORDER;
+  const bio = pageData?.bio || "";
+  const customButtons = (pageData?.custom_buttons || []).filter(b => b.label && b.url);
+  const embedData = pageData?.embed_url ? buildEmbedSrc(pageData.embed_url) : null;
 
-  const platforms = [
-    socials.spotify && socials.spotify !== "PLACEHOLDER" && { label: "SPOTIFY", icon: <FaSpotify size={17} />, url: socials.spotify },
-    socials.appleMusic && socials.appleMusic !== "PLACEHOLDER" && { label: "APPLE MUSIC", icon: <FaApple size={17} />, url: socials.appleMusic },
-    socials.youtube && socials.youtube !== "PLACEHOLDER" && { label: "YOUTUBE", icon: <FaYoutube size={17} />, url: socials.youtube },
-    socials.tiktok && socials.tiktok !== "PLACEHOLDER" && { label: "TIKTOK", icon: <FaTiktok size={17} />, url: socials.tiktok },
-    socials.instagram && socials.instagram !== "PLACEHOLDER" && { label: "INSTAGRAM", icon: <FaInstagram size={17} />, url: socials.instagram },
-    pressPosts.length > 0 && { label: "PRESS", url: `/press`, internal: true },
-  ].filter(Boolean);
-
-  /* custom buttons from dashboard */
-  const customButtons = (artistPageData?.custom_buttons || []).filter(b => b.label && b.url);
-
-  /* embed */
-  const embedData = artistPageData?.embed_url ? buildEmbedSrc(artistPageData.embed_url) : null;
-
-  /* bio */
-  const bio = artistPageData?.bio || "";
+  /* build ordered platform buttons */
+  const platforms = buttonOrder.map(key => {
+    if (key === "press") {
+      return pressPosts.length > 0 ? { key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
+    }
+    const url = socials[key];
+    if (!url || url === "PLACEHOLDER") return null;
+    return { key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICON[key], url, internal: false };
+  }).filter(Boolean);
 
   const btnStyle = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "12px",
-    width: "calc(100% - 48px)",
-    margin: "0 24px 10px",
-    padding: "18px 24px",
-    border: "2px solid rgba(240,237,232,0.8)",
-    background: "transparent",
-    fontFamily: F,
-    fontSize: "11px",
-    fontWeight: 700,
-    letterSpacing: "0.3em",
-    textTransform: "uppercase",
-    color: "#f0ede8",
-    textDecoration: "none",
-    cursor: "pointer",
-    transition: "background 0.15s",
-    boxSizing: "border-box",
+    display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+    width: "calc(100% - 48px)", margin: "0 24px 10px", padding: "18px 24px",
+    border: "2px solid rgba(240,237,232,0.8)", background: "transparent",
+    fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.3em",
+    textTransform: "uppercase", color: "#f0ede8", textDecoration: "none",
+    cursor: "pointer", transition: "background 0.15s", boxSizing: "border-box",
   };
 
   return (
@@ -148,12 +138,8 @@ export default function ArtistPage() {
       {/* ── Spinning logo + marquee ── */}
       <div style={{ paddingTop: "36px", paddingBottom: "0" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-          <img
-            src="/spinning yen logo white.gif"
-            alt="YEN SOUND"
-            className="yen-spin"
-            style={{ width: "52px", height: "52px", opacity: 0.55 }}
-          />
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin"
+            style={{ width: "52px", height: "52px", opacity: 0.55 }} />
         </div>
         <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
           <div style={{ display: "inline-flex", gap: "0", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
@@ -164,13 +150,10 @@ export default function ArtistPage() {
         </div>
       </div>
 
-      {/* ── Full-bleed square cover ── */}
+      {/* ── Full-bleed cover ── */}
       <div style={{ width: "100%", marginTop: "24px" }}>
-        <img
-          src={artist.image}
-          alt={artistName}
-          style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }}
-        />
+        <img src={artist.image} alt={artistName}
+          style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
       </div>
 
       {/* ── Name + bio ── */}
@@ -178,62 +161,60 @@ export default function ArtistPage() {
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
-        {bio ? (
-          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 8px" }}>
+        {bio && (
+          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>
             {bio}
           </p>
-        ) : null}
-        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35, marginTop: bio ? "16px" : "0" }}>
+        )}
+        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
           Choose music service
         </p>
       </div>
 
-      {/* ── Platform buttons ── */}
+      {/* ── Platform buttons (ordered) ── */}
       <div style={{ padding: "24px 0 16px" }}>
         {platforms.map((p, i) =>
           p.internal ? (
             <Link key={i} to={p.url} style={btnStyle}
               onMouseOver={e => e.currentTarget.style.background = "#111"}
               onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon && p.icon}
-              {p.label}
+              {p.icon} {p.label}
             </Link>
           ) : (
             <a key={i} href={p.url} target="_blank" rel="noreferrer" style={btnStyle}
               onMouseOver={e => e.currentTarget.style.background = "#111"}
               onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon && p.icon}
-              {p.label}
+              {p.icon} {p.label}
             </a>
           )
         )}
 
-        {/* ── Custom buttons from dashboard ── */}
+        {/* ── Custom buttons ── */}
         {customButtons.map((btn, i) => (
-          <a key={`custom-${i}`} href={btn.url} target="_blank" rel="noreferrer" style={btnStyle}
+          <a key={`c${i}`} href={btn.url} target="_blank" rel="noreferrer" style={btnStyle}
             onMouseOver={e => e.currentTarget.style.background = "#111"}
             onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-            {ICON_COMPONENTS[btn.icon] || null}
+            <span style={{ opacity: 0.8 }}>{CUSTOM_ICON_MAP[btn.icon] || "→"}</span>
             {btn.label.toUpperCase()}
           </a>
         ))}
       </div>
 
-      {/* ── Embed (from dashboard) ── */}
+      {/* ── Embed ── */}
       {embedData && (
         <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
           {embedData.type === "youtube" ? (
             <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-              <iframe src={embedData.src} frameBorder="0" allowFullScreen title="Video embed"
+              <iframe src={embedData.src} title="Video embed" frameBorder="0" allowFullScreen
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
             </div>
           ) : embedData.type === "spotify" ? (
             <iframe src={embedData.src} width="100%" height="152" frameBorder="0" title="Music embed"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy" style={{ display: "block" }} />
-          ) : embedData.type === "soundcloud" ? (
+          ) : (
             <iframe width="100%" height="166" frameBorder="0" src={embedData.src} title="SoundCloud embed" style={{ display: "block" }} />
-          ) : null}
+          )}
         </div>
       )}
 
@@ -243,7 +224,7 @@ export default function ArtistPage() {
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
             Releases · {artistReleases.length}
           </p>
-          <div className="artist-releases-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "28px 16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "28px 16px" }}>
             {visible.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
                 <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "10px" }}>
@@ -294,13 +275,9 @@ export default function ArtistPage() {
                 <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>
                   {formatDate(p.date)}
                 </p>
-                <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>
-                  {p.title}
-                </p>
+                <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>{p.title}</p>
                 {p.excerpt && (
-                  <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {p.excerpt}
-                  </p>
+                  <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.excerpt}</p>
                 )}
               </div>
             </Link>
@@ -317,14 +294,11 @@ export default function ArtistPage() {
           ← Roster
         </button>
       </div>
-
     </div>
   );
 }
 
 function formatDate(d) {
   if (!d) return "";
-  return new Date(d + "T00:00:00").toLocaleDateString("he-IL", {
-    day: "2-digit", month: "short", year: "numeric",
-  });
+  return new Date(d + "T00:00:00").toLocaleDateString("he-IL", { day: "2-digit", month: "short", year: "numeric" });
 }
