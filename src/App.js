@@ -388,8 +388,9 @@ function SlugRedirect({ releases }) {
       const { data: slugRow } = await supabase
         .from("slugs").select("destination").eq("slug", maybeSlug).single();
       if (slugRow?.destination) {
-        // external URL — do a hard redirect
-        window.location.replace(slugRow.destination);
+        // external URL — ensure protocol then hard redirect
+        const dest = /^https?:\/\//i.test(slugRow.destination) ? slugRow.destination : `https://${slugRow.destination}`;
+        window.location.replace(dest);
         return;
       }
 
@@ -461,7 +462,7 @@ function App() {
             <Route path="/001" element={<Capsule001 />} />
             <Route path="/release/:slug" element={<ReleasePage />} />
             <Route path="/rsvp" element={<RSVP />} />
-            <Route path="/sigh" element={<Sigh />} />
+            <Route path="/sigh" element={<Navigate to="/artist/sigh" replace />} />
             <Route path="/voice" element={<VoiceLessons />} />
             <Route path="/press" element={<Press />} />
             <Route path="/press/:slug" element={<PostPage />} />
