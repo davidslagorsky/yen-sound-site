@@ -1,95 +1,63 @@
-// src/About.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import Footer from "./Footer";
 
-const About = ({ theme, toggleTheme }) => (
-  <div
-    style={{
-      textAlign: "center",
-      fontFamily: "Arial, sans-serif",
-      padding: "40px",
-      backgroundColor: theme === "dark" ? "#000" : "#fff",
-      color: theme === "dark" ? "#fff" : "#000",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "space-between",
-    }}
-  >
-    <div>
-      <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: "bold" }}>
-        About Yen Sound
-      </h1>
+const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-      <p
-        style={{
-          fontSize: "clamp(1rem, 2.5vw, 1.5rem)",
-          maxWidth: "600px",
-          margin: "20px auto",
-        }}
-      >
-        Yen Sound is a boutique PR & distribution label based in Tel Aviv.
-        We craft tailored strategies, design compelling visuals, and oversee
-        production and digital presence — all in service of bold,
-        boundary-pushing artistry.
+const About = () => (
+  <div style={{
+    backgroundColor: "#000",
+    color: "#f0ede8",
+    minHeight: "100vh",
+    padding: "80px 40px",
+    maxWidth: "680px",
+    margin: "0 auto",
+    fontFamily: F,
+  }}>
+    <p style={{ fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "48px" }}>
+      About
+    </p>
+
+    <h1 style={{ fontSize: "clamp(36px, 6vw, 64px)", fontWeight: 700, letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "40px" }}>
+      Yen Sound
+    </h1>
+
+    <p style={{ fontSize: "16px", fontWeight: 300, lineHeight: 1.85, opacity: 0.72, marginBottom: "24px" }}>
+      Yen Sound is a boutique PR &amp; distribution label based in Tel Aviv.
+      We craft tailored strategies, design compelling visuals, and oversee
+      production and digital presence — all in service of bold,
+      boundary-pushing artistry.
+    </p>
+
+    <p style={{ fontSize: "16px", fontWeight: 300, lineHeight: 1.85, opacity: 0.72, marginBottom: "64px" }}>
+      We work closely with our artists at every stage — from the first demo
+      to global release — building the kind of long-term presence that outlasts
+      any single record.
+    </p>
+
+    <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "40px" }}>
+      <p style={{ fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "16px" }}>
+        Contact
       </p>
-
-      <div
-        style={{
-          marginTop: "40px",
-          fontSize: "clamp(1rem, 2.5vw, 1.2rem)",
-        }}
-      >
-        <p>
-          For contact:
-          <br />
-          office@yensound.com 
-          <br />
-        
-          <a
-            href="https://instagram.com/yen.sound"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: theme === "dark" ? "#fff" : "#000",
-              textDecoration: "underline",
-            }}
-          >
-            Instagram
-          </a>
-        </p>
-      </div>
-
-      <Link
-        to="/"
-        style={{
-          color: theme === "dark" ? "#fff" : "#000",
-          textDecoration: "underline",
-          fontSize: "clamp(1rem, 3vw, 1.2rem)",
-        }}
-      >
-        ← Back to Home
-      </Link>
-
-      <div style={{ marginTop: "30px" }}>
-        <button
-          onClick={toggleTheme}
-          style={{
-            width: "1px",
-            height: "1px",
-            borderRadius: "1%",
-            border: "1px solid",
-            borderColor: theme === "dark" ? "#fff" : "#000",
-            backgroundColor: theme === "dark" ? "#fff" : "#000",
-            cursor: "pointer",
-          }}
-          aria-label="Toggle Theme"
-        />
-      </div>
+      <a href="mailto:office@yensound.com" style={{ display: "block", fontSize: "15px", color: "#f0ede8", textDecoration: "none", opacity: 0.7, marginBottom: "10px", transition: "opacity 0.2s" }}
+        onMouseOver={e => e.currentTarget.style.opacity = 1}
+        onMouseOut={e => e.currentTarget.style.opacity = 0.7}>
+        office@yensound.com
+      </a>
+      <a href="https://instagram.com/yen.sound" target="_blank" rel="noopener noreferrer"
+        style={{ display: "block", fontSize: "15px", color: "#f0ede8", textDecoration: "none", opacity: 0.7, transition: "opacity 0.2s" }}
+        onMouseOver={e => e.currentTarget.style.opacity = 1}
+        onMouseOut={e => e.currentTarget.style.opacity = 0.7}>
+        Instagram ↗
+      </a>
     </div>
 
-    <Footer />
+    <div style={{ marginTop: "64px" }}>
+      <Link to="/" style={{ fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.35, textDecoration: "none", transition: "opacity 0.2s" }}
+        onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+        onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
+        ← Home
+      </Link>
+    </div>
   </div>
 );
 
