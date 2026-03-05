@@ -227,14 +227,13 @@ const Releases = ({ releases }) => {
             </p>
           )}
 
-          <div style={{
+          <div className="releases-grid" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
             gap: "48px 32px",
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                {/* Square cover */}
                 <div style={{
                   width: "100%", aspectRatio: "1", overflow: "hidden",
                   background: "#111", marginBottom: "14px",
@@ -250,7 +249,6 @@ const Releases = ({ releases }) => {
                     onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
                   />
                 </div>
-                {/* Info — year0001 style */}
                 <p style={{
                   fontFamily: F, fontSize: "10px", letterSpacing: "0.15em",
                   textTransform: "uppercase", opacity: 0.45, marginBottom: "4px",
@@ -269,6 +267,20 @@ const Releases = ({ releases }) => {
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 600px) {
+          .releases-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 32px 12px !important;
+          }
+        }
+        @media (max-width: 600px) {
+          .releases-grid > * > div:first-child {
+            margin-bottom: 10px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
