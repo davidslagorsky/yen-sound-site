@@ -13,31 +13,50 @@ body {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  cursor: none;
 }
 
 html { scroll-behavior: smooth; }
 
-/* ── CUSTOM CURSOR ── */
+/* ── CUSTOM + CURSOR (desktop only) ── */
+@media (hover: hover) {
+  body { cursor: none; }
+  a, button, [role="button"], input, select, textarea, label { cursor: none; }
+}
+
 .yen-cursor {
   position: fixed;
   top: 0; left: 0;
-  width: 7px; height: 7px;
-  background: #f0ede8;
-  border-radius: 50%;
+  width: 20px; height: 20px;
   pointer-events: none;
   z-index: 99999;
   transform: translate(-50%, -50%);
-  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   mix-blend-mode: difference;
 }
-.yen-cursor.hovering {
-  width: 32px;
-  height: 32px;
-  opacity: 0.5;
+.yen-cursor::before,
+.yen-cursor::after {
+  content: '';
+  position: absolute;
+  background: #f0ede8;
+  border-radius: 1px;
 }
-a, button, [role="button"], input, select, textarea, label {
-  cursor: none;
+/* horizontal bar */
+.yen-cursor::before {
+  width: 20px; height: 1px;
+  top: 50%; left: 0;
+  transform: translateY(-50%);
+}
+/* vertical bar */
+.yen-cursor::after {
+  width: 1px; height: 20px;
+  left: 50%; top: 0;
+  transform: translateX(-50%);
+}
+/* hovering interactive element */
+.yen-cursor.hovering {
+  transform: translate(-50%, -50%) scale(1.5);
+  opacity: 0.5;
 }
 
 /* ── GRAIN OVERLAY ── */
