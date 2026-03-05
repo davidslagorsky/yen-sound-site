@@ -100,8 +100,8 @@ function ShareButton({ release }) {
   }
   return (
     <button onClick={handle} style={platformBtn}
-      onMouseOver={e => e.currentTarget.style.borderColor = "#f0ede8"}
-      onMouseOut={e => e.currentTarget.style.borderColor = "#222"}>
+      onMouseOver={e => e.currentTarget.style.opacity = 0.6}
+      onMouseOut={e => e.currentTarget.style.opacity = 1}>
       {copied ? <FiCheck size={14} /> : <FiShare2 size={14} />}
       <span>{copied ? "Copied" : "Share"}</span>
     </button>
@@ -134,7 +134,7 @@ function SocialRow({ socials = {} }) {
   );
 }
 
-/* ── per-artist social rows (socialsByArtist) ── */
+/* ── per-artist social rows ── */
 function ArtistSocialSection({ release }) {
   const hasByArtist = Array.isArray(release.socialsByArtist) && release.socialsByArtist.length > 0;
   const hasGeneral = release.socials && Object.keys(release.socials).length > 0;
@@ -199,14 +199,12 @@ export default function ReleasePage() {
   const isLocked = !!(unlockAt && new Date() < unlockAt);
   useSecondTicker(isLocked);
 
-  /* ── loading ── */
   if (loading) return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.3 }}>Loading</p>
     </div>
   );
 
-  /* ── not found ── */
   if (!release) return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "24px" }}>
       <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4 }}>Release not found</p>
@@ -222,7 +220,6 @@ export default function ReleasePage() {
   const pageDescription = `Listen to ${release.title} by ${release.artist} on Yen Sound.`;
   const pageImage = release.cover || "https://yensound.com/logo.png";
 
-  /* ── background config ── */
   const bgCfg = release.background || {};
   const bgUrl = isReal(bgCfg.url) ? bgCfg.url : null;
   const bgOpacity = typeof bgCfg.opacity === "number" ? bgCfg.opacity : 0.22;
@@ -232,20 +229,17 @@ export default function ReleasePage() {
   const prefersReduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   const showBg = !!(bgUrl && !(isGif && prefersReduced));
 
-  /* ── embeds ── */
   const embedSpotify = isReal(release.embedSpotify) ? release.embedSpotify : null;
   const embedYoutubeId = isReal(release.embedYoutubeId) ? release.embedYoutubeId : null;
   const youtubeId = embedYoutubeId || (isReal(release.youtubeUrl) ? extractYouTubeId(release.youtubeUrl) : null);
   const ytSrc = youtubeId ? buildYouTubeEmbedSrc(youtubeId, typeof window !== "undefined" ? window.location.origin : undefined) : null;
 
-  /* ── platform links ── */
   const hasSpotify = isReal(release.spotifyUrl);
   const hasApple = isReal(release.appleUrl);
   const hasYouTube = isReal(release.youtubeUrl);
   const hasSmartLink = isReal(release.smartLink);
   const hasAnyPlatform = hasSpotify || hasApple || hasYouTube;
 
-  /* ── pre-release / locked ── */
   if (isLocked) {
     const parts = getCountdownParts(unlockAt);
     return (
@@ -279,7 +273,6 @@ export default function ReleasePage() {
     );
   }
 
-  /* ══ NORMAL RELEASE VIEW ══ */
   return (
     <div style={{ backgroundColor: "#000", color: "#f0ede8", minHeight: "100vh", fontFamily: F, position: "relative" }}>
       <Helmet>
@@ -295,7 +288,6 @@ export default function ReleasePage() {
         <meta name="twitter:image" content={pageImage} />
       </Helmet>
 
-      {/* Optional background */}
       {showBg && (
         <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: 0, backgroundImage: `url("${bgUrl}")`, backgroundSize: "cover", backgroundPosition: "center", opacity: bgOpacity, filter: bgBlur ? `blur(${bgBlur}px)` : undefined }} />
       )}
@@ -303,21 +295,23 @@ export default function ReleasePage() {
         <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: 1, background: "#000", opacity: bgDarken }} />
       )}
 
-      {/* Centered column */}
       <div style={{ position: "relative", zIndex: 2, maxWidth: "480px", margin: "0 auto", paddingTop: "60px" }}>
 
-        {/* Back link */}
-        <div style={{ padding: "24px 24px 0", textAlign: "left" }}>
+        {/* Spinning logo + back */}
+        <div style={{ padding: "24px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={() => navigate("/releases")}
             style={{ background: "none", border: "none", color: "#f0ede8", cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, padding: 0, transition: "opacity 0.2s" }}
             onMouseOver={e => e.currentTarget.style.opacity = 0.8}
             onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
             ← Releases
           </button>
+          <img src="/spinning yen logo white.gif" alt="Yen Sound"
+            className="yen-spin"
+            style={{ width: "28px", height: "28px", opacity: 0.45 }} />
         </div>
 
-        {/* Cover art — full width, square */}
-        <div style={{ width: "100%", marginTop: "20px" }}>
+        {/* Cover — greyscale clears on hover */}
+        <div className="yen-cover" style={{ width: "100%", marginTop: "20px" }}>
           <img src={release.cover} alt={release.title}
             style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover" }} />
         </div>
@@ -332,7 +326,7 @@ export default function ReleasePage() {
           </p>
         </div>
 
-        {/* Platform buttons — each separated by border-top line, exactly like the reference */}
+        {/* Platform buttons */}
         <div>
           {hasSpotify && (
             <a href={release.spotifyUrl} target="_blank" rel="noreferrer" style={platformBtn}
@@ -364,7 +358,7 @@ export default function ReleasePage() {
           )}
         </div>
 
-        {/* YouTube video embed */}
+        {/* YouTube embed */}
         {ytSrc && (
           <div style={{ borderTop: "1px solid #1a1a1a" }}>
             <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
