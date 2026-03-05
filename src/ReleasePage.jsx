@@ -310,8 +310,8 @@ export default function ReleasePage() {
             style={{ width: "28px", height: "28px", opacity: 0.45 }} />
         </div>
 
-        {/* Cover — greyscale clears on hover */}
-        <div className="yen-cover" style={{ width: "100%", marginTop: "20px" }}>
+        {/* Cover — full color */}
+        <div style={{ width: "100%", marginTop: "20px" }}>
           <img src={release.cover} alt={release.title}
             style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover" }} />
         </div>
