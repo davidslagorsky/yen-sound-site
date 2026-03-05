@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -28,28 +28,46 @@ import { useReleases } from "./hooks/useReleases";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-/* ---------------- Cursor Dot ---------------- */
-function CursorDot() {
-  const dotRef = React.useRef(null);
+/* ---------------- + Cursor (desktop only) ---------------- */
+function CursorPlus() {
+  const cursorRef = React.useRef(null);
+
   useEffect(() => {
-    const dot = dotRef.current;
-    if (!dot) return;
+    if (window.matchMedia("(hover: none)").matches) return;
+
+    const el = cursorRef.current;
+    if (!el) return;
+
+    let visible = false;
+
     const move = (e) => {
-      dot.style.left = e.clientX + "px";
-      dot.style.top  = e.clientY + "px";
+      el.style.left = e.clientX + "px";
+      el.style.top  = e.clientY + "px";
+      if (!visible) { el.style.opacity = "1"; visible = true; }
     };
-    const over = (e) => { if (e.target.closest("a, button, [role=button]")) dot.classList.add("hovering"); };
-    const out  = () => dot.classList.remove("hovering");
+    const over = (e) => {
+      if (e.target.closest("a, button, [role=button]")) el.classList.add("hovering");
+    };
+    const out = () => el.classList.remove("hovering");
+    const leave = () => { el.style.opacity = "0"; visible = false; };
+    const enter = () => { if (visible) el.style.opacity = "1"; };
+
     window.addEventListener("mousemove", move);
     document.addEventListener("mouseover", over);
     document.addEventListener("mouseout", out);
+    document.addEventListener("mouseleave", leave);
+    document.addEventListener("mouseenter", enter);
+
     return () => {
       window.removeEventListener("mousemove", move);
       document.removeEventListener("mouseover", over);
       document.removeEventListener("mouseout", out);
+      document.removeEventListener("mouseleave", leave);
+      document.removeEventListener("mouseenter", enter);
     };
   }, []);
-  return <div ref={dotRef} className="yen-cursor" aria-hidden />;
+
+  return <div ref={cursorRef} className="yen-cursor" aria-hidden />;
 }
 
 /* ---------------- Grain Overlay ---------------- */
@@ -83,9 +101,11 @@ function Marquee() {
 /* ---------------- Home ---------------- */
 const Home = ({ releases }) => {
   const videoRef = React.useRef(null);
-  const latest = releases && releases.length > 0
-    ? [...releases].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
-    : null;
+
+  const latest5 = useMemo(() => {
+    if (!releases || releases.length === 0) return [];
+    return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  }, [releases]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -121,25 +141,32 @@ const Home = ({ releases }) => {
         </p>
       </div>
 
-      {/* Latest release */}
-      {latest && (
+      {/* Latest releases — last 5, desaturated thumbnails */}
+      {latest5.length > 0 && (
         <div style={{ borderTop: "1px solid #1a1a1a", padding: "32px 40px" }}>
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "20px" }}>
-            Latest Release
+            Latest Releases
           </p>
-          <Link to={`/release/${latest.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "inline-flex", alignItems: "center", gap: "16px" }}>
-            <div className="yen-cover" style={{ width: "clamp(48px, 8vw, 72px)", aspectRatio: "1", overflow: "hidden", flexShrink: 0 }}>
-              <img src={latest.cover} alt={latest.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            </div>
-            <div>
-              <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "3px" }}>
-                {latest.artist}
-              </p>
-              <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>
-                {latest.title}
-              </p>
-            </div>
-          </Link>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {latest5.map((r, i) => (
+              <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "flex", alignItems: "center", gap: "14px" }}>
+                <div className="yen-cover" style={{ width: "48px", height: "48px", overflow: "hidden", flexShrink: 0 }}>
+                  <img src={r.cover} alt={r.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "2px" }}>
+                    {r.artist}
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {r.title}
+                  </p>
+                </div>
+                <span style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.1em", opacity: 0.25, flexShrink: 0 }}>
+                  {r.date?.slice(0, 4)}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
@@ -157,6 +184,20 @@ const Releases = ({ releases }) => {
   const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [filteredFromURL, setFilteredFromURL] = useState(null);
+  const [dotLeft, setDotLeft] = useState(0);
+  const filterRefs = useRef({});
+
+  const TYPE_FILTERS = ["All", "Album", "Single"];
+
+  useEffect(() => {
+    const activeKey = showRoster ? "__roster__" : filter;
+    const el = filterRefs.current[activeKey];
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const parentRect = el.offsetParent?.getBoundingClientRect() || { left: 0 };
+      setDotLeft(rect.left - parentRect.left + rect.width / 2 - 2.5);
+    }
+  }, [filter, showRoster]);
 
   const allArtists = useMemo(() => {
     const names = new Set();
@@ -192,74 +233,102 @@ const Releases = ({ releases }) => {
       });
   }, [releases, filter, artistFilter]);
 
-  const btnBase = {
+  const btnStyle = (active) => ({
     fontFamily: F,
     fontSize: "10px",
-    fontWeight: 400,
-    letterSpacing: "0.2em",
+    fontWeight: active ? 700 : 400,
+    letterSpacing: "0.22em",
     textTransform: "uppercase",
-    padding: "8px 16px",
-    border: "1px solid #2a2a2a",
+    padding: "6px 4px",
+    border: "none",
     background: "transparent",
     color: "#f0ede8",
+    opacity: active ? 1 : 0.35,
     cursor: "pointer",
-    transition: "all 0.2s",
-  };
-  const btnActive = { ...btnBase, background: "#f0ede8", color: "#000", borderColor: "#f0ede8" };
+    transition: "opacity 0.2s",
+  });
 
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
 
-      <div style={{
-        maxWidth: "1100px", margin: "0 auto", padding: "28px 40px",
-        display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center",
-        borderBottom: "1px solid #1a1a1a", position: "relative",
-      }}>
-        {["All", "Album", "Single"].map((t) => (
-          <button key={t}
-            onClick={() => { setFilter(t); setArtistFilter("All"); setArtistDropdownOpen(false); setShowRoster(false); setFilteredFromURL(null); }}
-            style={filter === t && !showRoster ? btnActive : btnBase}
-          >{t}</button>
-        ))}
+      {/* Filter bar */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "28px 40px 0", borderBottom: "1px solid #1a1a1a" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "center", position: "relative", paddingBottom: "18px" }}>
 
-        <button onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
-          style={artistFilter !== "All" ? btnActive : btnBase}>
-          {artistFilter === "All" ? "Artists ▾" : artistFilter + " ▾"}
-        </button>
-
-        <button onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
-          style={showRoster ? btnActive : btnBase}>
-          Roster
-        </button>
-
-        <Link to="/artist-login" style={{ textDecoration: "none" }}>
-          <button style={btnBase}
-            onMouseOver={e => { e.currentTarget.style.background = "#f0ede8"; e.currentTarget.style.color = "#000"; }}
-            onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#f0ede8"; }}>
-            Artist Login
-          </button>
-        </Link>
-
-        {artistDropdownOpen && (
+          {/* Sliding dot */}
           <div style={{
-            position: "absolute", top: "calc(100% + 1px)", left: "40px",
-            background: "#000", border: "1px solid #222",
-            padding: "8px 0", zIndex: 20, minWidth: "200px",
-            maxHeight: "260px", overflowY: "auto",
-          }}>
-            <button onClick={() => { setArtistFilter("All"); setFilteredFromURL(null); setArtistDropdownOpen(false); }}
-              style={{ ...btnBase, display: "block", width: "100%", textAlign: "left", border: "none", borderRadius: 0, padding: "10px 20px" }}>
-              All Artists
+            position: "absolute",
+            bottom: "6px",
+            left: dotLeft,
+            width: "5px",
+            height: "5px",
+            borderRadius: "50%",
+            background: "#f0ede8",
+            transition: "left 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
+            pointerEvents: "none",
+          }} />
+
+          {TYPE_FILTERS.map((t) => (
+            <button
+              key={t}
+              ref={el => filterRefs.current[t] = el}
+              onClick={() => { setFilter(t); setArtistFilter("All"); setArtistDropdownOpen(false); setShowRoster(false); setFilteredFromURL(null); }}
+              style={btnStyle(filter === t && !showRoster)}
+              onMouseOver={e => { if (!(filter === t && !showRoster)) e.currentTarget.style.opacity = 0.7; }}
+              onMouseOut={e => { if (!(filter === t && !showRoster)) e.currentTarget.style.opacity = 0.35; }}
+            >{t}</button>
+          ))}
+
+          {/* Artist dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
+              style={btnStyle(artistFilter !== "All")}
+              onMouseOver={e => { if (artistFilter === "All") e.currentTarget.style.opacity = 0.7; }}
+              onMouseOut={e => { if (artistFilter === "All") e.currentTarget.style.opacity = 0.35; }}
+            >
+              {artistFilter === "All" ? "Artists ▾" : artistFilter + " ▾"}
             </button>
-            {allArtists.map((a) => (
-              <button key={a}
-                onClick={() => { setArtistFilter(a); setFilteredFromURL(a); setArtistDropdownOpen(false); setShowRoster(false); }}
-                style={{ ...btnBase, display: "block", width: "100%", textAlign: "left", border: "none", borderRadius: 0, padding: "10px 20px" }}>
-                {a}
-              </button>
-            ))}
+
+            {artistDropdownOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", left: 0,
+                background: "#000", border: "1px solid #1a1a1a",
+                padding: "8px 0", zIndex: 20, minWidth: "180px",
+                maxHeight: "260px", overflowY: "auto",
+              }}>
+                <button onClick={() => { setArtistFilter("All"); setFilteredFromURL(null); setArtistDropdownOpen(false); }}
+                  style={{ ...btnStyle(false), display: "block", width: "100%", textAlign: "left", padding: "10px 20px" }}>
+                  All Artists
+                </button>
+                {allArtists.map((a) => (
+                  <button key={a}
+                    onClick={() => { setArtistFilter(a); setFilteredFromURL(a); setArtistDropdownOpen(false); setShowRoster(false); }}
+                    style={{ ...btnStyle(artistFilter === a), display: "block", width: "100%", textAlign: "left", padding: "10px 20px" }}>
+                    {a}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          <button
+            ref={el => filterRefs.current["__roster__"] = el}
+            onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
+            style={btnStyle(showRoster)}
+            onMouseOver={e => { if (!showRoster) e.currentTarget.style.opacity = 0.7; }}
+            onMouseOut={e => { if (!showRoster) e.currentTarget.style.opacity = 0.35; }}
+          >Roster</button>
+
+          <Link to="/artist-login" style={{ textDecoration: "none" }}>
+            <button style={btnStyle(false)}
+              onMouseOver={e => e.currentTarget.style.opacity = 0.7}
+              onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
+              Artist Login
+            </button>
+          </Link>
+
+        </div>
       </div>
 
       {showRoster ? (
@@ -268,12 +337,14 @@ const Releases = ({ releases }) => {
         </div>
       ) : (
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px 80px" }}>
+
           {filteredFromURL && (
             <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "32px" }}>
               Showing: {filteredFromURL}
             </p>
           )}
 
+          {/* Full color grid */}
           <div className="releases-grid" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -281,9 +352,18 @@ const Releases = ({ releases }) => {
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div className="yen-cover" style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "14px" }}>
+                <div style={{
+                  width: "100%", aspectRatio: "1", overflow: "hidden",
+                  background: "#111", marginBottom: "14px",
+                }}>
                   <img src={r.cover} alt={r.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    style={{
+                      width: "100%", height: "100%", objectFit: "cover", display: "block",
+                      transition: "transform 0.6s ease",
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
+                    onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+                  />
                 </div>
                 <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.45, marginBottom: "4px" }}>
                   {r.artist}
@@ -349,7 +429,7 @@ function App() {
 
   return (
     <HelmetProvider>
-      <CursorDot />
+      <CursorPlus />
       <GrainOverlay />
       <Header />
 
