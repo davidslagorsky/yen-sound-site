@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Routes, Route, Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 
@@ -22,35 +22,37 @@ import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
 import Sigh from "./pages/Sigh";
 import VoiceLessons from "./pages/VoiceLessons";
+import Press from "./pages/Press";
+import PostPage from "./pages/PostPage";
 import { useReleases } from "./hooks/useReleases";
 
+const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
 /* ---------------- Home ---------------- */
-const Home = ({ theme }) => {
-  const videoRef = useRef(null);
+const Home = () => {
+  const videoRef = React.useRef(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
       video.muted = true;
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => console.warn("Autoplay failed:", err));
-      }
+      const p = video.play();
+      if (p !== undefined) p.catch(() => {});
     }
   }, []);
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        fontFamily: "Arial, sans-serif",
-        padding: "40px",
-        backgroundColor: theme === "dark" ? "#000" : "#fff",
-        color: theme === "dark" ? "#fff" : "#000",
-        minHeight: "100vh",
-      }}
-    >
-      <div style={{ marginBottom: "30px" }}>
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#000",
+      padding: "40px 20px",
+      textAlign: "center",
+    }}>
+      <div style={{ marginBottom: "24px" }}>
         <video
           ref={videoRef}
           id="title-video"
@@ -62,412 +64,240 @@ const Home = ({ theme }) => {
           onEnded={() => {
             const vid = document.getElementById("title-video");
             const img = document.getElementById("title-image");
-            if (vid && img) {
-              vid.style.display = "none";
-              img.style.display = "inline";
-            }
+            if (vid && img) { vid.style.display = "none"; img.style.display = "inline"; }
           }}
-          style={{
-            width: "clamp(300px, 50vw, 600px)",
-            height: "auto",
-            filter: theme === "light" ? "invert(1)" : "none",
-          }}
+          style={{ width: "clamp(240px, 45vw, 520px)", height: "auto" }}
         />
         <img
           id="title-image"
           src="/yen sound white on black raw.png"
-          alt="Yen Sound Logo"
-          style={{
-            display: "none",
-            width: "clamp(300px, 50vw, 600px)",
-            height: "auto",
-            filter: theme === "light" ? "invert(1)" : "none",
-          }}
+          alt="Yen Sound"
+          style={{ display: "none", width: "clamp(240px, 45vw, 520px)", height: "auto" }}
         />
       </div>
 
-      <p style={{ fontSize: "clamp(1rem, 3vw, 1.5rem)", marginBottom: "30px" }}>
-        Boutique PR & Distribution
-        <br />
-        Based in Tel Aviv
+      <p style={{
+        fontFamily: F,
+        fontSize: "11px",
+        fontWeight: 300,
+        letterSpacing: "0.3em",
+        textTransform: "uppercase",
+        color: "#f0ede8",
+        opacity: 0.35,
+      }}>
+        Boutique PR &amp; Distribution · Tel Aviv
       </p>
-
-      <div style={{ marginTop: "30px" }}>
-        <Link
-          to="/about"
-          style={{
-            color: theme === "dark" ? "#fff" : "#000",
-            textDecoration: "underline",
-            fontSize: "clamp(1rem, 3vw, 1.2rem)",
-          }}
-        >
-          ABOUT YEN SOUND
-        </Link>
-      </div>
     </div>
   );
 };
 
 /* ---------------- Releases ---------------- */
-const Releases = ({ theme, releases }) => {
+const Releases = ({ releases }) => {
   const currentLocation = useLocation();
   const [filter, setFilter] = useState("All");
   const [artistFilter, setArtistFilter] = useState("All");
   const [artistDropdownOpen, setArtistDropdownOpen] = useState(false);
-  const [columns, setColumns] = useState(3);
   const [showRoster, setShowRoster] = useState(false);
   const [filteredFromURL, setFilteredFromURL] = useState(null);
 
-  useEffect(() => {
-    const updateColumns = () => {
-      setColumns(window.innerWidth < 768 ? 2 : 3);
-    };
-    updateColumns();
-    window.addEventListener("resize", updateColumns);
-    return () => window.removeEventListener("resize", updateColumns);
-  }, []);
-
   const allArtists = useMemo(() => {
     const names = new Set();
-    releases.forEach((r) => {
-      r.artist.split(",").forEach((name) => names.add(name.trim()));
-    });
-    return Array.from(names);
+    releases.forEach((r) => r.artist.split(",").forEach((n) => names.add(n.trim())));
+    return Array.from(names).sort();
   }, [releases]);
 
-  const artistNameMap = useMemo(
-    () => ({
-      sgulot: "סגולות",
-      ethel: "Ethel",
-      sighdafekt: "Sighdafekt",
-      shower: "SHOWER",
-      kizels: "Kizels",
-      roynismo: "Roy Nismo",
-    }),
-    []
-  );
+  const artistNameMap = useMemo(() => ({
+    sgulot: "סגולות", ethel: "Ethel", sighdafekt: "Sighdafekt",
+    shower: "SHOWER", kizels: "Kizels", roynismo: "Roy Nismo",
+  }), []);
 
   useEffect(() => {
     const params = new URLSearchParams(currentLocation.search);
-    const artistFromURL = params.get("artist");
-
-    if (artistFromURL) {
-      const normalized = artistFromURL.toLowerCase().replace(/\s+/g, "");
-      const mappedName = artistNameMap[normalized];
-
-      if (mappedName && allArtists.includes(mappedName)) {
-        setArtistFilter(mappedName);
-        setFilteredFromURL(mappedName);
-        setShowRoster(false);
-      } else {
-        const fallback = allArtists.find(
-          (a) => a.toLowerCase().replace(/\s+/g, "") === normalized
-        );
-        if (fallback) {
-          setArtistFilter(fallback);
-          setFilteredFromURL(fallback);
-          setShowRoster(false);
-        } else {
-          setArtistFilter("All");
-          setFilteredFromURL(null);
-        }
-      }
-    }
+    const a = params.get("artist");
+    if (!a) return;
+    const norm = a.toLowerCase().replace(/\s+/g, "");
+    const mapped = artistNameMap[norm];
+    const match = mapped && allArtists.includes(mapped)
+      ? mapped
+      : allArtists.find((x) => x.toLowerCase().replace(/\s+/g, "") === norm);
+    if (match) { setArtistFilter(match); setFilteredFromURL(match); setShowRoster(false); }
+    else { setArtistFilter("All"); setFilteredFromURL(null); }
   }, [currentLocation.search, allArtists, artistNameMap]);
 
-  const sortedReleases = useMemo(() => {
-    return [...releases].sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [releases]);
+  const filtered = useMemo(() => {
+    return [...releases]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .filter((r) => {
+        const okType = filter === "All" || r.type === filter;
+        const okArtist = artistFilter === "All" || r.artist.includes(artistFilter);
+        return okType && okArtist;
+      });
+  }, [releases, filter, artistFilter]);
 
-  const filtered = sortedReleases.filter((r) => {
-    const matchesType = filter === "All" || r.type === filter;
-    const matchesArtist = artistFilter === "All" || r.artist.includes(artistFilter);
-    return matchesType && matchesArtist;
-  });
+  const btnBase = {
+    fontFamily: F,
+    fontSize: "10px",
+    fontWeight: 400,
+    letterSpacing: "0.2em",
+    textTransform: "uppercase",
+    padding: "8px 16px",
+    border: "1px solid #2a2a2a",
+    background: "transparent",
+    color: "#f0ede8",
+    cursor: "pointer",
+    transition: "all 0.2s",
+  };
+  const btnActive = { ...btnBase, background: "#f0ede8", color: "#000", borderColor: "#f0ede8" };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        fontFamily: "Arial, sans-serif",
-        backgroundColor: theme === "dark" ? "#000" : "#fff",
-        color: theme === "dark" ? "#fff" : "#000",
-        minHeight: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
-      <h2
-        style={{
-          textAlign: "center",
-          fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
-          fontWeight: "bold",
-          marginTop: "40px",
-          marginBottom: "30px",
-        }}
-      >
-        Releases
-      </h2>
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
 
-      <div style={{ textAlign: "center", margin: "40px 0", position: "relative" }}>
+      {/* Filter bar */}
+      <div style={{
+        padding: "24px 20px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "6px",
+        alignItems: "center",
+        borderBottom: "1px solid #1a1a1a",
+        position: "relative",
+      }}>
         {["All", "Album", "Single"].map((t) => (
-          <button
-            key={t}
-            onClick={() => {
-              setShowRoster(false);
-              setFilter(t);
-              setArtistFilter("All");
-              setArtistDropdownOpen(false);
-              setFilteredFromURL(null);
-            }}
-            style={{
-              margin: "6px",
-              padding: "14px 20px",
-              minHeight: "44px",
-              borderRadius: "5px",
-              border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-              backgroundColor: "transparent",
-              color: theme === "dark" ? "#fff" : "#000",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-              transition: "background-color 0.2s",
-            }}
-          >
-            {t}
-          </button>
+          <button key={t}
+            onClick={() => { setFilter(t); setArtistFilter("All"); setArtistDropdownOpen(false); setShowRoster(false); setFilteredFromURL(null); }}
+            style={filter === t && !showRoster ? btnActive : btnBase}
+          >{t}</button>
         ))}
 
         <button
           onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
-          style={{
-            margin: "6px",
-            padding: "14px 20px",
-            minHeight: "44px",
-            borderRadius: "5px",
-            border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-            backgroundColor: "transparent",
-            color: theme === "dark" ? "#fff" : "#000",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-          }}
+          style={artistFilter !== "All" ? btnActive : btnBase}
         >
-          Artists ▾
+          {artistFilter === "All" ? "Artists ▾" : artistFilter + " ▾"}
         </button>
 
         <button
-          onClick={() => {
-            setShowRoster(true);
-            setArtistDropdownOpen(false);
-            setFilteredFromURL(null);
-          }}
-          style={{
-            margin: "6px",
-            padding: "14px 20px",
-            minHeight: "44px",
-            borderRadius: "5px",
-            border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-            backgroundColor: showRoster ? (theme === "dark" ? "#fff" : "#000") : "transparent",
-            color: showRoster ? (theme === "dark" ? "#000" : "#fff") : theme === "dark" ? "#fff" : "#000",
-            cursor: "pointer",
-            fontWeight: "bold",
-            fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-          }}
+          onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
+          style={showRoster ? btnActive : btnBase}
         >
           Roster
         </button>
 
-        <Link to="/artist-login">
-          <button
-            style={{
-              margin: "6px",
-              padding: "14px 20px",
-              minHeight: "44px",
-              borderRadius: "5px",
-              border: `2px solid ${theme === "dark" ? "#fff" : "#000"}`,
-              backgroundColor: "transparent",
-              color: theme === "dark" ? "#fff" : "#000",
-              cursor: "pointer",
-              fontWeight: "bold",
-              fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = theme === "dark" ? "#fff" : "#000";
-              e.currentTarget.style.color = theme === "dark" ? "#000" : "#fff";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = theme === "dark" ? "#fff" : "#000";
-            }}
-          >
-            Artist Login
-          </button>
+        <Link to="/artist-login" style={{ textDecoration: "none" }}>
+          <button style={btnBase}
+            onMouseOver={e => { e.currentTarget.style.background = "#f0ede8"; e.currentTarget.style.color = "#000"; }}
+            onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#f0ede8"; }}
+          >Artist Login</button>
         </Link>
 
         {artistDropdownOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "100%",
-              left: "50%",
-              transform: "translateX(-50%)",
-              backgroundColor: theme === "dark" ? "#111" : "#eee",
-              border: `1px solid ${theme === "dark" ? "#444" : "#ccc"}`,
-              borderRadius: "6px",
-              marginTop: "10px",
-              padding: "10px",
-              zIndex: 10,
-              maxHeight: "200px",
-              overflowY: "auto",
-            }}
-          >
-            <button
-              onClick={() => {
-                setArtistFilter("All");
-                setFilteredFromURL(null);
-                setArtistDropdownOpen(false);
-              }}
-              style={dropdownBtnStyle(theme)}
-            >
+          <div style={{
+            position: "absolute", top: "calc(100% + 1px)", left: 0,
+            background: "#000", border: "1px solid #222", borderTop: "none",
+            padding: "8px 0", zIndex: 20, minWidth: "200px",
+            maxHeight: "260px", overflowY: "auto",
+          }}>
+            <button onClick={() => { setArtistFilter("All"); setFilteredFromURL(null); setArtistDropdownOpen(false); }}
+              style={{ ...btnBase, display: "block", width: "100%", textAlign: "left", border: "none", borderRadius: 0, padding: "10px 20px" }}>
               All Artists
             </button>
-            {allArtists.map((artist) => (
-              <button
-                key={artist}
-                onClick={() => {
-                  setArtistFilter(artist);
-                  setFilteredFromURL(artist);
-                  setArtistDropdownOpen(false);
-                }}
-                style={dropdownBtnStyle(theme)}
-              >
-                {artist}
+            {allArtists.map((a) => (
+              <button key={a}
+                onClick={() => { setArtistFilter(a); setFilteredFromURL(a); setArtistDropdownOpen(false); setShowRoster(false); }}
+                style={{ ...btnBase, display: "block", width: "100%", textAlign: "left", border: "none", borderRadius: 0, padding: "10px 20px" }}>
+                {a}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {filteredFromURL && !showRoster && (
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: "0.95rem",
-            marginTop: "-20px",
-            marginBottom: "10px",
-            color: theme === "dark" ? "#aaa" : "#444",
-          }}
-        >
-          🔍 Showing results for: <strong>{filteredFromURL}</strong>
-        </div>
-      )}
-
       {showRoster ? (
-        <Roster />
+        <div style={{ padding: "40px 20px" }}><Roster /></div>
       ) : (
-        <div
-          style={{
+        <>
+          {filteredFromURL && (
+            <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, padding: "16px 20px" }}>
+              Showing: {filteredFromURL}
+            </p>
+          )}
+
+          {/* year0001-style grid — edge to edge, square covers, info below */}
+          <div style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-            gap: "30px",
-            maxWidth: "1000px",
-            margin: "auto",
-          }}
-        >
-          {filtered.map((r, i) => (
-            <Link
-              key={i}
-              to={`/release/${r.slug}`}
-              style={{
-                textDecoration: "none",
-                color: theme === "dark" ? "#fff" : "#000",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <div className="release-cover-wrapper">
-                <img
-                  src={r.cover}
-                  alt={r.title}
-                  style={{
-                    width: "100%",
-                    maxWidth: "240px",
-                    borderRadius: "10px",
-                    marginBottom: "10px",
-                    display: "block",
-                    transition: "all 0.3s ease",
-                    border: "2px solid transparent",
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.border = `2px solid ${theme === "dark" ? "#fff" : "#000"}`)
-                  }
-                  onMouseOut={(e) => (e.currentTarget.style.border = "2px solid transparent")}
-                />
-              </div>
-              <div
-                style={{
-                  fontWeight: "bold",
-                  fontSize: "1em",
-                  textAlign: "center",
-                  maxWidth: "240px",
-                }}
-              >
-                {r.title}
-                <br />
-                <span style={{ fontWeight: "normal", fontSize: "0.9em" }}>
-                  {r.artist} ({r.type})
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: "0",
+          }}>
+            {filtered.map((r, i) => (
+              <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
+                <div style={{ borderRight: "1px solid #0f0f0f", borderBottom: "1px solid #0f0f0f" }}>
+                  {/* Square cover */}
+                  <div style={{ position: "relative", overflow: "hidden", background: "#111", aspectRatio: "1" }}>
+                    <img
+                      src={r.cover}
+                      alt={r.title}
+                      style={{
+                        width: "100%", height: "100%", objectFit: "cover", display: "block",
+                        transition: "transform 0.5s ease",
+                      }}
+                      onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
+                      onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+                    />
+                  </div>
+                  {/* Info below image — year0001 style */}
+                  <div style={{ padding: "10px 12px 14px", borderTop: "1px solid #0f0f0f" }}>
+                    <p style={{
+                      fontFamily: F, fontSize: "9px", letterSpacing: "0.2em",
+                      textTransform: "uppercase", opacity: 0.4, marginBottom: "3px",
+                    }}>
+                      {r.artist}
+                    </p>
+                    <p style={{
+                      fontFamily: F, fontSize: "11px", fontWeight: 700,
+                      letterSpacing: "0.05em", textTransform: "uppercase",
+                      opacity: 0.9, lineHeight: 1.2,
+                    }}>
+                      {r.title}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
 };
 
-/* ---------------- Shared styles ---------------- */
-const dropdownBtnStyle = (theme) => ({
-  display: "block",
-  width: "100%",
-  padding: "12px 16px",
-  minHeight: "44px",
-  backgroundColor: "transparent",
-  border: "none",
-  color: theme === "dark" ? "#fff" : "#000",
-  textAlign: "left",
-  cursor: "pointer",
-  fontSize: "clamp(0.9rem, 2.5vw, 1rem)",
-});
-
-/* ---------------- Slug redirect (/:maybeSlug) ---------------- */
+/* ---------------- Slug redirect ---------------- */
 function SlugRedirect({ releases }) {
   const { maybeSlug } = useParams();
+  const reserved = [
+    "press","about","releases","roster","merch","admin","ipod",
+    "rsvp","sigh","voice","artist-login","artist-dashboard",
+    "enter-shower","rigshi-fam","001","release"
+  ];
+  if (reserved.includes(maybeSlug)) return <Navigate to="/" replace />;
   const match = releases.find((r) => r.slug === maybeSlug);
-  if (match) {
-    return <Navigate to={`/release/${match.slug}`} replace />;
-  }
+  if (match) return <Navigate to={`/release/${match.slug}`} replace />;
   return <Navigate to="/" replace />;
 }
 
 /* ---------------- App ---------------- */
 function App() {
   const currentLocation = useLocation();
-  const theme = "dark";
   const { releases, loading } = useReleases();
 
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
-    document.body.style.color = "#fff";
+    document.body.style.color = "#f0ede8";
   }, []);
 
   useEffect(() => {
     const disableRightClick = (e) => e.preventDefault();
     document.addEventListener("contextmenu", disableRightClick);
-    return () => {
-      document.removeEventListener("contextmenu", disableRightClick);
-    };
+    return () => document.removeEventListener("contextmenu", disableRightClick);
   }, []);
 
   useAnalytics();
@@ -475,38 +305,45 @@ function App() {
   if (loading) {
     return (
       <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "#fff", fontFamily: "Arial, sans-serif", fontSize: "1.2rem" }}>Loading...</div>
+        <div style={{ color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.4 }}>Loading</div>
       </div>
     );
   }
+
+  const isReleasePage = currentLocation.pathname.startsWith("/release/");
+  const isHomePage = currentLocation.pathname === "/";
 
   return (
     <HelmetProvider>
       <Header />
 
-      <Routes>
-        <Route path="/" element={<div style={{ paddingBottom: "100px" }}><Home theme={theme} /></div>} />
-        <Route path="/releases" element={<div style={{ paddingBottom: "100px" }}><Releases theme={theme} releases={releases} /></div>} />
-        <Route path="/about" element={<div style={{ paddingBottom: "100px" }}><About theme={theme} /></div>} />
-        <Route path="/ipod" element={<div style={{ paddingBottom: "100px" }}><CoverFlowFrame /></div>} />
-        <Route path="/roster" element={<div style={{ paddingBottom: "100px" }}><Roster /></div>} />
-        <Route path="/artist/:slug" element={<div style={{ paddingBottom: "100px" }}><ArtistPage theme={theme} /></div>} />
-        <Route path="/artist-login" element={<div style={{ paddingBottom: "100px" }}><ArtistLogin /></div>} />
-        <Route path="/artist-dashboard/:artistId" element={<div style={{ paddingBottom: "100px" }}><ArtistDashboard /></div>} />
-        <Route path="/artist-dashboard/submit" element={<div style={{ paddingBottom: "100px" }}><SubmitForm /></div>} />
-        <Route path="/admin" element={<div style={{ paddingBottom: "100px" }}><AdminDashboard /></div>} />
-        <Route path="/enter-shower" element={<HiddenSplash />} />
-        <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
-        <Route path="/merch" element={<div style={{ paddingBottom: "100px" }}><Capsule001 /></div>} />
-        <Route path="/001" element={<Capsule001 />} />
-        <Route path="/release/:slug" element={<div style={{ paddingBottom: "100px" }}><ReleasePage theme={theme} /></div>} />
-        <Route path="/rsvp" element={<RSVP />} />
-        <Route path="/sigh" element={<Sigh />} />
-        <Route path="/voice" element={<VoiceLessons />} />
-        <Route path="/:maybeSlug" element={<SlugRedirect releases={releases} />} />
-      </Routes>
+      <main style={{ paddingTop: isHomePage ? "0" : "60px" }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/releases" element={<Releases releases={releases} />} />
+          <Route path="/about" element={<About theme="dark" />} />
+          <Route path="/ipod" element={<CoverFlowFrame />} />
+          <Route path="/roster" element={<Roster />} />
+          <Route path="/artist/:slug" element={<ArtistPage theme="dark" />} />
+          <Route path="/artist-login" element={<ArtistLogin />} />
+          <Route path="/artist-dashboard/:artistId" element={<ArtistDashboard />} />
+          <Route path="/artist-dashboard/submit" element={<SubmitForm />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/enter-shower" element={<HiddenSplash />} />
+          <Route path="/rigshi-fam" element={<RigshiFamRelease />} />
+          <Route path="/merch" element={<Capsule001 />} />
+          <Route path="/001" element={<Capsule001 />} />
+          <Route path="/release/:slug" element={<ReleasePage theme="dark" />} />
+          <Route path="/rsvp" element={<RSVP />} />
+          <Route path="/sigh" element={<Sigh />} />
+          <Route path="/voice" element={<VoiceLessons />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/press/:slug" element={<PostPage />} />
+          <Route path="/:maybeSlug" element={<SlugRedirect releases={releases} />} />
+        </Routes>
+      </main>
 
-      {!currentLocation.pathname.startsWith("/release/") && <Footer />}
+      {!isReleasePage && <Footer />}
       <SpeedInsights />
     </HelmetProvider>
   );
