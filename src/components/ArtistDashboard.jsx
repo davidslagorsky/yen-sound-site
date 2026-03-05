@@ -94,6 +94,7 @@ export default function ArtistDashboard() {
   const [bioStatus, setBioStatus] = useState('idle');
   const [btnStatus, setBtnStatus] = useState('idle');
   const [embedStatus, setEmbedStatus] = useState('idle');
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
     async function fetchArtist() {
@@ -115,22 +116,22 @@ export default function ArtistDashboard() {
 
   /* ── savers ── */
   async function saveBio() {
-    setBioStatus('saving');
+    setBioStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ bio }).eq('id', artistId);
-    setBioStatus(error ? 'error' : 'saved');
-    setTimeout(() => setBioStatus('idle'), 2000);
+    if (error) { setSaveError(error.message); setBioStatus('error'); } else setBioStatus('saved');
+    setTimeout(() => setBioStatus('idle'), 2500);
   }
   async function saveButtons() {
-    setBtnStatus('saving');
+    setBtnStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: customButtons }).eq('id', artistId);
-    setBtnStatus(error ? 'error' : 'saved');
-    setTimeout(() => setBtnStatus('idle'), 2000);
+    if (error) { setSaveError(error.message); setBtnStatus('error'); } else setBtnStatus('saved');
+    setTimeout(() => setBtnStatus('idle'), 2500);
   }
   async function saveEmbed() {
-    setEmbedStatus('saving');
+    setEmbedStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ embed_url: embedUrl }).eq('id', artistId);
-    setEmbedStatus(error ? 'error' : 'saved');
-    setTimeout(() => setEmbedStatus('idle'), 2000);
+    if (error) { setSaveError(error.message); setEmbedStatus('error'); } else setEmbedStatus('saved');
+    setTimeout(() => setEmbedStatus('idle'), 2500);
   }
 
   /* ── button helpers ── */
@@ -238,6 +239,26 @@ export default function ArtistDashboard() {
         <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.25, textAlign: 'center', marginBottom: '20px' }}>
           My Page
         </p>
+
+        {/* error banner */}
+        {saveError && (
+          <div style={{ margin: '0 0 16px', padding: '12px 16px', border: '1px solid rgba(255,80,80,0.4)', background: 'rgba(255,80,80,0.06)' }}>
+            <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', color: 'rgba(255,120,120,0.9)', lineHeight: 1.5 }}>
+              <strong>Save failed:</strong> {saveError}
+            </p>
+            {saveError.includes('column') && (
+              <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.1em', opacity: 0.6, marginTop: '6px', color: '#f0ede8' }}>
+                Run this in Supabase SQL Editor:<br />
+                <code style={{ fontFamily: 'monospace', fontSize: '10px', opacity: 0.8 }}>
+                  ALTER TABLE artists ADD COLUMN IF NOT EXISTS bio text;<br />
+                  ALTER TABLE artists ADD COLUMN IF NOT EXISTS custom_buttons jsonb DEFAULT '[]';<br />
+                  ALTER TABLE artists ADD COLUMN IF NOT EXISTS embed_url text;<br />
+                  ALTER TABLE artists ADD COLUMN IF NOT EXISTS slug text;
+                </code>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* tab row */}
         <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
