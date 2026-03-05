@@ -31,33 +31,25 @@ const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 /* ---------------- + Cursor (desktop only) ---------------- */
 function CursorPlus() {
   const cursorRef = React.useRef(null);
-
   useEffect(() => {
     if (window.matchMedia("(hover: none)").matches) return;
-
     const el = cursorRef.current;
     if (!el) return;
-
     let visible = false;
-
     const move = (e) => {
       el.style.left = e.clientX + "px";
       el.style.top  = e.clientY + "px";
       if (!visible) { el.style.opacity = "1"; visible = true; }
     };
-    const over = (e) => {
-      if (e.target.closest("a, button, [role=button]")) el.classList.add("hovering");
-    };
-    const out = () => el.classList.remove("hovering");
+    const over = (e) => { if (e.target.closest("a, button, [role=button]")) el.classList.add("hovering"); };
+    const out  = () => el.classList.remove("hovering");
     const leave = () => { el.style.opacity = "0"; visible = false; };
     const enter = () => { if (visible) el.style.opacity = "1"; };
-
     window.addEventListener("mousemove", move);
     document.addEventListener("mouseover", over);
     document.addEventListener("mouseout", out);
     document.addEventListener("mouseleave", leave);
     document.addEventListener("mouseenter", enter);
-
     return () => {
       window.removeEventListener("mousemove", move);
       document.removeEventListener("mouseover", over);
@@ -66,7 +58,6 @@ function CursorPlus() {
       document.removeEventListener("mouseenter", enter);
     };
   }, []);
-
   return <div ref={cursorRef} className="yen-cursor" aria-hidden />;
 }
 
@@ -85,7 +76,7 @@ function PageTransition({ children }) {
   );
 }
 
-/* ---------------- Marquee ---------------- */
+/* ---------------- Bottom Marquee ---------------- */
 const MARQUEE_TEXT = "YEN SOUND · TEL AVIV · PR & DISTRIBUTION · BOUTIQUE LABEL · ";
 function Marquee() {
   const items = Array(8).fill(MARQUEE_TEXT);
@@ -118,9 +109,10 @@ const Home = ({ releases }) => {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#000", display: "flex", flexDirection: "column" }}>
-      {/* Hero */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 20px 40px", textAlign: "center" }}>
-        <div style={{ marginBottom: "28px" }}>
+
+      {/* Hero: full-bleed on mobile, centered on desktop */}
+      <div className="yen-hero">
+        <div className="yen-hero-media">
           <video
             ref={videoRef}
             id="title-video"
@@ -129,48 +121,51 @@ const Home = ({ releases }) => {
             onEnded={() => {
               const vid = document.getElementById("title-video");
               const img = document.getElementById("title-image");
-              if (vid && img) { vid.style.display = "none"; img.style.display = "inline"; }
+              if (vid && img) { vid.style.display = "none"; img.style.display = "block"; }
             }}
-            style={{ width: "clamp(200px, 38vw, 460px)", height: "auto" }}
+            style={{ width: "100%", height: "auto", display: "block" }}
           />
-          <img id="title-image" src="/yen sound white on black raw.png" alt="Yen Sound"
-            style={{ display: "none", width: "clamp(200px, 38vw, 460px)", height: "auto" }} />
+          <img
+            id="title-image"
+            src="/yen sound white on black raw.png"
+            alt="Yen Sound"
+            style={{ display: "none", width: "100%", height: "auto" }}
+          />
         </div>
-        <p style={{ fontFamily: F, fontSize: "10px", fontWeight: 300, letterSpacing: "0.32em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.3 }}>
+        <p className="yen-hero-tagline">
           Boutique PR &amp; Distribution · Tel Aviv
         </p>
       </div>
 
-      {/* Latest releases — last 5, desaturated thumbnails */}
+      {/* Latest releases scrolling marquee */}
       {latest5.length > 0 && (
-        <div style={{ borderTop: "1px solid #1a1a1a", padding: "32px 40px" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "20px" }}>
-            Latest Releases
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {latest5.map((r, i) => (
-              <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "flex", alignItems: "center", gap: "14px" }}>
-                <div className="yen-cover" style={{ width: "48px", height: "48px", overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "18px 0", overflow: "hidden" }}>
+          <div className="yen-releases-track">
+            {[...latest5, ...latest5, ...latest5].map((r, i) => (
+              <Link
+                key={i}
+                to={`/release/${r.slug}`}
+                style={{ textDecoration: "none", color: "#f0ede8", display: "flex", alignItems: "center", gap: "12px", flexShrink: 0, padding: "0 28px" }}
+              >
+                <div className="yen-cover" style={{ width: "36px", height: "36px", overflow: "hidden", flexShrink: 0 }}>
                   <img src={r.cover} alt={r.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ whiteSpace: "nowrap" }}>
                   <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "2px" }}>
                     {r.artist}
                   </p>
-                  <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>
                     {r.title}
                   </p>
                 </div>
-                <span style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.1em", opacity: 0.25, flexShrink: 0 }}>
-                  {r.date?.slice(0, 4)}
-                </span>
+                <span style={{ fontFamily: F, fontSize: "10px", opacity: 0.2, paddingLeft: "4px" }}>·</span>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      {/* Marquee */}
+      {/* Bottom text marquee */}
       <Marquee />
     </div>
   );
@@ -251,27 +246,19 @@ const Releases = ({ releases }) => {
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
 
-      {/* Filter bar */}
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "28px 40px 0", borderBottom: "1px solid #1a1a1a" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "center", position: "relative", paddingBottom: "18px" }}>
 
-          {/* Sliding dot */}
           <div style={{
-            position: "absolute",
-            bottom: "6px",
-            left: dotLeft,
-            width: "5px",
-            height: "5px",
-            borderRadius: "50%",
+            position: "absolute", bottom: "6px", left: dotLeft,
+            width: "5px", height: "5px", borderRadius: "50%",
             background: "#f0ede8",
             transition: "left 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
             pointerEvents: "none",
           }} />
 
           {TYPE_FILTERS.map((t) => (
-            <button
-              key={t}
-              ref={el => filterRefs.current[t] = el}
+            <button key={t} ref={el => filterRefs.current[t] = el}
               onClick={() => { setFilter(t); setArtistFilter("All"); setArtistDropdownOpen(false); setShowRoster(false); setFilteredFromURL(null); }}
               style={btnStyle(filter === t && !showRoster)}
               onMouseOver={e => { if (!(filter === t && !showRoster)) e.currentTarget.style.opacity = 0.7; }}
@@ -279,17 +266,13 @@ const Releases = ({ releases }) => {
             >{t}</button>
           ))}
 
-          {/* Artist dropdown */}
           <div style={{ position: "relative" }}>
-            <button
-              onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
+            <button onClick={() => setArtistDropdownOpen(!artistDropdownOpen)}
               style={btnStyle(artistFilter !== "All")}
               onMouseOver={e => { if (artistFilter === "All") e.currentTarget.style.opacity = 0.7; }}
-              onMouseOut={e => { if (artistFilter === "All") e.currentTarget.style.opacity = 0.35; }}
-            >
+              onMouseOut={e => { if (artistFilter === "All") e.currentTarget.style.opacity = 0.35; }}>
               {artistFilter === "All" ? "Artists ▾" : artistFilter + " ▾"}
             </button>
-
             {artistDropdownOpen && (
               <div style={{
                 position: "absolute", top: "calc(100% + 8px)", left: 0,
@@ -312,13 +295,13 @@ const Releases = ({ releases }) => {
             )}
           </div>
 
-          <button
-            ref={el => filterRefs.current["__roster__"] = el}
+          <button ref={el => filterRefs.current["__roster__"] = el}
             onClick={() => { setShowRoster(true); setArtistDropdownOpen(false); setFilteredFromURL(null); }}
             style={btnStyle(showRoster)}
             onMouseOver={e => { if (!showRoster) e.currentTarget.style.opacity = 0.7; }}
-            onMouseOut={e => { if (!showRoster) e.currentTarget.style.opacity = 0.35; }}
-          >Roster</button>
+            onMouseOut={e => { if (!showRoster) e.currentTarget.style.opacity = 0.35; }}>
+            Roster
+          </button>
 
           <Link to="/artist-login" style={{ textDecoration: "none" }}>
             <button style={btnStyle(false)}
@@ -327,7 +310,6 @@ const Releases = ({ releases }) => {
               Artist Login
             </button>
           </Link>
-
         </div>
       </div>
 
@@ -337,14 +319,11 @@ const Releases = ({ releases }) => {
         </div>
       ) : (
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px 80px" }}>
-
           {filteredFromURL && (
             <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "32px" }}>
               Showing: {filteredFromURL}
             </p>
           )}
-
-          {/* Full color grid */}
           <div className="releases-grid" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
@@ -352,15 +331,9 @@ const Releases = ({ releases }) => {
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div style={{
-                  width: "100%", aspectRatio: "1", overflow: "hidden",
-                  background: "#111", marginBottom: "14px",
-                }}>
+                <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "14px" }}>
                   <img src={r.cover} alt={r.title}
-                    style={{
-                      width: "100%", height: "100%", objectFit: "cover", display: "block",
-                      transition: "transform 0.6s ease",
-                    }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.6s ease" }}
                     onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
                     onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
                   />
