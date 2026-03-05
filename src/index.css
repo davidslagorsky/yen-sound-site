@@ -149,9 +149,12 @@ html { scroll-behavior: smooth; }
   align-items: center;
   white-space: nowrap;
   animation: marquee 24s linear infinite;
+  will-change: transform;
+  touch-action: none;
+  pointer-events: none;
 }
-.yen-releases-track:hover {
-  animation-play-state: paused;
+.yen-releases-track a {
+  pointer-events: auto;
 }
 
 /* ── BOTTOM TEXT MARQUEE ── */
@@ -164,8 +167,12 @@ html { scroll-behavior: smooth; }
   display: flex;
   white-space: nowrap;
   animation: marquee 22s linear infinite;
+  will-change: transform;
+  touch-action: none;
+  pointer-events: none;
 }
 .yen-marquee-track:hover { animation-play-state: paused; }
+.yen-marquee-track span { pointer-events: none; }
 .yen-marquee-item {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 10px;
