@@ -55,7 +55,6 @@ export default function ArtistPage() {
       const names = [
         artistName,
         ...(artist.aliases || []),
-        ...(artist.hebrewName ? [artist.hebrewName] : []),
       ].filter(Boolean).map(n => n.trim().toLowerCase());
 
       const matched = data.filter(p => {
@@ -90,8 +89,8 @@ export default function ArtistPage() {
           ← Roster
         </Link>
 
-        {/* Header */}
-        <div className="artist-header-grid" style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "48px", alignItems: "start", marginBottom: "64px" }}>
+        {/* ── Header ── */}
+        <div className="artist-header-grid" style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "48px", alignItems: "start", marginBottom: "48px" }}>
           <div style={{ width: "200px", aspectRatio: "1", overflow: "hidden", background: "#111" }}>
             <img src={artist.image} alt={artistName}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", filter: "grayscale(0.1)" }} />
@@ -136,7 +135,83 @@ export default function ArtistPage() {
           </div>
         </div>
 
-        {/* Releases */}
+        {/* ── Press — bold feature strip under profile ── */}
+        {pressPosts.length > 0 && (
+          <div style={{ marginBottom: "64px" }}>
+            <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "32px", marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35 }}>
+                Press
+              </p>
+              <Link to="/press" style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.3, color: "#f0ede8", textDecoration: "none" }}
+                onMouseOver={e => e.currentTarget.style.opacity = 0.7}
+                onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
+                כל הכתבות →
+              </Link>
+            </div>
+
+            {/* Featured first post — big */}
+            {pressPosts[0] && (
+              <Link to={`/press/${pressPosts[0].slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "block", marginBottom: "2px" }}
+                onMouseOver={e => e.currentTarget.style.opacity = 0.8}
+                onMouseOut={e => e.currentTarget.style.opacity = 1}>
+                <div style={{ display: "grid", gridTemplateColumns: pressPosts[0].cover_url ? "1fr 1fr" : "1fr", gap: "0", border: "1px solid #111" }}>
+                  {pressPosts[0].cover_url && (
+                    <div style={{ aspectRatio: "1", overflow: "hidden", background: "#111" }}>
+                      <img src={pressPosts[0].cover_url} alt={pressPosts[0].title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.6s ease" }}
+                        onMouseOver={e => e.currentTarget.style.transform = "scale(1.03)"}
+                        onMouseOut={e => e.currentTarget.style.transform = "scale(1)"} />
+                    </div>
+                  )}
+                  <div style={{ padding: "32px", display: "flex", flexDirection: "column", justifyContent: "flex-end", direction: "rtl", textAlign: "right" }}>
+                    <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.35, marginBottom: "12px" }}>
+                      {formatDate(pressPosts[0].date)}
+                    </p>
+                    <h2 style={{ fontFamily: F, fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 700, lineHeight: 1.15, marginBottom: "14px", color: "#f0ede8" }}>
+                      {pressPosts[0].title}
+                    </h2>
+                    {pressPosts[0].excerpt && (
+                      <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 300, lineHeight: 1.7, opacity: 0.5, marginBottom: "24px" }}>
+                        {pressPosts[0].excerpt}
+                      </p>
+                    )}
+                    <span style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.5, borderBottom: "1px solid #333", paddingBottom: "2px", alignSelf: "flex-start" }}>
+                      קרא עוד
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            {/* Remaining posts — compact list */}
+            {pressPosts.slice(1).map((p) => (
+              <Link key={p.id} to={`/press/${p.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "16px", alignItems: "center", padding: "16px 0", borderBottom: "1px solid #111", transition: "opacity 0.2s" }}
+                onMouseOver={e => e.currentTarget.style.opacity = 0.65}
+                onMouseOut={e => e.currentTarget.style.opacity = 1}>
+                {p.cover_url && (
+                  <div style={{ width: "60px", height: "60px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
+                    <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
+                  <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>
+                    {formatDate(p.date)}
+                  </p>
+                  <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>
+                    {p.title}
+                  </p>
+                  {p.excerpt && (
+                    <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {p.excerpt}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* ── Releases ── */}
         {artistReleases.length > 0 && (
           <>
             <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "40px", marginBottom: "32px" }}>
@@ -172,43 +247,6 @@ export default function ArtistPage() {
                 </button>
               </div>
             )}
-          </>
-        )}
-
-        {/* Press */}
-        {pressPosts.length > 0 && (
-          <>
-            <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "40px", marginBottom: "32px", marginTop: "60px" }}>
-              <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35 }}>
-                Press · {pressPosts.length}
-              </p>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {pressPosts.map((p) => (
-                <Link key={p.id} to={`/press/${p.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "20px", alignItems: "flex-start", padding: "20px 0", borderBottom: "1px solid #111", transition: "opacity 0.2s" }}
-                  onMouseOver={e => e.currentTarget.style.opacity = 0.7}
-                  onMouseOut={e => e.currentTarget.style.opacity = 1}>
-                  {p.cover_url && (
-                    <div style={{ width: "72px", height: "72px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
-                      <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
-                    <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "4px" }}>
-                      {formatDate(p.date)}
-                    </p>
-                    <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.3, marginBottom: "4px" }}>
-                      {p.title}
-                    </p>
-                    {p.excerpt && (
-                      <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, lineHeight: 1.6, opacity: 0.45, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {p.excerpt}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
           </>
         )}
 
