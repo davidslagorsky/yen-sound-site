@@ -13,45 +13,114 @@ body {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  cursor: none;
 }
 
-html {
-  scroll-behavior: smooth;
+html { scroll-behavior: smooth; }
+
+/* ── CUSTOM CURSOR ── */
+.yen-cursor {
+  position: fixed;
+  top: 0; left: 0;
+  width: 7px; height: 7px;
+  background: #f0ede8;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+  mix-blend-mode: difference;
+}
+.yen-cursor.hovering {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+}
+a, button, [role="button"], input, select, textarea, label {
+  cursor: none;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+/* ── GRAIN OVERLAY ── */
+.yen-grain {
+  position: fixed;
+  inset: -60%;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  mix-blend-mode: overlay;
+  animation: grainMove 8s steps(12) infinite;
+  will-change: transform;
+}
+@keyframes grainMove {
+  0%   { transform: translate(0,0); }
+  10%  { transform: translate(-2%,-3%); }
+  20%  { transform: translate(-4%, 2%); }
+  30%  { transform: translate( 3%,-4%); }
+  40%  { transform: translate(-3%, 5%); }
+  50%  { transform: translate(-5%,-2%); }
+  60%  { transform: translate( 4%, 3%); }
+  70%  { transform: translate( 2%,-5%); }
+  80%  { transform: translate(-4%,-1%); }
+  90%  { transform: translate( 5%, 2%); }
+  100% { transform: translate(0,0); }
 }
 
-/* ── RELEASE GRID CARDS ── */
-.release-cover-wrapper {
-  position: relative;
-  display: inline-block;
+/* ── PAGE TRANSITION ── */
+.yen-page {
+  animation: pageIn 0.35s ease both;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RELEASE / ROSTER COVER HOVER — grayscale to color ── */
+.yen-cover img {
+  filter: grayscale(0.85) brightness(0.9);
+  transition: filter 0.6s ease, transform 0.6s ease;
+}
+.yen-cover:hover img {
+  filter: grayscale(0) brightness(1);
+  transform: scale(1.04);
+}
+
+/* ── MARQUEE ── */
+.yen-marquee-wrap {
+  overflow: hidden;
   width: 100%;
+  border-top: 1px solid #1a1a1a;
+}
+.yen-marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 22s linear infinite;
+}
+.yen-marquee-track:hover { animation-play-state: paused; }
+.yen-marquee-item {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #f0ede8;
+  opacity: 0.25;
+  padding: 14px 40px;
+  flex-shrink: 0;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-.release-cover-wrapper img {
-  width: 100%;
-  display: block;
-  transition: transform 0.4s ease, filter 0.3s ease;
-  filter: grayscale(0.15);
+/* ── SPINNING LOGO (release page) ── */
+.yen-spin {
+  animation: spinSlow 12s linear infinite;
 }
-
-.release-cover-wrapper:hover img {
-  transform: scale(1.03);
-  filter: grayscale(0);
-}
-
-/* ── HOVER UTILITIES ── */
-.hover-zoom {
-  transition: transform 0.25s ease;
-}
-.hover-zoom:hover {
-  transform: scale(1.03);
-}
-
-.hover-button {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* ── PRESS BODY RICH TEXT ── */
@@ -64,18 +133,16 @@ code {
   font-weight: 300;
 }
 .press-body h2 {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: #f0ede8;
   margin: 40px 0 16px;
 }
 .press-body h3 {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: #f0ede8;
   margin: 32px 0 12px;
 }
@@ -93,14 +160,18 @@ code {
   color: #777;
   font-style: italic;
 }
-.press-body img {
-  width: 100%;
-  display: block;
-  margin: 32px 0;
-}
+.press-body img { width: 100%; display: block; margin: 32px 0; }
 .press-body ul, .press-body ol {
   padding-left: 24px;
   margin-bottom: 20px;
   color: rgba(240, 237, 232, 0.72);
   line-height: 1.85;
+}
+
+/* ── REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  .yen-grain { animation: none; }
+  .yen-page  { animation: none; }
+  .yen-marquee-track { animation: none; }
+  .yen-spin  { animation: none; }
 }
