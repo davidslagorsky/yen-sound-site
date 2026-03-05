@@ -25,8 +25,9 @@ const CUSTOM_ICON_MAP = {
   instagram: "◻", tiktok: "◇", soundcloud: "◉", bandcamp: "◆",
 };
 
+/* ── embed parser — same as dashboard ── */
 function buildEmbedData(url = "") {
-  if (!url || !url.trim()) return null;
+  if (!url?.trim()) return null;
   const u = url.trim();
   const spotify = u.match(/open\.spotify\.com\/(track|album|playlist|episode|artist)\/([A-Za-z0-9]+)/);
   const youtube = u.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
@@ -35,6 +36,42 @@ function buildEmbedData(url = "") {
   if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1&playsinline=1` };
   if (sc) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true` };
   return null;
+}
+
+/* ── migrate old embed_url into custom_buttons shape ── */
+function migrateEmbedUrl(buttons, embedUrl) {
+  if (!embedUrl?.trim()) return buttons;
+  const alreadyMigrated = buttons.some(b => b.type === "embed" && b.url === embedUrl.trim());
+  if (alreadyMigrated) return buttons;
+  return [...buttons, { id: "__legacy_embed__", type: "embed", url: embedUrl.trim(), label: "" }];
+}
+
+/* ── inline embed card ── */
+function EmbedCard({ item }) {
+  const data = buildEmbedData(item.url);
+  if (!data) return null;
+  return (
+    <div style={{ margin: "0 24px 10px", border: "1px solid rgba(240,237,232,0.15)", overflow: "hidden" }}>
+      {item.label && (
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>
+          {item.label}
+        </p>
+      )}
+      {data.type === "youtube" ? (
+        <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
+          <iframe src={data.src} title="Video embed" frameBorder="0" allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+        </div>
+      ) : data.type === "spotify" ? (
+        <iframe src={data.src} width="100%" height="152" frameBorder="0" title="Music embed"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy" style={{ display: "block" }} />
+      ) : (
+        <iframe width="100%" height="166" frameBorder="0" src={data.src} title="SoundCloud embed" style={{ display: "block" }} />
+      )}
+    </div>
+  );
 }
 
 export default function ArtistPage() {
@@ -67,7 +104,7 @@ export default function ArtistPage() {
   useEffect(() => {
     if (!artist) return;
     async function fetchPress() {
-      const { data } = await supabase.from("press_posts").select("id, title, excerpt, cover_url, date, slug, artist").order("date", { ascending: false });
+      const { data } = await supabase.from("press_posts").select("id,title,excerpt,cover_url,date,slug,artist").order("date", { ascending: false });
       if (!data) return;
       const names = [artistName, ...(artist.aliases || [])].filter(Boolean).map(n => n.trim().toLowerCase());
       setPressPosts(data.filter(p => {
@@ -76,7 +113,7 @@ export default function ArtistPage() {
       }));
     }
     async function fetchPageData() {
-      const { data } = await supabase.from("artists").select("bio, custom_buttons, embed_url, button_order").eq("slug", slug).single();
+      const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order").eq("slug", slug).single();
       if (data) setPageData(data);
     }
     fetchPress();
@@ -93,16 +130,37 @@ export default function ArtistPage() {
   );
 
   const socials = artist.socials || {};
-  const buttonOrder = pageData?.button_order?.length ? pageData.button_order : DEFAULT_ORDER;
   const bio = pageData?.bio || "";
-  const customButtons = (pageData?.custom_buttons || []).filter(b => b.label && b.url);
-  const embedData = pageData?.embed_url ? buildEmbedData(pageData.embed_url) : null;
 
-  const platforms = buttonOrder.map(key => {
-    if (key === "press") return pressPosts.length > 0 ? { key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
-    const url = socials[key];
-    if (!url || url === "PLACEHOLDER") return null;
-    return { key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICON[key], url, internal: false };
+  /* merge legacy embed into custom buttons */
+  const rawButtons = pageData?.custom_buttons || [];
+  const customButtons = migrateEmbedUrl(rawButtons, pageData?.embed_url || "");
+
+  /* build order: saved order, fall back to default + append any unordered custom items */
+  const savedOrder = pageData?.button_order?.length ? pageData.button_order : DEFAULT_ORDER;
+  const allCustomIds = customButtons.map(b => b.id);
+  const buttonOrder = [...savedOrder, ...allCustomIds.filter(id => !savedOrder.includes(id))];
+
+  /* build final ordered item list */
+  const orderedItems = buttonOrder.map(key => {
+    /* streaming platform */
+    if (PLATFORM_LABEL[key]) {
+      if (key === "press") return pressPosts.length > 0 ? { kind: "platform", key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
+      const url = socials[key];
+      if (!url || url === "PLACEHOLDER") return null;
+      return { kind: "platform", key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICON[key], url, internal: false };
+    }
+    /* custom item */
+    const item = customButtons.find(b => b.id === key);
+    if (!item) return null;
+    if (item.type === "embed") {
+      if (!item.url?.trim()) return null;
+      return { kind: "embed", key, item };
+    }
+    if (item.type === "link" && item.label && item.url) {
+      return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon, url: item.url };
+    }
+    return null;
   }).filter(Boolean);
 
   const btnStyle = {
@@ -141,59 +199,54 @@ export default function ArtistPage() {
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
-        {bio && <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>{bio}</p>}
-        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>Choose music service</p>
-      </div>
-
-      {/* platform + custom buttons */}
-      <div style={{ padding: "24px 0 16px" }}>
-        {platforms.map((p, i) =>
-          p.internal ? (
-            <Link key={i} to={p.url} style={btnStyle}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon}{p.label}
-            </Link>
-          ) : (
-            <a key={i} href={p.url} target="_blank" rel="noreferrer" style={btnStyle}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              {p.icon}{p.label}
-            </a>
-          )
+        {bio && (
+          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>
+            {bio}
+          </p>
         )}
-        {customButtons.map((btn, i) => (
-          <a key={`c${i}`} href={btn.url} target="_blank" rel="noreferrer" style={btnStyle}
-            onMouseOver={e => e.currentTarget.style.background = "#111"}
-            onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-            <span style={{ opacity: 0.8 }}>{CUSTOM_ICON_MAP[btn.icon] || "→"}</span>
-            {btn.label.toUpperCase()}
-          </a>
-        ))}
+        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
+          Choose music service
+        </p>
       </div>
 
-      {/* embed */}
-      {embedData && (
-        <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
-          {embedData.type === "youtube" ? (
-            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-              <iframe src={embedData.src} title="Video embed" frameBorder="0" allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
-            </div>
-          ) : embedData.type === "spotify" ? (
-            <iframe src={embedData.src} width="100%" height="152" frameBorder="0" title="Music embed"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy" style={{ display: "block" }} />
-          ) : (
-            <iframe width="100%" height="166" frameBorder="0" src={embedData.src} title="SoundCloud embed" style={{ display: "block" }} />
-          )}
-        </div>
-      )}
+      {/* ── ordered items: platforms, links, embeds ── */}
+      <div style={{ paddingBottom: "24px" }}>
+        {orderedItems.map((item, i) => {
+          if (item.kind === "embed") {
+            return <EmbedCard key={item.key} item={item.item} />;
+          }
+          if (item.kind === "platform") {
+            return item.internal ? (
+              <Link key={item.key} to={item.url} style={btnStyle}
+                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                {item.icon}{item.label}
+              </Link>
+            ) : (
+              <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
+                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                {item.icon}{item.label}
+              </a>
+            );
+          }
+          if (item.kind === "link") {
+            return (
+              <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
+                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                <span style={{ opacity: 0.8 }}>{CUSTOM_ICON_MAP[item.icon] || "→"}</span>
+                {item.label}
+              </a>
+            );
+          }
+          return null;
+        })}
+      </div>
 
       {/* releases */}
       {artistReleases.length > 0 && (
-        <div style={{ padding: "48px 24px 24px" }}>
+        <div style={{ padding: "48px 24px 24px", borderTop: "1px solid #1a1a1a" }}>
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
             Releases · {artistReleases.length}
           </p>
@@ -226,14 +279,20 @@ export default function ArtistPage() {
 
       {/* press */}
       {pressPosts.length > 0 && (
-        <div style={{ padding: "40px 24px 80px" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>Press · {pressPosts.length}</p>
+        <div style={{ padding: "40px 24px 80px", borderTop: "1px solid #1a1a1a" }}>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
+            Press · {pressPosts.length}
+          </p>
           {pressPosts.map((p) => (
             <Link key={p.id} to={`/press/${p.slug}`}
               style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "16px", alignItems: "center", padding: "16px 0", borderBottom: "1px solid #1a1a1a", transition: "opacity 0.2s" }}
               onMouseOver={e => e.currentTarget.style.opacity = 0.65}
               onMouseOut={e => e.currentTarget.style.opacity = 1}>
-              {p.cover_url && <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111" }}><img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></div>}
+              {p.cover_url && (
+                <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
+                  <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+              )}
               <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
                 <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>{formatDate(p.date)}</p>
                 <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>{p.title}</p>
