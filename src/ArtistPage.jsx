@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import roster from "./rosterData";
 import releases from "./releases";
+import { supabase } from "./supabase";
 import { FaInstagram, FaSpotify, FaApple, FaTiktok } from "react-icons/fa";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
@@ -17,6 +18,7 @@ const socialLinkStyle = {
 export default function ArtistPage() {
   const { slug } = useParams();
   const [showAllReleases, setShowAllReleases] = useState(false);
+  const [pressPosts, setPressPosts] = useState([]);
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -41,6 +43,31 @@ export default function ArtistPage() {
       })
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [artist, allNames]);
+
+  useEffect(() => {
+    if (!artist) return;
+    async function fetchPress() {
+      const { data } = await supabase
+        .from("press_posts")
+        .select("id, title, excerpt, cover_url, date, slug, artist")
+        .order("date", { ascending: false });
+      if (!data) return;
+      const names = [
+        artistName,
+        ...(artist.aliases || []),
+        ...(artist.hebrewName ? [artist.hebrewName] : []),
+      ].filter(Boolean).map(n => n.trim().toLowerCase());
+
+      const matched = data.filter(p => {
+        if (!p.artist) return false;
+        return p.artist.split(",").map(a => a.trim().toLowerCase()).some(a =>
+          names.some(n => a.includes(n) || n.includes(a))
+        );
+      });
+      setPressPosts(matched);
+    }
+    fetchPress();
+  }, [artist, artistName]);
 
   const LIMIT = 12;
   const visible = showAllReleases ? artistReleases : artistReleases.slice(0, LIMIT);
@@ -147,6 +174,44 @@ export default function ArtistPage() {
             )}
           </>
         )}
+
+        {/* Press */}
+        {pressPosts.length > 0 && (
+          <>
+            <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "40px", marginBottom: "32px", marginTop: "60px" }}>
+              <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35 }}>
+                Press · {pressPosts.length}
+              </p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {pressPosts.map((p) => (
+                <Link key={p.id} to={`/press/${p.slug}`} style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "20px", alignItems: "flex-start", padding: "20px 0", borderBottom: "1px solid #111", transition: "opacity 0.2s" }}
+                  onMouseOver={e => e.currentTarget.style.opacity = 0.7}
+                  onMouseOut={e => e.currentTarget.style.opacity = 1}>
+                  {p.cover_url && (
+                    <div style={{ width: "72px", height: "72px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
+                      <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
+                    <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "4px" }}>
+                      {formatDate(p.date)}
+                    </p>
+                    <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.3, marginBottom: "4px" }}>
+                      {p.title}
+                    </p>
+                    {p.excerpt && (
+                      <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, lineHeight: 1.6, opacity: 0.45, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {p.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
       </div>
 
       <style>{`
@@ -158,4 +223,11 @@ export default function ArtistPage() {
       `}</style>
     </div>
   );
+}
+
+function formatDate(d) {
+  if (!d) return "";
+  return new Date(d + "T00:00:00").toLocaleDateString("he-IL", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
 }
