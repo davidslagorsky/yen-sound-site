@@ -154,7 +154,9 @@ const Releases = ({ releases }) => {
 
       {/* Filter bar */}
       <div style={{
-        padding: "24px 20px",
+        maxWidth: "1100px",
+        margin: "0 auto",
+        padding: "28px 40px",
         display: "flex",
         flexWrap: "wrap",
         gap: "6px",
@@ -192,8 +194,8 @@ const Releases = ({ releases }) => {
 
         {artistDropdownOpen && (
           <div style={{
-            position: "absolute", top: "calc(100% + 1px)", left: 0,
-            background: "#000", border: "1px solid #222", borderTop: "none",
+            position: "absolute", top: "calc(100% + 1px)", left: "40px",
+            background: "#000", border: "1px solid #222",
             padding: "8px 0", zIndex: 20, minWidth: "200px",
             maxHeight: "260px", overflowY: "auto",
           }}>
@@ -213,58 +215,59 @@ const Releases = ({ releases }) => {
       </div>
 
       {showRoster ? (
-        <div style={{ padding: "40px 20px" }}><Roster /></div>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px" }}>
+          <Roster />
+        </div>
       ) : (
-        <>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px 80px" }}>
+
           {filteredFromURL && (
-            <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, padding: "16px 20px" }}>
+            <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "32px" }}>
               Showing: {filteredFromURL}
             </p>
           )}
 
-          {/* year0001-style grid — edge to edge, square covers, info below */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: "0",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            gap: "48px 32px",
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div style={{ borderRight: "1px solid #0f0f0f", borderBottom: "1px solid #0f0f0f" }}>
-                  {/* Square cover */}
-                  <div style={{ position: "relative", overflow: "hidden", background: "#111", aspectRatio: "1" }}>
-                    <img
-                      src={r.cover}
-                      alt={r.title}
-                      style={{
-                        width: "100%", height: "100%", objectFit: "cover", display: "block",
-                        transition: "transform 0.5s ease",
-                      }}
-                      onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
-                      onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
-                    />
-                  </div>
-                  {/* Info below image — year0001 style */}
-                  <div style={{ padding: "10px 12px 14px", borderTop: "1px solid #0f0f0f" }}>
-                    <p style={{
-                      fontFamily: F, fontSize: "9px", letterSpacing: "0.2em",
-                      textTransform: "uppercase", opacity: 0.4, marginBottom: "3px",
-                    }}>
-                      {r.artist}
-                    </p>
-                    <p style={{
-                      fontFamily: F, fontSize: "11px", fontWeight: 700,
-                      letterSpacing: "0.05em", textTransform: "uppercase",
-                      opacity: 0.9, lineHeight: 1.2,
-                    }}>
-                      {r.title}
-                    </p>
-                  </div>
+                {/* Square cover */}
+                <div style={{
+                  width: "100%", aspectRatio: "1", overflow: "hidden",
+                  background: "#111", marginBottom: "14px",
+                }}>
+                  <img
+                    src={r.cover}
+                    alt={r.title}
+                    style={{
+                      width: "100%", height: "100%", objectFit: "cover", display: "block",
+                      transition: "transform 0.5s ease",
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
+                    onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+                  />
                 </div>
+                {/* Info — year0001 style */}
+                <p style={{
+                  fontFamily: F, fontSize: "10px", letterSpacing: "0.15em",
+                  textTransform: "uppercase", opacity: 0.45, marginBottom: "4px",
+                }}>
+                  {r.artist}
+                </p>
+                <p style={{
+                  fontFamily: F, fontSize: "12px", fontWeight: 700,
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  lineHeight: 1.3, opacity: 0.9,
+                }}>
+                  {r.title}
+                </p>
               </Link>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
