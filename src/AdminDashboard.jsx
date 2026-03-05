@@ -1,10 +1,118 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
-import linkMap from "./linkMap";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-/* ── Minimal rich editor ── */
+/* ══════════════════════════════════════════════
+   SHARED UI PRIMITIVES
+══════════════════════════════════════════════ */
+function FieldLabel({ children }) {
+  return <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "6px" }}>{children}</p>;
+}
+
+function Input({ value, onChange, placeholder, name, type = "text" }) {
+  return (
+    <input
+      name={name} type={type} value={value}
+      onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", padding: "10px 12px", outline: "none", transition: "border-color 0.15s" }}
+      onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
+      onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+    />
+  );
+}
+
+function NamedInput({ name, value, onChange, placeholder, type = "text" }) {
+  return (
+    <input
+      name={name} type={type} value={value}
+      onChange={onChange} placeholder={placeholder}
+      style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", padding: "10px 12px", outline: "none", transition: "border-color 0.15s" }}
+      onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
+      onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+    />
+  );
+}
+
+function ActionBtn({ onClick, children, danger = false, disabled = false, small = false }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: "block", width: "100%", padding: small ? "10px 16px" : "16px 24px",
+      border: danger ? "2px solid rgba(220,80,80,0.6)" : "2px solid rgba(240,237,232,0.8)",
+      background: "transparent", color: danger ? "rgba(220,80,80,0.9)" : "#f0ede8",
+      fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.3em",
+      textTransform: "uppercase", cursor: disabled ? "default" : "pointer",
+      transition: "background 0.15s", opacity: disabled ? 0.4 : 1, boxSizing: "border-box",
+    }}
+      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(220,80,80,0.08)" : "#111"; }}
+      onMouseOut={e => e.currentTarget.style.background = "transparent"}
+    >{children}</button>
+  );
+}
+
+function GhostBtn({ onClick, href, children, danger = false }) {
+  const s = {
+    fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase",
+    padding: "7px 12px", background: "transparent", cursor: "pointer", textDecoration: "none",
+    border: danger ? "1px solid rgba(220,80,80,0.5)" : "1px solid rgba(240,237,232,0.25)",
+    color: danger ? "rgba(220,80,80,0.9)" : "#f0ede8",
+    transition: "border-color 0.15s",
+  };
+  if (href) return <a href={href} target="_blank" rel="noreferrer" style={s}>{children}</a>;
+  return <button onClick={onClick} style={s}>{children}</button>;
+}
+
+function DashTile({ icon, label, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: "10px", padding: "28px 16px",
+      border: active ? "1px solid rgba(240,237,232,0.6)" : "1px solid rgba(240,237,232,0.15)",
+      background: active ? "#0d0d0d" : "transparent", color: "#f0ede8",
+      cursor: "pointer", transition: "border-color 0.2s, background 0.2s", width: "100%",
+    }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "rgba(240,237,232,0.4)"; e.currentTarget.style.background = "#0a0a0a"; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "rgba(240,237,232,0.15)"; e.currentTarget.style.background = "transparent"; } }}
+    >
+      <span style={{ fontSize: "22px", lineHeight: 1, opacity: 0.7 }}>{icon}</span>
+      <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", opacity: active ? 1 : 0.7 }}>{label}</span>
+    </button>
+  );
+}
+
+function StatusMsg({ status, noun }) {
+  if (!status) return null;
+  const ok = status === "success";
+  return (
+    <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.15em", marginTop: "10px", color: ok ? "rgba(100,255,180,0.85)" : "rgba(255,100,100,0.85)" }}>
+      {ok ? `✓ ${noun}` : status.replace("error:", "")}
+    </p>
+  );
+}
+
+function DataRow({ label, sub, children }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1px solid #111", gap: "12px" }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", color: "#f0ede8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</p>
+        {sub && <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.35, marginTop: "2px", letterSpacing: "0.08em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</p>}
+      </div>
+      {children && <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>{children}</div>}
+    </div>
+  );
+}
+
+function Panel({ children }) {
+  return <div style={{ border: "1px solid rgba(240,237,232,0.15)", padding: "24px", marginBottom: "12px" }}>{children}</div>;
+}
+
+function SectionLabel({ children }) {
+  return <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.2, textAlign: "center", marginBottom: "16px" }}>{children}</p>;
+}
+
+/* ══════════════════════════════════════════════
+   RICH TEXT EDITOR (for press posts)
+══════════════════════════════════════════════ */
 function RichEditor({ value, onChange }) {
   const editorRef = useRef(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
@@ -21,210 +129,212 @@ function RichEditor({ value, onChange }) {
     if (el.innerHTML !== value) el.innerHTML = value || "";
   }, []); // eslint-disable-line
 
-  const emit = useCallback(() => {
-    if (editorRef.current) onChange(editorRef.current.innerHTML);
-  }, [onChange]);
-
-  const saveRange = () => {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount) savedRange.current = sel.getRangeAt(0).cloneRange();
-  };
-
-  const restoreRange = () => {
-    const sel = window.getSelection();
-    if (savedRange.current && sel) {
-      sel.removeAllRanges();
-      sel.addRange(savedRange.current);
-    }
-  };
-
-  const exec = (cmd, value = null) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
-    emit();
-  };
+  const emit = useCallback(() => { if (editorRef.current) onChange(editorRef.current.innerHTML); }, [onChange]);
+  const saveRange = () => { const s = window.getSelection(); if (s?.rangeCount) savedRange.current = s.getRangeAt(0).cloneRange(); };
+  const restoreRange = () => { const s = window.getSelection(); if (savedRange.current && s) { s.removeAllRanges(); s.addRange(savedRange.current); } };
+  const exec = (cmd, val = null) => { editorRef.current?.focus(); document.execCommand(cmd, false, val); emit(); };
 
   const insertLink = () => {
     restoreRange();
-    const url = linkUrl.trim();
-    const text = linkText.trim();
-    if (!url) return;
-    const html = `<a href="${url}" target="_blank" rel="noreferrer">${text || url}</a>`;
-    document.execCommand("insertHTML", false, html);
-    emit();
-    setShowLinkDialog(false);
-    setLinkUrl(""); setLinkText("");
+    const url = linkUrl.trim(); if (!url) return;
+    document.execCommand("insertHTML", false, `<a href="${url}" target="_blank" rel="noreferrer">${linkText.trim() || url}</a>`);
+    emit(); setShowLinkDialog(false); setLinkUrl(""); setLinkText("");
   };
-
   const insertImage = () => {
     restoreRange();
-    const url = imageUrl.trim();
-    if (!url) return;
-    const html = `<img src="${url}" alt="" style="width:100%;display:block;margin:24px 0;" />`;
-    document.execCommand("insertHTML", false, html);
-    emit();
-    setShowImageDialog(false);
-    setImageUrl("");
+    const url = imageUrl.trim(); if (!url) return;
+    document.execCommand("insertHTML", false, `<img src="${url}" alt="" style="width:100%;display:block;margin:24px 0;" />`);
+    emit(); setShowImageDialog(false); setImageUrl("");
   };
 
   const toolBtn = (label, action, title) => (
-    <button
-      type="button"
-      title={title || label}
-      onMouseDown={(e) => { e.preventDefault(); saveRange(); action(); }}
-      style={toolBtnStyle}
-    >{label}</button>
+    <button type="button" title={title || label}
+      onMouseDown={e => { e.preventDefault(); saveRange(); action(); }}
+      style={{ background: "transparent", border: "none", color: "#f0ede8", fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: "4px 8px", opacity: 0.6 }}>
+      {label}
+    </button>
   );
+
+  const dInput = { background: "transparent", border: "none", borderBottom: "1px solid #2a2a2a", color: "#f0ede8", fontFamily: F, fontSize: "12px", letterSpacing: "0.05em", padding: "6px 2px", outline: "none", width: "100%" };
+  const dBtn = { background: "transparent", border: "1px solid #333", color: "#f0ede8", fontFamily: F, fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", padding: "6px 14px", cursor: "pointer" };
 
   return (
     <div style={{ border: "1px solid #222", background: "#050505" }}>
-      {/* Toolbar */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "8px 10px", borderBottom: "1px solid #1a1a1a", alignItems: "center" }}>
-        {toolBtn("B",  () => exec("bold"),      "Bold")}
-        {toolBtn("I",  () => exec("italic"),     "Italic")}
+        {toolBtn("B", () => exec("bold"), "Bold")}
+        {toolBtn("I", () => exec("italic"), "Italic")}
         {toolBtn("H2", () => exec("formatBlock", "h2"), "Heading 2")}
         {toolBtn("H3", () => exec("formatBlock", "h3"), "Heading 3")}
-        {toolBtn("P",  () => exec("formatBlock", "p"),  "Paragraph")}
-        {toolBtn("—",  () => exec("insertHorizontalRule"), "Divider")}
-
+        {toolBtn("P", () => exec("formatBlock", "p"), "Paragraph")}
+        {toolBtn("—", () => exec("insertHorizontalRule"), "Divider")}
         <div style={{ width: "1px", height: "16px", background: "#222", margin: "0 4px" }} />
-
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); saveRange(); setShowLinkDialog(true); setShowImageDialog(false); }} style={toolBtnStyle} title="Insert link">
-          Link
-        </button>
-        <button type="button" onMouseDown={(e) => { e.preventDefault(); saveRange(); setShowImageDialog(true); setShowLinkDialog(false); }} style={toolBtnStyle} title="Insert image">
-          Img
-        </button>
-
+        <button type="button" onMouseDown={e => { e.preventDefault(); saveRange(); setShowLinkDialog(true); setShowImageDialog(false); }}
+          style={{ background: "transparent", border: "none", color: "#f0ede8", fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: "4px 8px", opacity: 0.6 }}>Link</button>
+        <button type="button" onMouseDown={e => { e.preventDefault(); saveRange(); setShowImageDialog(true); setShowLinkDialog(false); }}
+          style={{ background: "transparent", border: "none", color: "#f0ede8", fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: "4px 8px", opacity: 0.6 }}>Img</button>
         <div style={{ marginLeft: "auto" }}>
-          <button type="button" onClick={() => setPreview(p => !p)} style={{ ...toolBtnStyle, opacity: preview ? 1 : 0.45, letterSpacing: "0.15em" }}>
+          <button type="button" onClick={() => setPreview(p => !p)}
+            style={{ background: "transparent", border: "none", color: "#f0ede8", fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: "4px 8px", opacity: preview ? 1 : 0.45 }}>
             {preview ? "Edit" : "Preview"}
           </button>
         </div>
       </div>
-
-      {/* Link dialog */}
       {showLinkDialog && (
-        <div style={dialogStyle}>
-          <input autoFocus placeholder="URL (https://...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && insertLink()} style={dialogInput} />
-          <input placeholder="Display text (optional)" value={linkText} onChange={e => setLinkText(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && insertLink()} style={dialogInput} />
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #1a1a1a", background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <input autoFocus placeholder="URL (https://...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && insertLink()} style={dInput} />
+          <input placeholder="Display text (optional)" value={linkText} onChange={e => setLinkText(e.target.value)} onKeyDown={e => e.key === "Enter" && insertLink()} style={dInput} />
           <div style={{ display: "flex", gap: "8px" }}>
-            <button type="button" onClick={insertLink} style={dialogBtn}>Insert</button>
-            <button type="button" onClick={() => setShowLinkDialog(false)} style={{ ...dialogBtn, opacity: 0.4 }}>Cancel</button>
+            <button type="button" onClick={insertLink} style={dBtn}>Insert</button>
+            <button type="button" onClick={() => setShowLinkDialog(false)} style={{ ...dBtn, opacity: 0.4 }}>Cancel</button>
           </div>
         </div>
       )}
-
-      {/* Image dialog */}
       {showImageDialog && (
-        <div style={dialogStyle}>
-          <input autoFocus placeholder="Image URL (https://...)" value={imageUrl} onChange={e => setImageUrl(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && insertImage()} style={dialogInput} />
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #1a1a1a", background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <input autoFocus placeholder="Image URL (https://...)" value={imageUrl} onChange={e => setImageUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && insertImage()} style={dInput} />
           <div style={{ display: "flex", gap: "8px" }}>
-            <button type="button" onClick={insertImage} style={dialogBtn}>Insert</button>
-            <button type="button" onClick={() => setShowImageDialog(false)} style={{ ...dialogBtn, opacity: 0.4 }}>Cancel</button>
+            <button type="button" onClick={insertImage} style={dBtn}>Insert</button>
+            <button type="button" onClick={() => setShowImageDialog(false)} style={{ ...dBtn, opacity: 0.4 }}>Cancel</button>
           </div>
         </div>
       )}
-
-      {/* Editor / Preview */}
       {preview ? (
-        <div
-          className="press-body"
-          style={{ padding: "20px 24px", minHeight: "280px", fontSize: "14px", lineHeight: 1.8, color: "rgba(240,237,232,0.7)" }}
-          dangerouslySetInnerHTML={{ __html: value }}
-        />
+        <div className="press-body" style={{ padding: "20px 24px", minHeight: "280px", fontSize: "14px", lineHeight: 1.8, color: "rgba(240,237,232,0.7)" }} dangerouslySetInnerHTML={{ __html: value }} />
       ) : (
-        <div
-          ref={editorRef}
-          contentEditable
-          suppressContentEditableWarning
-          data-yen-editor
-          onInput={emit}
-          onBlur={emit}
-          style={{
-            padding: "20px 24px",
-            minHeight: "280px",
-            outline: "none",
-            fontFamily: F,
-            fontSize: "14px",
-            lineHeight: 1.8,
-            color: "rgba(240,237,232,0.75)",
-            caretColor: "#f0ede8",
-          }}
-        />
+        <div ref={editorRef} contentEditable suppressContentEditableWarning data-yen-editor onInput={emit} onBlur={emit}
+          style={{ padding: "20px 24px", minHeight: "280px", outline: "none", fontFamily: F, fontSize: "14px", lineHeight: 1.8, color: "rgba(240,237,232,0.75)", caretColor: "#f0ede8" }} />
       )}
     </div>
   );
 }
 
-const toolBtnStyle = {
-  background: "transparent", border: "none", color: "#f0ede8",
-  fontFamily: F, fontSize: "10px", fontWeight: 700,
-  letterSpacing: "0.15em", textTransform: "uppercase",
-  cursor: "pointer", padding: "4px 8px", opacity: 0.6,
-};
+/* ══════════════════════════════════════════════
+   SLUG MANAGER PANEL
+══════════════════════════════════════════════ */
+function SlugManager({ artists }) {
+  const [slugs, setSlugs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newSlug, setNewSlug] = useState("");
+  const [newDest, setNewDest] = useState("");
+  const [addStatus, setAddStatus] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
-const dialogStyle = {
-  padding: "12px 16px", borderBottom: "1px solid #1a1a1a",
-  background: "#0a0a0a", display: "flex", flexDirection: "column", gap: "8px",
-};
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from("slugs").select("*").order("created_at", { ascending: false });
+      if (data) setSlugs(data);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
-const dialogInput = {
-  background: "transparent", border: "none",
-  borderBottom: "1px solid #2a2a2a", color: "#f0ede8",
-  fontFamily: F, fontSize: "12px", letterSpacing: "0.05em",
-  padding: "6px 2px", outline: "none", width: "100%",
-};
+  async function addSlug() {
+    const slug = newSlug.trim().toLowerCase().replace(/\s+/g, "-");
+    const dest = newDest.trim();
+    if (!slug || !dest) { setAddStatus("error:Slug and destination required."); return; }
+    setAddStatus(null);
+    const { data, error } = await supabase.from("slugs").insert([{ slug, destination: dest }]).select().single();
+    if (error) setAddStatus("error:" + error.message);
+    else { setSlugs(p => [data, ...p]); setNewSlug(""); setNewDest(""); setAddStatus("success"); }
+    setTimeout(() => setAddStatus(null), 2500);
+  }
 
-const dialogBtn = {
-  background: "transparent", border: "1px solid #333", color: "#f0ede8",
-  fontFamily: F, fontSize: "10px", letterSpacing: "0.2em",
-  textTransform: "uppercase", padding: "6px 14px", cursor: "pointer",
-};
+  async function deleteSlug(id, slug) {
+    if (!window.confirm(`Delete slug "/${slug}"?`)) return;
+    const { error } = await supabase.from("slugs").delete().eq("id", id);
+    if (!error) setSlugs(p => p.filter(s => s.id !== id));
+    else alert("Error: " + error.message);
+  }
 
-/* ── Main dashboard ── */
+  function copyLink(slug) {
+    navigator.clipboard.writeText(`https://yensound.com/${slug}`);
+    setCopiedId(slug); setTimeout(() => setCopiedId(null), 1500);
+  }
+
+  /* Artist slugs from the artists table */
+  const artistSlugs = artists.filter(a => a.slug);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+
+      {/* Artist slugs (read-only view) */}
+      <div style={{ marginBottom: "24px" }}>
+        <FieldLabel>Artist Page Slugs</FieldLabel>
+        {artistSlugs.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "12px 0" }}>No artist slugs set. Add a slug to an artist via Supabase or the artist dashboard.</p>}
+        {artistSlugs.map(a => (
+          <DataRow key={a.id} label={`/artist/${a.slug}`} sub={a.display_name}>
+            <GhostBtn onClick={() => copyLink(`artist/${a.slug}`)}>{copiedId === `artist/${a.slug}` ? "Copied" : "Copy"}</GhostBtn>
+            <GhostBtn href={`/artist/${a.slug}`}>View</GhostBtn>
+          </DataRow>
+        ))}
+      </div>
+
+      {/* Custom redirect slugs */}
+      <div>
+        <FieldLabel>Custom Redirect Slugs</FieldLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+          <Input value={newSlug} onChange={setNewSlug} placeholder="short path (e.g. presskit)" />
+          <Input value={newDest} onChange={setNewDest} placeholder="destination URL (https://...)" />
+          <ActionBtn onClick={addSlug}>Add Slug</ActionBtn>
+          <StatusMsg status={addStatus} noun="Slug added" />
+        </div>
+
+        {loading && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25 }}>Loading...</p>}
+        {!loading && slugs.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "12px 0" }}>No custom slugs yet.</p>}
+        {slugs.map(s => (
+          <DataRow key={s.id} label={`/${s.slug}`} sub={s.destination}>
+            <GhostBtn onClick={() => copyLink(s.slug)}>{copiedId === s.slug ? "Copied" : "Copy"}</GhostBtn>
+            <GhostBtn danger onClick={() => deleteSlug(s.id, s.slug)}>Delete</GhostBtn>
+          </DataRow>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   MAIN DASHBOARD
+══════════════════════════════════════════════ */
 export default function AdminDashboard() {
   const [auth, setAuth] = useState(false);
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [authError, setAuthError] = useState("");
 
-  const [shortlink, setShortlink] = useState("");
-  const [destination, setDestination] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [copiedSlug, setCopiedSlug] = useState(null);
-
+  /* data */
   const [releases, setReleases] = useState([]);
   const [artists, setArtists] = useState([]);
-  const [artistForm, setArtistForm] = useState({ id: "", password: "", display_name: "", filter_name: "", upload_url: "" });
-  const [artistSubmitStatus, setArtistSubmitStatus] = useState(null);
-  const [artistSubmitting, setArtistSubmitting] = useState(false);
-
   const [posts, setPosts] = useState([]);
-  const [postForm, setPostForm] = useState({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" });
-  const [postSubmitStatus, setPostSubmitStatus] = useState(null);
-  const [postSubmitting, setPostSubmitting] = useState(false);
-  const [editingPost, setEditingPost] = useState(false);
 
-  const [form, setForm] = useState({
+  /* active panel */
+  const [activePanel, setActivePanel] = useState(null);
+
+  /* release form */
+  const [releaseForm, setReleaseForm] = useState({
     title: "", artist: "", type: "Single", date: "", release_at: "",
     slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "",
     youtube_url: "", embed_youtube_id: "", embed_spotify: "",
-    background_url: "", background_darken: 0.0,
-    socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: ""
+    background_url: "", socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: "",
   });
-  const [submitStatus, setSubmitStatus] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [releaseStatus, setReleaseStatus] = useState(null);
+  const [releaseSubmitting, setReleaseSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (localStorage.getItem("yenAdminAuthed") === "true") setAuth(true);
-  }, []);
+  /* artist form */
+  const [artistForm, setArtistForm] = useState({ id: "", password: "", display_name: "", filter_name: "", upload_url: "", slug: "" });
+  const [artistStatus, setArtistStatus] = useState(null);
+  const [artistSubmitting, setArtistSubmitting] = useState(false);
+
+  /* press form */
+  const [postForm, setPostForm] = useState({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" });
+  const [postStatus, setPostStatus] = useState(null);
+  const [postSubmitting, setPostSubmitting] = useState(false);
+  const [editingPost, setEditingPost] = useState(false);
+
+  /* auth */
+  useEffect(() => { if (localStorage.getItem("yenAdminAuthed") === "true") setAuth(true); }, []);
 
   useEffect(() => {
     if (!auth) return;
-    const load = async () => {
+    (async () => {
       const [rel, art, pst] = await Promise.all([
         supabase.from("releases").select("id,title,artist,date").order("date", { ascending: false }),
         supabase.from("artists").select("*").order("created_at", { ascending: true }),
@@ -233,102 +343,85 @@ export default function AdminDashboard() {
       if (rel.data) setReleases(rel.data);
       if (art.data) setArtists(art.data);
       if (pst.data) setPosts(pst.data);
-    };
-    load();
+    })();
   }, [auth]);
 
   const handleLogin = () => {
-    if (password === "sighmadethissite") {
-      setAuth(true);
-      localStorage.setItem("yenAdminAuthed", "true");
-    } else setError("Incorrect password");
+    if (password === "sighmadethissite") { setAuth(true); localStorage.setItem("yenAdminAuthed", "true"); }
+    else setAuthError("Incorrect password");
   };
 
-  const handleDelete = async (id, title) => {
+  const slugify = str => str.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+
+  /* ── Release handlers ── */
+  const handleReleaseChange = e => setReleaseForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  const handleAddRelease = async () => {
+    if (!releaseForm.title || !releaseForm.artist || !releaseForm.slug || !releaseForm.date) {
+      setReleaseStatus("error:Title, Artist, Slug and Date are required."); return;
+    }
+    setReleaseSubmitting(true); setReleaseStatus(null);
+    const { error } = await supabase.from("releases").insert([{
+      title: releaseForm.title, artist: releaseForm.artist, type: releaseForm.type,
+      date: releaseForm.date, release_at: releaseForm.release_at || null,
+      slug: releaseForm.slug, cover: releaseForm.cover || null,
+      smart_link: releaseForm.smart_link || null, spotify_url: releaseForm.spotify_url || null,
+      apple_url: releaseForm.apple_url || null, youtube_url: releaseForm.youtube_url || null,
+      embed_youtube_id: releaseForm.embed_youtube_id || null, embed_spotify: releaseForm.embed_spotify || null,
+      background_url: releaseForm.background_url || null,
+      socials: {
+        instagram: releaseForm.socials_instagram || "PLACEHOLDER",
+        tiktok: releaseForm.socials_tiktok || "PLACEHOLDER",
+        youtube: releaseForm.socials_youtube || "PLACEHOLDER",
+        website: releaseForm.socials_website || "PLACEHOLDER",
+      },
+    }]);
+    if (error) setReleaseStatus("error:" + error.message);
+    else {
+      setReleaseStatus("success");
+      setReleases(p => [{ id: Date.now(), title: releaseForm.title, artist: releaseForm.artist, date: releaseForm.date }, ...p]);
+      setReleaseForm({ title: "", artist: "", type: "Single", date: "", release_at: "", slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "", youtube_url: "", embed_youtube_id: "", embed_spotify: "", background_url: "", socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: "" });
+    }
+    setReleaseSubmitting(false);
+  };
+  const handleDeleteRelease = async (id, title) => {
     if (!window.confirm(`Delete "${title}"?`)) return;
     const { error } = await supabase.from("releases").delete().eq("id", id);
     if (!error) setReleases(p => p.filter(r => r.id !== id));
-    else alert("Error: " + error.message);
+    else alert(error.message);
   };
 
-  const handleDeleteArtist = async (id) => {
-    if (!window.confirm(`Delete artist "${id}"?`)) return;
-    const { error } = await supabase.from("artists").delete().eq("id", id);
-    if (!error) setArtists(p => p.filter(a => a.id !== id));
-    else alert("Error: " + error.message);
-  };
-
-  const generateSnippet = () => `"${shortlink.trim()}": "${destination.trim()}"`;
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generateSnippet()).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  };
-  const handleCopySlug = (slug) => {
-    navigator.clipboard.writeText(`https://yensound.com/${slug}`);
-    setCopiedSlug(slug); setTimeout(() => setCopiedSlug(null), 1500);
-  };
-
-  const handleFormChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
-  const handleArtistFormChange = e => setArtistForm(p => ({ ...p, [e.target.name]: e.target.value }));
-  const handlePostFieldChange = e => setPostForm(p => ({ ...p, [e.target.name]: e.target.value }));
-
-  const handleAddRelease = async () => {
-    if (!form.title || !form.artist || !form.slug || !form.date) {
-      setSubmitStatus("error:Please fill in Title, Artist, Slug and Date."); return;
-    }
-    setSubmitting(true); setSubmitStatus(null);
-    const payload = {
-      title: form.title, artist: form.artist, type: form.type, date: form.date,
-      release_at: form.release_at || null, slug: form.slug,
-      cover: form.cover || null, smart_link: form.smart_link || null,
-      spotify_url: form.spotify_url || null, apple_url: form.apple_url || null,
-      youtube_url: form.youtube_url || null, embed_youtube_id: form.embed_youtube_id || null,
-      embed_spotify: form.embed_spotify || null, background_url: form.background_url || null,
-      background_darken: parseFloat(form.background_darken) || 0.0,
-      socials: {
-        instagram: form.socials_instagram || "PLACEHOLDER",
-        tiktok: form.socials_tiktok || "PLACEHOLDER",
-        youtube: form.socials_youtube || "PLACEHOLDER",
-        website: form.socials_website || "PLACEHOLDER",
-      }
-    };
-    const { error } = await supabase.from("releases").insert([payload]);
-    if (error) setSubmitStatus("error:" + error.message);
-    else {
-      setSubmitStatus("success");
-      setReleases(p => [{ id: Date.now(), title: form.title, artist: form.artist, date: form.date }, ...p]);
-      setForm({ title: "", artist: "", type: "Single", date: "", release_at: "", slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "", youtube_url: "", embed_youtube_id: "", embed_spotify: "", background_url: "", background_darken: 0.0, socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: "" });
-    }
-    setSubmitting(false);
-  };
-
+  /* ── Artist handlers ── */
+  const handleArtistChange = e => setArtistForm(p => ({ ...p, [e.target.name]: e.target.value }));
   const handleAddArtist = async () => {
     if (!artistForm.id || !artistForm.password || !artistForm.display_name) {
-      setArtistSubmitStatus("error:Please fill in ID, Password and Display Name."); return;
+      setArtistStatus("error:ID, Password and Display Name are required."); return;
     }
-    setArtistSubmitting(true); setArtistSubmitStatus(null);
+    setArtistSubmitting(true); setArtistStatus(null);
     const { error } = await supabase.from("artists").insert([{
       id: artistForm.id.trim(), password: artistForm.password.trim(),
       display_name: artistForm.display_name.trim(),
       filter_name: artistForm.filter_name.trim() || artistForm.display_name.trim(),
       upload_url: artistForm.upload_url.trim() || null,
+      slug: artistForm.slug.trim() || null,
     }]);
-    if (error) setArtistSubmitStatus("error:" + error.message);
-    else { setArtistSubmitStatus("success"); setArtists(p => [...p, { ...artistForm }]); setArtistForm({ id: "", password: "", display_name: "", filter_name: "", upload_url: "" }); }
+    if (error) setArtistStatus("error:" + error.message);
+    else { setArtistStatus("success"); setArtists(p => [...p, { ...artistForm }]); setArtistForm({ id: "", password: "", display_name: "", filter_name: "", upload_url: "", slug: "" }); }
     setArtistSubmitting(false);
   };
+  const handleDeleteArtist = async (id) => {
+    if (!window.confirm(`Delete artist "${id}"?`)) return;
+    const { error } = await supabase.from("artists").delete().eq("id", id);
+    if (!error) setArtists(p => p.filter(a => a.id !== id));
+    else alert(error.message);
+  };
 
-  const slugify = str => str.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
-
+  /* ── Press handlers ── */
+  const handlePostChange = e => setPostForm(p => ({ ...p, [e.target.name]: e.target.value }));
   const handleSavePost = async () => {
-    // Read body directly from the editor DOM in case blur hasn't fired
     const editorEl = document.querySelector("[data-yen-editor]");
-    const liveBody = editorEl ? editorEl.innerHTML : postForm.body;
-    const finalBody = liveBody.trim();
-
-    if (!postForm.title || !finalBody) {
-      setPostSubmitStatus("error:Title and body are required."); return;
-    }
-    setPostSubmitting(true); setPostSubmitStatus(null);
+    const finalBody = (editorEl ? editorEl.innerHTML : postForm.body).trim();
+    if (!postForm.title || !finalBody) { setPostStatus("error:Title and body are required."); return; }
+    setPostSubmitting(true); setPostStatus(null);
     const payload = {
       title: postForm.title.trim(), artist: postForm.artist.trim() || null,
       cover_url: postForm.cover_url.trim() || null,
@@ -345,223 +438,235 @@ export default function AdminDashboard() {
       ({ error: err } = await supabase.from("press_posts").insert([payload]));
       if (!err) setPosts(p => [{ ...payload, id: Date.now() }, ...p]);
     }
-    if (err) setPostSubmitStatus("error:" + err.message);
-    else {
-      setPostSubmitStatus("success");
-      setPostForm({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" });
-      setEditingPost(false);
-    }
+    if (err) setPostStatus("error:" + err.message);
+    else { setPostStatus("success"); setPostForm({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" }); setEditingPost(false); }
     setPostSubmitting(false);
   };
-
-  const handleEditPost = (post) => {
+  const handleEditPost = post => {
     setEditingPost(true);
     setPostForm({ id: post.id, title: post.title || "", artist: post.artist || "", cover_url: post.cover_url || "", date: post.date || "", excerpt: post.excerpt || "", body: post.body || "", slug: post.slug || "" });
-    setPostSubmitStatus(null);
+    setPostStatus(null);
+    setActivePanel("press");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
   const handleDeletePost = async (id, title) => {
     if (!window.confirm(`Delete post "${title}"?`)) return;
     const { error } = await supabase.from("press_posts").delete().eq("id", id);
     if (!error) setPosts(p => p.filter(x => x.id !== id));
-    else alert("Error: " + error.message);
+    else alert(error.message);
   };
 
+  /* ── Login screen ── */
   if (!auth) return (
-    <div style={S.container}>
-      <h2 style={S.title}>Admin</h2>
-      <input type="password" placeholder="Password" value={password}
-        onChange={e => setPassword(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && handleLogin()}
-        style={S.input} />
-      <button onClick={handleLogin} style={{ ...S.button, marginTop: "16px" }}>Enter</button>
-      {error && <p style={S.error}>{error}</p>}
-    </div>
-  );
-
-  return (
-    <div style={S.container}>
-
-      <Section title="Add Release">
-        {[
-          { name: "title", placeholder: "Title *" },
-          { name: "artist", placeholder: "Artist *" },
-          { name: "slug", placeholder: "Slug * (e.g. bahaimhaele)" },
-          { name: "date", placeholder: "Date * (YYYY-MM-DD)" },
-          { name: "release_at", placeholder: "Release At (YYYY-MM-DD, countdown)" },
-          { name: "cover", placeholder: "Cover image URL" },
-          { name: "smart_link", placeholder: "Smart Link" },
-          { name: "spotify_url", placeholder: "Spotify URL" },
-          { name: "apple_url", placeholder: "Apple Music URL" },
-          { name: "youtube_url", placeholder: "YouTube URL" },
-          { name: "embed_youtube_id", placeholder: "YouTube Embed ID" },
-          { name: "embed_spotify", placeholder: "Spotify Embed URL" },
-          { name: "background_url", placeholder: "Background image URL" },
-          { name: "socials_instagram", placeholder: "Instagram URL" },
-          { name: "socials_tiktok", placeholder: "TikTok URL" },
-          { name: "socials_youtube", placeholder: "YouTube channel URL" },
-          { name: "socials_website", placeholder: "Website URL" },
-        ].map(({ name, placeholder }) => (
-          <input key={name} name={name} placeholder={placeholder} value={form[name]} onChange={handleFormChange} style={S.input} />
-        ))}
-        <select name="type" value={form.type} onChange={handleFormChange} style={{ ...S.input, color: "#f0ede8" }}>
-          <option value="Single">Single</option>
-          <option value="Album">Album</option>
-        </select>
-        <button onClick={handleAddRelease} disabled={submitting} style={S.button}>
-          {submitting ? "Adding..." : "Add Release"}
-        </button>
-        <StatusMsg status={submitStatus} noun="Release added" />
-      </Section>
-
-      <Section title="Add Artist Login">
-        {[
-          { name: "id", placeholder: "Artist ID * (e.g. sigh)" },
-          { name: "password", placeholder: "Password *" },
-          { name: "display_name", placeholder: "Display Name *" },
-          { name: "filter_name", placeholder: "Filter Name (exact name in releases)" },
-          { name: "upload_url", placeholder: "Google Drive Vault URL" },
-        ].map(({ name, placeholder }) => (
-          <input key={name} name={name} placeholder={placeholder} value={artistForm[name]} onChange={handleArtistFormChange} style={S.input} />
-        ))}
-        <button onClick={handleAddArtist} disabled={artistSubmitting} style={S.button}>
-          {artistSubmitting ? "Adding..." : "Add Artist"}
-        </button>
-        <StatusMsg status={artistSubmitStatus} noun="Artist added" />
-      </Section>
-
-      <Section title="All Artists">
-        {artists.map(a => (
-          <Row key={a.id} label={`${a.display_name} (${a.id})`} sub={`Filter: ${a.filter_name}`}>
-            <DangerBtn onClick={() => handleDeleteArtist(a.id)}>Delete</DangerBtn>
-          </Row>
-        ))}
-      </Section>
-
-      <Section title="Shortlink Generator">
-        <input placeholder="short path (e.g. presskit)" value={shortlink} onChange={e => setShortlink(e.target.value)} style={S.input} />
-        <input placeholder="full destination URL" value={destination} onChange={e => setDestination(e.target.value)} style={S.input} />
-        <button onClick={copyToClipboard} style={S.button}>Copy Snippet</button>
-        {copied && <p style={S.success}>Copied</p>}
-        {shortlink && destination && <pre style={S.snippetBox}>{generateSnippet()}</pre>}
-        <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {Object.entries(linkMap).map(([slug, url]) => (
-            <Row key={slug} label={slug} sub={url}>
-              <GhostBtn onClick={() => handleCopySlug(slug)}>{copiedSlug === slug ? "Copied" : "Copy"}</GhostBtn>
-            </Row>
-          ))}
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
+      <div style={{ paddingTop: "36px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
         </div>
-      </Section>
-
-      <Section title="All Releases">
-        {releases.map(r => (
-          <Row key={r.id} label={`${r.title} — ${r.artist}`} sub={r.date}>
-            <DangerBtn onClick={() => handleDelete(r.id, r.title)}>Delete</DangerBtn>
-          </Row>
-        ))}
-      </Section>
-
-      <Section title={editingPost ? "Edit Press Post" : "New Press Post"}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
-          <input name="title" placeholder="Title *" value={postForm.title}
-            onChange={handlePostFieldChange} style={{ ...S.input, gridColumn: "1 / -1" }} />
-          <input name="artist" placeholder="Artist tag (e.g. SHOWER)" value={postForm.artist}
-            onChange={handlePostFieldChange} style={S.input} />
-          <input name="date" placeholder="Date (YYYY-MM-DD)" value={postForm.date}
-            onChange={handlePostFieldChange} style={S.input} />
-          <input name="slug" placeholder="Slug (auto if blank)" value={postForm.slug}
-            onChange={handlePostFieldChange} style={S.input} />
-          <input name="cover_url" placeholder="Cover image URL" value={postForm.cover_url}
-            onChange={handlePostFieldChange} style={S.input} />
-          <input name="excerpt" placeholder="Excerpt / subtitle" value={postForm.excerpt}
-            onChange={handlePostFieldChange} style={{ ...S.input, gridColumn: "1 / -1" }} />
+        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
+          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
+            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
+              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
+            ))}
+          </div>
         </div>
-
-        <div style={{ marginTop: "16px" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "8px" }}>Body</p>
-          <RichEditor key={editingPost ? postForm.id : "new"} value={postForm.body} onChange={v => setPostForm(p => ({ ...p, body: v }))} />
-        </div>
-
-        <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-          <button onClick={handleSavePost} disabled={postSubmitting} style={S.button}>
-            {postSubmitting ? "Saving..." : editingPost ? "Update Post" : "Publish Post"}
-          </button>
-          {editingPost && (
-            <button onClick={() => { setEditingPost(false); setPostForm({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" }); setPostSubmitStatus(null); }}
-              style={{ ...S.button, borderColor: "#222", opacity: 0.45 }}>
-              Cancel
-            </button>
-          )}
-        </div>
-        <StatusMsg status={postSubmitStatus} noun={editingPost ? "Post updated" : "Post published"} />
-      </Section>
-
-      <Section title="All Press Posts">
-        {posts.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.2em", opacity: 0.3, textTransform: "uppercase" }}>No posts yet.</p>}
-        {posts.map(p => (
-          <Row key={p.id} label={p.title} sub={`${p.artist || "—"} · ${p.date}`}>
-            <a href={`/press/${p.slug}`} target="_blank" rel="noreferrer" style={ghostBtnStyle}>View</a>
-            <GhostBtn onClick={() => handleEditPost(p)}>Edit</GhostBtn>
-            <DangerBtn onClick={() => handleDeletePost(p.id, p.title)}>Delete</DangerBtn>
-          </Row>
-        ))}
-      </Section>
-
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <section style={{ marginBottom: "60px" }}>
-      <h2 style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.45, borderBottom: "1px solid #1a1a1a", paddingBottom: "12px", marginBottom: "20px" }}>
-        {title}
-      </h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>{children}</div>
-    </section>
-  );
-}
-
-function Row({ label, sub, children }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1px solid #111", gap: "12px" }}>
-      <div style={{ minWidth: 0 }}>
-        <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", color: "#f0ede8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</p>
-        {sub && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.35, marginTop: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</p>}
       </div>
-      <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>{children}</div>
+      <div style={{ padding: "60px 24px", maxWidth: "320px", margin: "0 auto" }}>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, marginBottom: "24px", textAlign: "center" }}>Admin</p>
+        <Input value={password} onChange={setPassword} placeholder="Password" type="password" />
+        {authError && <p style={{ fontFamily: F, fontSize: "10px", color: "rgba(255,100,100,0.8)", marginTop: "8px" }}>{authError}</p>}
+        <div style={{ marginTop: "16px" }}>
+          <ActionBtn onClick={handleLogin}>Enter</ActionBtn>
+        </div>
+      </div>
+    </div>
+  );
+
+  const tiles = [
+    { id: "releases",  icon: "♫",  label: "Releases"  },
+    { id: "artists",   icon: "◈",  label: "Artists"   },
+    { id: "press",     icon: "✎",  label: "Press"     },
+    { id: "slugs",     icon: "⌘",  label: "Slugs"     },
+  ];
+
+  const toggle = id => setActivePanel(p => p === id ? null : id);
+
+  return (
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
+
+      {/* logo + marquee */}
+      <div style={{ paddingTop: "36px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
+        </div>
+        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
+          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
+            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
+              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* title */}
+      <div style={{ padding: "40px 24px 32px", textAlign: "center" }}>
+        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "6px" }}>Admin</h1>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.25 }}>Yen Sound Dashboard</p>
+      </div>
+
+      {/* tile grid */}
+      <div style={{ padding: "0 24px" }}>
+        <SectionLabel>Manage</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", marginBottom: "24px" }}>
+          {tiles.map(t => <DashTile key={t.id} icon={t.icon} label={t.label} active={activePanel === t.id} onClick={() => toggle(t.id)} />)}
+        </div>
+      </div>
+
+      {/* panels */}
+      <div style={{ padding: "0 24px 80px" }}>
+
+        {/* ── Releases ── */}
+        {activePanel === "releases" && (
+          <>
+            <Panel>
+              <FieldLabel>Add Release</FieldLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {[
+                  { name: "title",           placeholder: "Title *"                       },
+                  { name: "artist",          placeholder: "Artist *"                      },
+                  { name: "slug",            placeholder: "Slug * (e.g. bahaimhaele)"     },
+                  { name: "date",            placeholder: "Date * (YYYY-MM-DD)"           },
+                  { name: "release_at",      placeholder: "Release At (countdown)"        },
+                  { name: "cover",           placeholder: "Cover image URL"               },
+                  { name: "smart_link",      placeholder: "Smart Link URL"                },
+                  { name: "spotify_url",     placeholder: "Spotify URL"                   },
+                  { name: "apple_url",       placeholder: "Apple Music URL"               },
+                  { name: "youtube_url",     placeholder: "YouTube URL"                   },
+                  { name: "embed_youtube_id",placeholder: "YouTube Embed ID"              },
+                  { name: "embed_spotify",   placeholder: "Spotify Embed URL"             },
+                  { name: "background_url",  placeholder: "Background image URL"          },
+                  { name: "socials_instagram",placeholder: "Instagram URL"               },
+                  { name: "socials_tiktok",  placeholder: "TikTok URL"                    },
+                  { name: "socials_youtube", placeholder: "YouTube channel URL"           },
+                  { name: "socials_website", placeholder: "Website URL"                   },
+                ].map(f => <NamedInput key={f.name} name={f.name} value={releaseForm[f.name]} onChange={handleReleaseChange} placeholder={f.placeholder} />)}
+                <select name="type" value={releaseForm.type} onChange={handleReleaseChange}
+                  style={{ background: "#000", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px", cursor: "pointer", outline: "none", width: "100%" }}>
+                  <option value="Single">Single</option>
+                  <option value="Album">Album</option>
+                  <option value="EP">EP</option>
+                </select>
+                <ActionBtn onClick={handleAddRelease} disabled={releaseSubmitting}>
+                  {releaseSubmitting ? "Adding..." : "Add Release"}
+                </ActionBtn>
+                <StatusMsg status={releaseStatus} noun="Release added" />
+              </div>
+            </Panel>
+
+            <Panel>
+              <FieldLabel>All Releases · {releases.length}</FieldLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {releases.map(r => (
+                  <DataRow key={r.id} label={r.title} sub={`${r.artist} · ${r.date}`}>
+                    <GhostBtn href={`/release/${r.slug || r.id}`}>View</GhostBtn>
+                    <GhostBtn danger onClick={() => handleDeleteRelease(r.id, r.title)}>Delete</GhostBtn>
+                  </DataRow>
+                ))}
+              </div>
+            </Panel>
+          </>
+        )}
+
+        {/* ── Artists ── */}
+        {activePanel === "artists" && (
+          <>
+            <Panel>
+              <FieldLabel>Add Artist Login</FieldLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {[
+                  { name: "id",           placeholder: "Artist ID * (e.g. sigh)"               },
+                  { name: "password",     placeholder: "Password *"                             },
+                  { name: "display_name", placeholder: "Display Name *"                         },
+                  { name: "filter_name",  placeholder: "Filter Name (exact name in releases)"   },
+                  { name: "slug",         placeholder: "Slug (e.g. sighdafekt — for /artist/…)" },
+                  { name: "upload_url",   placeholder: "Google Drive Vault URL"                 },
+                ].map(f => <NamedInput key={f.name} name={f.name} value={artistForm[f.name]} onChange={handleArtistChange} placeholder={f.placeholder} />)}
+                <ActionBtn onClick={handleAddArtist} disabled={artistSubmitting}>
+                  {artistSubmitting ? "Adding..." : "Add Artist"}
+                </ActionBtn>
+                <StatusMsg status={artistStatus} noun="Artist added" />
+              </div>
+            </Panel>
+
+            <Panel>
+              <FieldLabel>All Artists · {artists.length}</FieldLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {artists.map(a => (
+                  <DataRow key={a.id} label={a.display_name} sub={`ID: ${a.id}${a.slug ? ` · /artist/${a.slug}` : " · no slug"}`}>
+                    {a.slug && <GhostBtn href={`/artist/${a.slug}`}>View</GhostBtn>}
+                    <GhostBtn danger onClick={() => handleDeleteArtist(a.id)}>Delete</GhostBtn>
+                  </DataRow>
+                ))}
+              </div>
+            </Panel>
+          </>
+        )}
+
+        {/* ── Press ── */}
+        {activePanel === "press" && (
+          <>
+            <Panel>
+              <FieldLabel>{editingPost ? "Edit Post" : "New Press Post"}</FieldLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <NamedInput name="title" value={postForm.title} onChange={handlePostChange} placeholder="Title *" />
+                  <NamedInput name="artist" value={postForm.artist} onChange={handlePostChange} placeholder="Artist tag" />
+                  <NamedInput name="date" value={postForm.date} onChange={handlePostChange} placeholder="Date (YYYY-MM-DD)" />
+                  <NamedInput name="slug" value={postForm.slug} onChange={handlePostChange} placeholder="Slug (auto if blank)" />
+                  <NamedInput name="cover_url" value={postForm.cover_url} onChange={handlePostChange} placeholder="Cover image URL" />
+                  <NamedInput name="excerpt" value={postForm.excerpt} onChange={handlePostChange} placeholder="Excerpt / subtitle" />
+                </div>
+                <div style={{ marginTop: "8px" }}>
+                  <FieldLabel>Body</FieldLabel>
+                  <RichEditor key={editingPost ? postForm.id : "new"} value={postForm.body} onChange={v => setPostForm(p => ({ ...p, body: v }))} />
+                </div>
+                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                  <ActionBtn onClick={handleSavePost} disabled={postSubmitting}>
+                    {postSubmitting ? "Saving..." : editingPost ? "Update Post" : "Publish Post"}
+                  </ActionBtn>
+                  {editingPost && (
+                    <ActionBtn onClick={() => { setEditingPost(false); setPostForm({ id: "", title: "", artist: "", cover_url: "", date: "", excerpt: "", body: "", slug: "" }); setPostStatus(null); }}>
+                      Cancel
+                    </ActionBtn>
+                  )}
+                </div>
+                <StatusMsg status={postStatus} noun={editingPost ? "Post updated" : "Post published"} />
+              </div>
+            </Panel>
+
+            <Panel>
+              <FieldLabel>All Posts · {posts.length}</FieldLabel>
+              {posts.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25 }}>No posts yet.</p>}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                {posts.map(p => (
+                  <DataRow key={p.id} label={p.title} sub={`${p.artist || "—"} · ${p.date}`}>
+                    <GhostBtn href={`/press/${p.slug}`}>View</GhostBtn>
+                    <GhostBtn onClick={() => handleEditPost(p)}>Edit</GhostBtn>
+                    <GhostBtn danger onClick={() => handleDeletePost(p.id, p.title)}>Delete</GhostBtn>
+                  </DataRow>
+                ))}
+              </div>
+            </Panel>
+          </>
+        )}
+
+        {/* ── Slugs ── */}
+        {activePanel === "slugs" && (
+          <Panel>
+            <SlugManager artists={artists} />
+          </Panel>
+        )}
+      </div>
     </div>
   );
 }
-
-const ghostBtnStyle = {
-  fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase",
-  padding: "5px 10px", background: "transparent", border: "1px solid #2a2a2a",
-  color: "#f0ede8", cursor: "pointer", textDecoration: "none", opacity: 0.7,
-};
-
-function GhostBtn({ onClick, children }) {
-  return <button onClick={onClick} style={ghostBtnStyle}>{children}</button>;
-}
-
-function DangerBtn({ onClick, children }) {
-  return <button onClick={onClick} style={{ ...ghostBtnStyle, borderColor: "#3a1a1a", color: "#ff6b6b", opacity: 1 }}>{children}</button>;
-}
-
-function StatusMsg({ status, noun }) {
-  if (!status) return null;
-  if (status === "success") return <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.2em", color: "#6bffb8", marginTop: "8px" }}>✓ {noun}</p>;
-  if (status.startsWith("error:")) return <p style={{ fontFamily: F, fontSize: "10px", color: "#ff6b6b", marginTop: "8px" }}>{status.replace("error:", "")}</p>;
-  return null;
-}
-
-const S = {
-  container: { padding: "100px 24px 80px", maxWidth: "680px", margin: "0 auto", fontFamily: F, color: "#f0ede8", backgroundColor: "#000", minHeight: "100vh" },
-  title: { fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "32px", opacity: 0.6 },
-  input: { background: "transparent", color: "#f0ede8", padding: "11px 2px", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", border: "none", borderBottom: "1px solid #1e1e1e", outline: "none", width: "100%" },
-  button: { padding: "11px 20px", background: "transparent", color: "#f0ede8", border: "1px solid #2a2a2a", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", cursor: "pointer", marginTop: "4px", alignSelf: "flex-start" },
-  error: { color: "#ff6b6b", fontFamily: F, fontSize: "10px", letterSpacing: "0.1em", marginTop: "8px" },
-  success: { color: "#6bffb8", fontFamily: F, fontSize: "10px", letterSpacing: "0.2em", marginTop: "8px" },
-  snippetBox: { marginTop: "12px", background: "#080808", color: "#6bffb8", padding: "12px", fontFamily: "monospace", border: "1px solid #1a1a1a", fontSize: "12px", wordBreak: "break-word" },
-};
