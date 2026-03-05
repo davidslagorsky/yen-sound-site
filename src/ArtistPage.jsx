@@ -139,7 +139,7 @@ export default function ArtistPage() {
       </div>
 
       {/* ── Name + bio ── */}
-      <div style={{ padding: "28px 24px 24px", textAlign: "center", borderBottom: "2px solid rgba(240,237,232,0.85)" }}>
+      <div style={{ padding: "28px 24px 24px", textAlign: "center" }}>
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
