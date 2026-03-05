@@ -7,11 +7,30 @@ import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icon
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
+const ICON_COMPONENTS = {
+  spotify: <FaSpotify size={17} />,
+  apple: <FaApple size={17} />,
+  youtube: <FaYoutube size={17} />,
+  instagram: <FaInstagram size={17} />,
+  tiktok: <FaTiktok size={17} />,
+};
+
+function buildEmbedSrc(url = "") {
+  const spotify = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
+  const youtube = url.match(/(?:v=|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  const soundcloud = url.includes("soundcloud.com");
+  if (spotify) return { type: "spotify", src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
+  if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1` };
+  if (soundcloud) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false` };
+  return null;
+}
+
 export default function ArtistPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [showAllReleases, setShowAllReleases] = useState(false);
   const [pressPosts, setPressPosts] = useState([]);
+  const [artistPageData, setArtistPageData] = useState(null); // from supabase artists table
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -37,8 +56,10 @@ export default function ArtistPage() {
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [artist, allNames]);
 
+  /* fetch press + supabase artist page data */
   useEffect(() => {
     if (!artist) return;
+
     async function fetchPress() {
       const { data } = await supabase
         .from("press_posts")
@@ -55,8 +76,20 @@ export default function ArtistPage() {
       });
       setPressPosts(matched);
     }
+
+    async function fetchArtistPageData() {
+      // match by slug column in artists table
+      const { data } = await supabase
+        .from("artists")
+        .select("bio, custom_buttons, embed_url, slug")
+        .eq("slug", slug)
+        .single();
+      if (data) setArtistPageData(data);
+    }
+
     fetchPress();
-  }, [artist, artistName]);
+    fetchArtistPageData();
+  }, [artist, artistName, slug]);
 
   const LIMIT = 12;
   const visible = showAllReleases ? artistReleases : artistReleases.slice(0, LIMIT);
@@ -77,6 +110,15 @@ export default function ArtistPage() {
     socials.instagram && socials.instagram !== "PLACEHOLDER" && { label: "INSTAGRAM", icon: <FaInstagram size={17} />, url: socials.instagram },
     pressPosts.length > 0 && { label: "PRESS", url: `/press`, internal: true },
   ].filter(Boolean);
+
+  /* custom buttons from dashboard */
+  const customButtons = (artistPageData?.custom_buttons || []).filter(b => b.label && b.url);
+
+  /* embed */
+  const embedData = artistPageData?.embed_url ? buildEmbedSrc(artistPageData.embed_url) : null;
+
+  /* bio */
+  const bio = artistPageData?.bio || "";
 
   const btnStyle = {
     display: "flex",
@@ -113,17 +155,10 @@ export default function ArtistPage() {
             style={{ width: "52px", height: "52px", opacity: 0.55 }}
           />
         </div>
-        {/* Marquee */}
         <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-          <div style={{
-            display: "inline-flex", gap: "0",
-            animation: "marquee 18s linear infinite",
-            whiteSpace: "nowrap",
-          }}>
+          <div style={{ display: "inline-flex", gap: "0", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
             {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>
-                {t}
-              </span>
+              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
             ))}
           </div>
         </div>
@@ -143,7 +178,12 @@ export default function ArtistPage() {
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
-        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
+        {bio ? (
+          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 8px" }}>
+            {bio}
+          </p>
+        ) : null}
+        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35, marginTop: bio ? "16px" : "0" }}>
           Choose music service
         </p>
       </div>
@@ -167,7 +207,35 @@ export default function ArtistPage() {
             </a>
           )
         )}
+
+        {/* ── Custom buttons from dashboard ── */}
+        {customButtons.map((btn, i) => (
+          <a key={`custom-${i}`} href={btn.url} target="_blank" rel="noreferrer" style={btnStyle}
+            onMouseOver={e => e.currentTarget.style.background = "#111"}
+            onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+            {ICON_COMPONENTS[btn.icon] || null}
+            {btn.label.toUpperCase()}
+          </a>
+        ))}
       </div>
+
+      {/* ── Embed (from dashboard) ── */}
+      {embedData && (
+        <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
+          {embedData.type === "youtube" ? (
+            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
+              <iframe src={embedData.src} frameBorder="0" allowFullScreen
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+            </div>
+          ) : embedData.type === "spotify" ? (
+            <iframe src={embedData.src} width="100%" height="152" frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy" style={{ display: "block" }} />
+          ) : embedData.type === "soundcloud" ? (
+            <iframe width="100%" height="166" frameBorder="0" src={embedData.src} style={{ display: "block" }} />
+          ) : null}
+        </div>
+      )}
 
       {/* ── Releases ── */}
       {artistReleases.length > 0 && (
