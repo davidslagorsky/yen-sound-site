@@ -71,35 +71,40 @@ export default function PostPage() {
       <article style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px 24px 100px" }}>
 
-          <Link to="/press" style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: "40px" }}>
+          <Link to="/press" style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: "48px" }}>
             ← Press
           </Link>
 
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>
-            {post.artist && <span>{post.artist} · </span>}{formatDate(post.date)}
-          </p>
-
-          <h1 style={{ fontFamily: F, fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 700, letterSpacing: "0.01em", lineHeight: 1.05, color: "#f0ede8", marginBottom: "20px" }}>
-            {post.title}
-          </h1>
-
-          {post.excerpt && (
-            <p style={{ fontFamily: F, fontSize: "15px", fontWeight: 300, lineHeight: 1.6, color: "#f0ede8", opacity: 0.5, marginBottom: "36px", fontStyle: "italic" }}>
-              {post.excerpt}
+          <div style={{ direction: "rtl", textAlign: "right", marginBottom: "36px" }}>
+            <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>
+              {post.artist && <span>{post.artist} · </span>}{formatDate(post.date)}
             </p>
-          )}
+            <h1 style={{ fontFamily: F, fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 700, lineHeight: 1.1, color: "#f0ede8", marginBottom: "16px" }}>
+              {post.title}
+            </h1>
+            {post.excerpt && (
+              <p style={{ fontFamily: F, fontSize: "15px", fontWeight: 300, lineHeight: 1.7, color: "#f0ede8", opacity: 0.5, fontStyle: "italic" }}>
+                {post.excerpt}
+              </p>
+            )}
+          </div>
 
           {post.cover_url && (
-            <div style={{ width: "100%", aspectRatio: "16/9", overflow: "hidden", marginBottom: "48px" }}>
+            <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", marginBottom: "48px" }}>
               <img src={post.cover_url} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             </div>
           )}
 
-          <div className="press-body" dangerouslySetInnerHTML={{ __html: post.body || "" }} />
+          <div
+            className="press-body"
+            dir="rtl"
+            style={{ textAlign: "right" }}
+            dangerouslySetInnerHTML={{ __html: post.body || "" }}
+          />
 
           <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: "1px solid #1a1a1a" }}>
             <Link to="/press" style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4, textDecoration: "none" }}>
-              ← All Posts
+              ← Press
             </Link>
           </div>
         </div>
@@ -110,7 +115,7 @@ export default function PostPage() {
 
 function formatDate(d) {
   if (!d) return "";
-  return new Date(d + "T00:00:00").toLocaleDateString("en-GB", {
+  return new Date(d + "T00:00:00").toLocaleDateString("he-IL", {
     day: "2-digit", month: "long", year: "numeric",
   });
 }
