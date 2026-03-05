@@ -1,77 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 const ICON_MAP = {
-  spotify: '◎', apple: '◈', youtube: '▶', instagram: '◻', tiktok: '◇',
-  soundcloud: '◉', bandcamp: '◆', link: '→', custom: '＋',
+  link: '→', spotify: '◎', apple: '◈', youtube: '▶',
+  instagram: '◻', tiktok: '◇', soundcloud: '◉', bandcamp: '◆',
 };
 
 /* ── tiny helpers ── */
-function Label({ children }) {
+function FieldLabel({ children }) {
+  return <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px' }}>{children}</p>;
+}
+function Input({ value, onChange, placeholder }) {
   return (
-    <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.35, marginBottom: '8px' }}>
-      {children}
-    </p>
+    <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={{ width: '100%', boxSizing: 'border-box', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', transition: 'border-color 0.15s' }}
+      onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
+      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
   );
 }
-function Input({ value, onChange, placeholder, style = {} }) {
+function Textarea({ value, onChange, placeholder, rows = 5 }) {
   return (
-    <input
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      style={{
-        width: '100%', boxSizing: 'border-box',
-        background: 'transparent', border: '1px solid rgba(240,237,232,0.2)',
-        color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em',
-        padding: '10px 12px', outline: 'none',
-        transition: 'border-color 0.15s',
-        ...style,
-      }}
+    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+      style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', lineHeight: 1.6, transition: 'border-color 0.15s' }}
       onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'}
-    />
-  );
-}
-function Textarea({ value, onChange, placeholder, rows = 4 }) {
-  return (
-    <textarea
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      style={{
-        width: '100%', boxSizing: 'border-box', resize: 'vertical',
-        background: 'transparent', border: '1px solid rgba(240,237,232,0.2)',
-        color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em',
-        padding: '10px 12px', outline: 'none', lineHeight: 1.6,
-        transition: 'border-color 0.15s',
-      }}
-      onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'}
-    />
+      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
   );
 }
 
-/* ── save button ── */
-function SaveBtn({ onClick, status }) {
-  const label = status === 'saving' ? 'Saving...' : status === 'saved' ? '✓ Saved' : status === 'error' ? 'Error' : 'Save';
-  const opacity = status === 'saved' ? 0.5 : 1;
+/* ── full-width action button ── */
+function ActionBtn({ onClick, children, danger = false, disabled = false }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: 'block', width: '100%', padding: '16px 24px',
+      border: danger ? '2px solid rgba(220,80,80,0.6)' : '2px solid rgba(240,237,232,0.8)',
+      background: 'transparent', color: danger ? 'rgba(220,80,80,0.9)' : '#f0ede8',
+      fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.3em',
+      textTransform: 'uppercase', cursor: disabled ? 'default' : 'pointer',
+      transition: 'background 0.15s', opacity: disabled ? 0.4 : 1, boxSizing: 'border-box',
+    }}
+      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(220,80,80,0.08)' : '#111'; }}
+      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+      {children}
+    </button>
+  );
+}
+
+/* ── grid tile (matches main dashboard blocks) ── */
+function EditorTile({ icon, label, active, onClick }) {
   return (
     <button onClick={onClick} style={{
-      display: 'block', width: '100%', marginTop: '20px',
-      padding: '16px 24px', border: '2px solid rgba(240,237,232,0.8)',
-      background: 'transparent', color: '#f0ede8', fontFamily: F,
-      fontSize: '11px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase',
-      cursor: 'pointer', transition: 'background 0.15s', opacity,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: '10px', padding: '28px 16px',
+      border: active ? '1px solid rgba(240,237,232,0.6)' : '1px solid rgba(240,237,232,0.15)',
+      background: active ? '#0d0d0d' : 'transparent', color: '#f0ede8',
+      cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', width: '100%',
     }}
-      onMouseOver={e => { if (status !== 'saving') e.currentTarget.style.background = '#111'; }}
-      onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-    >
-      {label}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.4)'; e.currentTarget.style.background = '#0a0a0a'; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.15)'; e.currentTarget.style.background = 'transparent'; } }}>
+      <span style={{ fontSize: '22px', lineHeight: 1, opacity: 0.7 }}>{icon}</span>
+      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: active ? 1 : 0.7 }}>{label}</span>
     </button>
   );
 }
@@ -86,23 +76,23 @@ export default function ArtistDashboard() {
 
   /* editor state */
   const [bio, setBio] = useState('');
-  const [customButtons, setCustomButtons] = useState([]); // [{label, url, icon}]
+  const [customButtons, setCustomButtons] = useState([]);
   const [embedUrl, setEmbedUrl] = useState('');
-  const [activeTab, setActiveTab] = useState(null); // null | 'bio' | 'buttons' | 'embed'
+  const [activePanel, setActivePanel] = useState(null);
 
-  /* save status per section */
+  /* statuses */
   const [bioStatus, setBioStatus] = useState('idle');
   const [btnStatus, setBtnStatus] = useState('idle');
   const [embedStatus, setEmbedStatus] = useState('idle');
+  const [resetStatus, setResetStatus] = useState('idle');
   const [saveError, setSaveError] = useState(null);
+
+  /* drag state */
+  const dragIndex = useRef(null);
 
   useEffect(() => {
     async function fetchArtist() {
-      const { data, error } = await supabase
-        .from('artists')
-        .select('*')
-        .eq('id', artistId)
-        .single();
+      const { data, error } = await supabase.from('artists').select('*').eq('id', artistId).single();
       if (!error && data) {
         setArtist(data);
         setBio(data.bio || '');
@@ -134,27 +124,37 @@ export default function ArtistDashboard() {
     setTimeout(() => setEmbedStatus('idle'), 2500);
   }
 
-  /* ── button helpers ── */
-  function addButton() {
-    setCustomButtons(prev => [...prev, { label: '', url: '', icon: 'link' }]);
+  /* ── reset: clears custom buttons + embed ── */
+  async function resetPage() {
+    if (!window.confirm('This will remove all custom buttons and embeds from your page. Continue?')) return;
+    setResetStatus('saving'); setSaveError(null);
+    const { error } = await supabase.from('artists').update({ custom_buttons: [], embed_url: '' }).eq('id', artistId);
+    if (error) { setSaveError(error.message); setResetStatus('error'); }
+    else { setCustomButtons([]); setEmbedUrl(''); setResetStatus('saved'); }
+    setTimeout(() => setResetStatus('idle'), 2500);
   }
-  function updateButton(i, field, val) {
-    setCustomButtons(prev => prev.map((b, idx) => idx === i ? { ...b, [field]: val } : b));
-  }
-  function removeButton(i) {
-    setCustomButtons(prev => prev.filter((_, idx) => idx !== i));
-  }
-  function moveButton(i, dir) {
+
+  /* ── button list helpers ── */
+  function addButton() { setCustomButtons(prev => [...prev, { label: '', url: '', icon: 'link' }]); }
+  function updateButton(i, field, val) { setCustomButtons(prev => prev.map((b, idx) => idx === i ? { ...b, [field]: val } : b)); }
+  function removeButton(i) { setCustomButtons(prev => prev.filter((_, idx) => idx !== i)); }
+
+  /* drag-to-reorder */
+  function onDragStart(i) { dragIndex.current = i; }
+  function onDragOver(e, i) {
+    e.preventDefault();
+    if (dragIndex.current === null || dragIndex.current === i) return;
     setCustomButtons(prev => {
       const arr = [...prev];
-      const swap = i + dir;
-      if (swap < 0 || swap >= arr.length) return arr;
-      [arr[i], arr[swap]] = [arr[swap], arr[i]];
+      const [moved] = arr.splice(dragIndex.current, 1);
+      arr.splice(i, 0, moved);
+      dragIndex.current = i;
       return arr;
     });
   }
+  function onDragEnd() { dragIndex.current = null; }
 
-  /* ── loading / error states ── */
+  /* ── loading / not found ── */
   if (loading) return (
     <div style={centered}>
       <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.3, color: '#f0ede8' }}>Loading</p>
@@ -163,22 +163,26 @@ export default function ArtistDashboard() {
   if (!artist) return (
     <div style={centered}>
       <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.4, color: '#f0ede8' }}>Artist not found</p>
-      <Link to="/" style={{ color: '#f0ede8', fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', marginTop: '24px', opacity: 0.35 }}>← Home</Link>
+      <Link to="/" style={{ color: '#f0ede8', fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', marginTop: '24px', opacity: 0.35, textDecoration: 'none' }}>← Home</Link>
     </div>
   );
 
   const folders = [
-    { id: 'submit', label: 'Submit a Release', icon: '＋', href: 'https://docs.google.com/forms/d/e/1FAIpQLSe8rH0NRf1YBN-rD78uuzIoLxwZjJAl4qBKPn7tQ0hZeNr59w/viewform?usp=header', external: true },
+    { id: 'submit',       label: 'Submit a Release', icon: '＋', href: 'https://docs.google.com/forms/d/e/1FAIpQLSe8rH0NRf1YBN-rD78uuzIoLxwZjJAl4qBKPn7tQ0hZeNr59w/viewform?usp=header', external: true },
     { id: 'distribution', label: 'Distribution Form', icon: '↓', href: '/docs/YEN_DISTRIBUTION_FORM.pdf', download: true },
-    { id: 'vault', label: 'Vault', icon: '◈', href: artist.upload_url, external: true },
-    { id: 'releases', label: 'My Releases', icon: '♫', href: `/releases?artist=${encodeURIComponent(artist.filter_name || artistId)}`, internal: true },
+    { id: 'vault',        label: 'Vault',             icon: '◈', href: artist.upload_url, external: true },
+    { id: 'releases',     label: 'My Releases',       icon: '♫', href: `/releases?artist=${encodeURIComponent(artist.filter_name || artistId)}`, internal: true },
   ];
 
-  const tabs = [
-    { id: 'bio', label: 'Bio Text' },
-    { id: 'buttons', label: 'Custom Buttons' },
-    { id: 'embed', label: 'Embed' },
+  const editorTiles = [
+    { id: 'bio',     icon: '✎', label: 'Bio Text'   },
+    { id: 'buttons', icon: '⊞', label: 'Buttons'    },
+    { id: 'embed',   icon: '▶', label: 'Embed'      },
+    { id: 'reset',   icon: '↺', label: 'Reset Page' },
   ];
+
+  const tileHov   = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'; e.currentTarget.style.background = '#0a0a0a'; };
+  const tileUnhov = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.15)'; e.currentTarget.style.background = 'transparent'; };
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '600px', margin: '0 auto' }}>
@@ -198,18 +202,17 @@ export default function ArtistDashboard() {
         </div>
       </div>
 
-      {/* ── Welcome heading ── */}
+      {/* ── Welcome ── */}
       <div style={{ padding: '40px 24px 32px', textAlign: 'center' }}>
         <h1 style={{ fontFamily: F, fontSize: '17px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', marginBottom: '6px' }}>
           Welcome, {artist.display_name}
         </h1>
-        <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.25 }}>
-          Artist Dashboard
-        </p>
+        <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.25 }}>Artist Dashboard</p>
       </div>
 
       {/* ── Quick-access grid ── */}
-      <div style={{ padding: '0 24px 8px' }}>
+      <div style={{ padding: '0 24px' }}>
+        <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>Quick Access</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {folders.map(folder => {
             const inner = (
@@ -218,38 +221,38 @@ export default function ArtistDashboard() {
                 <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.85 }}>{folder.label}</span>
               </>
             );
-            const base = {
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: '28px 16px', border: '1px solid rgba(240,237,232,0.15)',
-              color: '#f0ede8', textDecoration: 'none', cursor: 'pointer',
-              transition: 'border-color 0.2s, background 0.2s', background: 'transparent',
-            };
-            const hov = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'; e.currentTarget.style.background = '#0a0a0a'; };
-            const unHov = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.15)'; e.currentTarget.style.background = 'transparent'; };
-            if (folder.download) return <a key={folder.id} href={folder.href} download style={base} onMouseEnter={hov} onMouseLeave={unHov}>{inner}</a>;
-            if (folder.internal) return <Link key={folder.id} to={folder.href} style={base} onMouseEnter={hov} onMouseLeave={unHov}>{inner}</Link>;
+            const base = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 16px', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', textDecoration: 'none', cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', background: 'transparent' };
+            if (folder.download) return <a key={folder.id} href={folder.href} download style={base} onMouseEnter={tileHov} onMouseLeave={tileUnhov}>{inner}</a>;
+            if (folder.internal) return <Link key={folder.id} to={folder.href} style={base} onMouseEnter={tileHov} onMouseLeave={tileUnhov}>{inner}</Link>;
             if (!folder.href) return <div key={folder.id} style={{ ...base, opacity: 0.3, cursor: 'default' }}>{inner}</div>;
-            return <a key={folder.id} href={folder.href} target="_blank" rel="noopener noreferrer" style={base} onMouseEnter={hov} onMouseLeave={unHov}>{inner}</a>;
+            return <a key={folder.id} href={folder.href} target="_blank" rel="noopener noreferrer" style={base} onMouseEnter={tileHov} onMouseLeave={tileUnhov}>{inner}</a>;
           })}
         </div>
       </div>
 
       {/* ── My Page editor ── */}
-      <div style={{ margin: '32px 24px 0', borderTop: '1px solid #1a1a1a', paddingTop: '32px' }}>
-        <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.25, textAlign: 'center', marginBottom: '20px' }}>
-          My Page
-        </p>
+      <div style={{ padding: '40px 24px 0' }}>
+        <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>My Page</p>
+
+        {/* editor tile grid — same style as quick access */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
+          {editorTiles.map(t => (
+            <EditorTile key={t.id} icon={t.icon} label={t.label}
+              active={activePanel === t.id}
+              onClick={() => setActivePanel(activePanel === t.id ? null : t.id)} />
+          ))}
+        </div>
 
         {/* error banner */}
         {saveError && (
-          <div style={{ margin: '0 0 16px', padding: '12px 16px', border: '1px solid rgba(255,80,80,0.4)', background: 'rgba(255,80,80,0.06)' }}>
-            <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', color: 'rgba(255,120,120,0.9)', lineHeight: 1.5 }}>
-              <strong>Save failed:</strong> {saveError}
+          <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid rgba(220,80,80,0.4)', background: 'rgba(220,80,80,0.06)' }}>
+            <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.1em', color: 'rgba(255,120,120,0.9)', lineHeight: 1.6 }}>
+              Save failed — {saveError}
             </p>
             {saveError.includes('column') && (
-              <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.1em', opacity: 0.6, marginTop: '6px', color: '#f0ede8' }}>
-                Run this in Supabase SQL Editor:<br />
-                <code style={{ fontFamily: 'monospace', fontSize: '10px', opacity: 0.8 }}>
+              <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.55, marginTop: '6px', color: '#f0ede8', lineHeight: 1.7 }}>
+                Run in Supabase SQL Editor:<br />
+                <code style={{ fontFamily: 'monospace', fontSize: '10px' }}>
                   ALTER TABLE artists ADD COLUMN IF NOT EXISTS bio text;<br />
                   ALTER TABLE artists ADD COLUMN IF NOT EXISTS custom_buttons jsonb DEFAULT '[]';<br />
                   ALTER TABLE artists ADD COLUMN IF NOT EXISTS embed_url text;<br />
@@ -260,119 +263,132 @@ export default function ArtistDashboard() {
           </div>
         )}
 
-        {/* tab row */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #1a1a1a' }}>
-          {tabs.map(t => {
-            const active = activeTab === t.id;
-            return (
-              <button key={t.id}
-                onClick={() => setActiveTab(active ? null : t.id)}
-                style={{
-                  flex: 1, padding: '14px 8px', background: 'transparent',
-                  border: 'none', borderBottom: active ? '2px solid rgba(240,237,232,0.8)' : '2px solid transparent',
-                  color: '#f0ede8', fontFamily: F, fontSize: '9px', fontWeight: 700,
-                  letterSpacing: '0.25em', textTransform: 'uppercase',
-                  cursor: 'pointer', opacity: active ? 1 : 0.35,
-                  transition: 'opacity 0.15s, border-color 0.15s',
-                  marginBottom: '-1px',
-                }}
-                onMouseOver={e => { if (!active) e.currentTarget.style.opacity = 0.7; }}
-                onMouseOut={e => { if (!active) e.currentTarget.style.opacity = 0.35; }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-
         {/* ── Bio panel ── */}
-        {activeTab === 'bio' && (
-          <div style={{ padding: '24px 0' }}>
-            <Label>Bio Text — shown on your artist page</Label>
-            <Textarea
-              value={bio}
-              onChange={setBio}
-              placeholder="Write a short bio about yourself..."
-              rows={6}
-            />
-            <SaveBtn onClick={saveBio} status={bioStatus} />
+        {activePanel === 'bio' && (
+          <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
+            <FieldLabel>Bio — shown under your name on your artist page</FieldLabel>
+            <Textarea value={bio} onChange={setBio} placeholder="Write a short bio about yourself..." rows={6} />
+            <div style={{ marginTop: '16px' }}>
+              <ActionBtn onClick={saveBio} disabled={bioStatus === 'saving'}>
+                {bioStatus === 'saving' ? 'Saving...' : bioStatus === 'saved' ? '✓ Saved' : 'Save Bio'}
+              </ActionBtn>
+            </div>
           </div>
         )}
 
-        {/* ── Custom Buttons panel ── */}
-        {activeTab === 'buttons' && (
-          <div style={{ padding: '24px 0' }}>
-            <Label>Custom buttons — appear on your artist page after the platform links</Label>
+        {/* ── Buttons panel ── */}
+        {activePanel === 'buttons' && (
+          <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
+            <FieldLabel>Custom Buttons — drag to reorder · appear after streaming links</FieldLabel>
+
+            {customButtons.length === 0 && (
+              <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', opacity: 0.25, textAlign: 'center', padding: '20px 0' }}>No custom buttons yet</p>
+            )}
 
             {customButtons.map((btn, i) => (
-              <div key={i} style={{ marginBottom: '16px', padding: '16px', border: '1px solid rgba(240,237,232,0.1)' }}>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <div key={i}
+                draggable
+                onDragStart={() => onDragStart(i)}
+                onDragOver={e => onDragOver(e, i)}
+                onDragEnd={onDragEnd}
+                style={{ marginBottom: '10px', padding: '14px', border: '1px solid rgba(240,237,232,0.12)', background: '#050505', cursor: 'grab', userSelect: 'none' }}>
+
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', opacity: 0.3 }}>
+                  <span style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.2em' }}>⠿ Drag to reorder</span>
+                  <span style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', marginLeft: 'auto' }}>#{i + 1}</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                   <div style={{ flex: 1 }}>
-                    <Label>Label</Label>
+                    <FieldLabel>Label</FieldLabel>
                     <Input value={btn.label} onChange={v => updateButton(i, 'label', v)} placeholder="e.g. BANDCAMP" />
                   </div>
-                  <div style={{ width: '90px' }}>
-                    <Label>Icon</Label>
+                  <div style={{ width: '110px' }}>
+                    <FieldLabel>Icon</FieldLabel>
                     <select value={btn.icon || 'link'} onChange={e => updateButton(i, 'icon', e.target.value)}
-                      style={{ width: '100%', background: '#0a0a0a', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 8px', cursor: 'pointer', outline: 'none' }}>
+                      style={{ width: '100%', background: '#000', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 8px', cursor: 'pointer', outline: 'none' }}>
                       {Object.entries(ICON_MAP).map(([k, v]) => (
                         <option key={k} value={k}>{v} {k}</option>
                       ))}
                     </select>
                   </div>
                 </div>
-                <Label>URL</Label>
+
+                <FieldLabel>URL</FieldLabel>
                 <Input value={btn.url} onChange={v => updateButton(i, 'url', v)} placeholder="https://..." />
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => moveButton(i, -1)} style={smallBtn} title="Move up">↑</button>
-                  <button onClick={() => moveButton(i, 1)} style={smallBtn} title="Move down">↓</button>
-                  <button onClick={() => removeButton(i)} style={{ ...smallBtn, color: 'rgba(240,100,100,0.7)' }}>Remove</button>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+                  <button onClick={() => removeButton(i)}
+                    style={{ background: 'transparent', border: '1px solid rgba(220,80,80,0.4)', color: 'rgba(220,80,80,0.8)', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer' }}>
+                    Remove
+                  </button>
                 </div>
               </div>
             ))}
 
-            <button onClick={addButton} style={{ ...smallBtn, width: '100%', padding: '14px', marginBottom: '4px', border: '1px dashed rgba(240,237,232,0.2)', letterSpacing: '0.2em' }}>
+            <button onClick={addButton}
+              style={{ width: '100%', padding: '14px', marginTop: '4px', marginBottom: '16px', background: 'transparent', border: '1px dashed rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', cursor: 'pointer' }}
+              onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'}
+              onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.2)'}>
               ＋ Add Button
             </button>
-            <SaveBtn onClick={saveButtons} status={btnStatus} />
+
+            <ActionBtn onClick={saveButtons} disabled={btnStatus === 'saving'}>
+              {btnStatus === 'saving' ? 'Saving...' : btnStatus === 'saved' ? '✓ Saved' : 'Save Buttons'}
+            </ActionBtn>
           </div>
         )}
 
         {/* ── Embed panel ── */}
-        {activeTab === 'embed' && (
-          <div style={{ padding: '24px 0' }}>
-            <Label>Embed URL — paste a Spotify, YouTube, or SoundCloud link</Label>
-            <Input
-              value={embedUrl}
-              onChange={setEmbedUrl}
-              placeholder="https://open.spotify.com/track/... or youtube.com/watch?v=..."
-            />
+        {activePanel === 'embed' && (
+          <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
+            <FieldLabel>Embed URL — Spotify, YouTube, or SoundCloud</FieldLabel>
+            <Input value={embedUrl} onChange={setEmbedUrl} placeholder="https://open.spotify.com/track/..." />
             {embedUrl && (
-              <div style={{ marginTop: '16px', opacity: 0.4 }}>
-                <Label>Preview</Label>
-                <EmbedPreview url={embedUrl} />
+              <div style={{ marginTop: '16px' }}>
+                <FieldLabel>Preview</FieldLabel>
+                <div style={{ opacity: 0.6 }}>
+                  <EmbedPreview url={embedUrl} />
+                </div>
               </div>
             )}
-            <SaveBtn onClick={saveEmbed} status={embedStatus} />
+            <div style={{ marginTop: '16px' }}>
+              <ActionBtn onClick={saveEmbed} disabled={embedStatus === 'saving'}>
+                {embedStatus === 'saving' ? 'Saving...' : embedStatus === 'saved' ? '✓ Saved' : 'Save Embed'}
+              </ActionBtn>
+            </div>
+          </div>
+        )}
+
+        {/* ── Reset panel ── */}
+        {activePanel === 'reset' && (
+          <div style={{ border: '1px solid rgba(220,80,80,0.2)', padding: '24px', marginBottom: '12px' }}>
+            <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.1em', lineHeight: 1.8, opacity: 0.6, marginBottom: '20px' }}>
+              Removes all custom buttons and embeds from your artist page. Your streaming links, social links, releases, and press posts will remain.
+            </p>
+            <ActionBtn onClick={resetPage} danger disabled={resetStatus === 'saving'}>
+              {resetStatus === 'saving' ? 'Resetting...' : resetStatus === 'saved' ? '✓ Reset' : '↺ Reset Page to Default'}
+            </ActionBtn>
           </div>
         )}
       </div>
 
-      {/* ── View my page link ── */}
-      <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-        {artist.slug && (
+      {/* ── View my page ── */}
+      {artist.slug && (
+        <div style={{ padding: '32px 24px 0', textAlign: 'center' }}>
           <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
-            style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none', display: 'inline-block', marginBottom: '24px', transition: 'opacity 0.2s' }}
+            style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none', transition: 'opacity 0.2s' }}
             onMouseOver={e => e.currentTarget.style.opacity = 0.8}
             onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
             View My Page →
           </a>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* ── Back to home ── */}
-      <div style={{ padding: '0 24px 60px', textAlign: 'center', borderTop: '1px solid #1a1a1a' }}>
-        <Link to="/" style={{ background: 'none', border: 'none', color: '#f0ede8', cursor: 'pointer', fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, textDecoration: 'none', display: 'inline-block', marginTop: '32px', transition: 'opacity 0.2s' }}
+      {/* ── Back ── */}
+      <div style={{ padding: '32px 24px 60px', textAlign: 'center', borderTop: '1px solid #1a1a1a', marginTop: '40px' }}>
+        <Link to="/"
+          style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.25, textDecoration: 'none', transition: 'opacity 0.2s' }}
           onMouseOver={e => e.currentTarget.style.opacity = 0.7}
           onMouseOut={e => e.currentTarget.style.opacity = 0.25}>
           ← Back to Home
@@ -383,40 +399,26 @@ export default function ArtistDashboard() {
   );
 }
 
-/* ── embed preview helper ── */
+/* ── embed preview ── */
 function EmbedPreview({ url }) {
   const spotify = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
   const youtube = url.match(/(?:v=|youtu\.be\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
   const soundcloud = url.includes('soundcloud.com');
-
   if (spotify) {
     const [, type, id] = spotify;
-    const src = `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`;
-    return <iframe src={src} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify embed preview" style={{ display: 'block' }} />;
+    return <iframe src={`https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`} width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify embed preview" style={{ display: 'block' }} />;
   }
   if (youtube) {
-    const src = `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1`;
     return (
       <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-        <iframe src={src} frameBorder="0" allowFullScreen title="YouTube embed preview" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <iframe src={`https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1`} frameBorder="0" allowFullScreen title="YouTube embed preview" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
       </div>
     );
   }
   if (soundcloud) {
-    const src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false`;
-    return <iframe width="100%" height="166" frameBorder="0" src={src} title="SoundCloud embed preview" style={{ display: 'block' }} />;
+    return <iframe width="100%" height="166" frameBorder="0" src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false`} title="SoundCloud embed preview" style={{ display: 'block' }} />;
   }
-  return <p style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '10px', opacity: 0.4 }}>Paste a Spotify, YouTube, or SoundCloud URL to preview</p>;
+  return <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.35 }}>Paste a Spotify, YouTube, or SoundCloud URL to preview</p>;
 }
 
-/* ── shared micro styles ── */
-const centered = {
-  minHeight: '100vh', backgroundColor: '#000', display: 'flex',
-  flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px',
-};
-const smallBtn = {
-  background: 'transparent', border: '1px solid rgba(240,237,232,0.2)',
-  color: '#f0ede8', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase',
-  padding: '8px 12px', cursor: 'pointer', transition: 'border-color 0.15s',
-};
+const centered = { minHeight: '100vh', backgroundColor: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' };
