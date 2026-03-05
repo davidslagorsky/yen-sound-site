@@ -1,104 +1,121 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../supabase";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-export default function Press() {
-  const [posts, setPosts] = useState([]);
+export default function PostPage() {
+  const { slug } = useParams();
+  const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    async function fetchPosts() {
+    async function fetchPost() {
       const { data, error } = await supabase
         .from("press_posts")
-        .select("id, title, artist, cover_url, date, excerpt, slug")
-        .order("date", { ascending: false });
-      if (!error && data) setPosts(data);
+        .select("*")
+        .eq("slug", slug)
+        .single();
+      if (error || !data) setNotFound(true);
+      else setPost(data);
       setLoading(false);
     }
-    fetchPosts();
-  }, []);
+    fetchPost();
+  }, [slug]);
+
+  if (loading) return (
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", padding: "120px 24px", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.3, color: "#f0ede8" }}>
+      Loading...
+    </div>
+  );
+
+  if (notFound) return (
+    <div style={{ backgroundColor: "#000", minHeight: "100vh", padding: "120px 24px", fontFamily: F, color: "#f0ede8" }}>
+      <Link to="/press" style={{ fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, color: "#f0ede8" }}>← Press</Link>
+    </div>
+  );
+
+  const canonicalUrl = `https://www.yensound.com/press/${post.slug}`;
 
   return (
     <>
       <Helmet>
-        <title>Press — YEN SOUND</title>
-        <meta name="description" content="Stories, features and updates from YEN SOUND artists." />
-        <meta property="og:title" content="Press — YEN SOUND" />
-        <meta property="og:description" content="Stories, features and updates from YEN SOUND artists." />
+        <title>{post.title} — YEN SOUND</title>
+        <meta name="description" content={post.excerpt || `${post.title} — YEN SOUND`} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:title" content={`${post.title} — YEN SOUND`} />
+        <meta property="og:description" content={post.excerpt || ""} />
+        <meta property="og:url" content={canonicalUrl} />
+        {post.cover_url && <meta property="og:image" content={post.cover_url} />}
+        <meta property="og:site_name" content="YEN SOUND" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${post.title} — YEN SOUND`} />
+        <meta name="twitter:description" content={post.excerpt || ""} />
+        {post.cover_url && <meta name="twitter:image" content={post.cover_url} />}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": post.title,
+          "description": post.excerpt || "",
+          "image": post.cover_url || "",
+          "datePublished": post.date || "",
+          "author": { "@type": "Organization", "name": "YEN SOUND" },
+          "publisher": { "@type": "Organization", "name": "YEN SOUND", "url": "https://www.yensound.com" },
+          "url": canonicalUrl,
+        })}</script>
       </Helmet>
 
-      <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
+      <article style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto", padding: "40px 24px 100px" }}>
 
-        <div style={{ padding: "24px 20px", borderBottom: "1px solid #1a1a1a" }}>
-          <h1 style={{
-            fontFamily: F, fontSize: "11px", fontWeight: 400,
-            letterSpacing: "0.3em", textTransform: "uppercase",
-            color: "#f0ede8", opacity: 0.4,
-          }}>Press</h1>
-        </div>
+          <Link to="/press" style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4, textDecoration: "none", display: "inline-block", marginBottom: "48px" }}>
+            ← Press
+          </Link>
 
-        {loading && (
-          <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.3, padding: "40px 20px" }}>
-            Loading...
-          </p>
-        )}
-
-        {!loading && posts.length === 0 && (
-          <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.3, padding: "40px 20px" }}>
-            No posts yet.
-          </p>
-        )}
-
-        {!loading && posts.length > 0 && (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "0",
-          }}>
-            {posts.map((post) => (
-              <Link key={post.id} to={`/press/${post.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <article style={{ borderRight: "1px solid #0f0f0f", borderBottom: "1px solid #0f0f0f" }}>
-                  {post.cover_url && (
-                    <div style={{ width: "100%", aspectRatio: "16/9", overflow: "hidden", background: "#111" }}>
-                      <img
-                        src={post.cover_url}
-                        alt={post.title}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" }}
-                        onMouseOver={e => e.currentTarget.style.transform = "scale(1.03)"}
-                        onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
-                      />
-                    </div>
-                  )}
-                  <div style={{ padding: "16px" }}>
-                    <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "6px" }}>
-                      {post.artist && <span>{post.artist} · </span>}{formatDate(post.date)}
-                    </p>
-                    <h2 style={{ fontFamily: F, fontSize: "15px", fontWeight: 700, letterSpacing: "0.02em", lineHeight: 1.2, marginBottom: "8px" }}>
-                      {post.title}
-                    </h2>
-                    {post.excerpt && (
-                      <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 300, lineHeight: 1.6, opacity: 0.5,
-                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {post.excerpt}
-                      </p>
-                    )}
-                  </div>
-                </article>
-              </Link>
-            ))}
+          <div style={{ direction: "rtl", textAlign: "right", marginBottom: "36px" }}>
+            <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>
+              {post.artist && <span>{post.artist} · </span>}{formatDate(post.date)}
+            </p>
+            <h1 style={{ fontFamily: F, fontSize: "clamp(28px, 5vw, 52px)", fontWeight: 700, lineHeight: 1.1, color: "#f0ede8", marginBottom: "16px" }}>
+              {post.title}
+            </h1>
+            {post.excerpt && (
+              <p style={{ fontFamily: F, fontSize: "15px", fontWeight: 300, lineHeight: 1.7, color: "#f0ede8", opacity: 0.5, fontStyle: "italic" }}>
+                {post.excerpt}
+              </p>
+            )}
           </div>
-        )}
-      </div>
+
+          {post.cover_url && (
+            <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", marginBottom: "48px" }}>
+              <img src={post.cover_url} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            </div>
+          )}
+
+          <div
+            className="press-body"
+            dir="rtl"
+            style={{ textAlign: "right" }}
+            dangerouslySetInnerHTML={{ __html: post.body || "" }}
+          />
+
+          <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: "1px solid #1a1a1a" }}>
+            <Link to="/press" style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4, textDecoration: "none" }}>
+              ← Press
+            </Link>
+          </div>
+        </div>
+      </article>
     </>
   );
 }
 
 function formatDate(d) {
   if (!d) return "";
-  return new Date(d + "T00:00:00").toLocaleDateString("en-GB", {
-    day: "2-digit", month: "short", year: "numeric",
+  return new Date(d + "T00:00:00").toLocaleDateString("he-IL", {
+    day: "2-digit", month: "long", year: "numeric",
   });
 }
