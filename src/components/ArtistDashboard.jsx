@@ -234,7 +234,6 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
           <div style={{ paddingBottom: '14px' }}>
             {orderedItems.map((item, i) => {
               if (item.kind === 'embed') {
-                const svc = detectEmbedService(item.url);
                 return (
                   <div key={i} style={{ margin: '0 14px 10px', border: '1px solid rgba(240,237,232,0.15)', overflow: 'hidden' }}>
                     {item.label && <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.4, padding: '8px 10px 4px', textAlign: 'center' }}>{item.label}</p>}
