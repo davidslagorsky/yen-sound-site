@@ -25,6 +25,8 @@ import VoiceLessons from "./pages/VoiceLessons";
 import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
 import { useReleases } from "./hooks/useReleases";
+import { supabase } from "./supabase";
+import roster from "./rosterData";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
@@ -362,15 +364,49 @@ const Releases = ({ releases }) => {
 /* ---------------- Slug redirect ---------------- */
 function SlugRedirect({ releases }) {
   const { maybeSlug } = useParams();
+  const [resolved, setResolved] = useState(null); // null=loading, false=not found, string=url
+
   const reserved = [
     "press","about","releases","roster","merch","admin","ipod",
     "rsvp","sigh","voice","artist-login","artist-dashboard",
     "enter-shower","rigshi-fam","001","release"
   ];
-  if (reserved.includes(maybeSlug)) return <Navigate to="/" replace />;
-  const match = releases.find((r) => r.slug === maybeSlug);
-  if (match) return <Navigate to={`/release/${match.slug}`} replace />;
-  return <Navigate to="/" replace />;
+
+  useEffect(() => {
+    if (reserved.includes(maybeSlug)) { setResolved(false); return; }
+
+    async function resolve() {
+      // 1. Check rosterData artist slugs → /artist/:slug
+      const artistMatch = roster.find(a => a.slug === maybeSlug);
+      if (artistMatch) { setResolved(`/artist/${maybeSlug}`); return; }
+
+      // 2. Check static releases.js
+      const staticRelease = releases.find(r => r.slug === maybeSlug);
+      if (staticRelease) { setResolved(`/release/${staticRelease.slug}`); return; }
+
+      // 3. Check Supabase slugs table (custom redirects)
+      const { data: slugRow } = await supabase
+        .from("slugs").select("destination").eq("slug", maybeSlug).single();
+      if (slugRow?.destination) {
+        // external URL — do a hard redirect
+        window.location.replace(slugRow.destination);
+        return;
+      }
+
+      // 4. Check Supabase releases table
+      const { data: dbRelease } = await supabase
+        .from("releases").select("slug").eq("slug", maybeSlug).single();
+      if (dbRelease?.slug) { setResolved(`/release/${dbRelease.slug}`); return; }
+
+      // Nothing found
+      setResolved(false);
+    }
+    resolve();
+  }, [maybeSlug]); // eslint-disable-line
+
+  if (resolved === null) return null; // still resolving — blank is fine, avoids flash
+  if (resolved === false) return <Navigate to="/" replace />;
+  return <Navigate to={resolved} replace />;
 }
 
 /* ---------------- App ---------------- */
