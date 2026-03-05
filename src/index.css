@@ -1,66 +1,106 @@
-/* Global minimalist font */
-* {
-  font-family: "Inter Tight", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  letter-spacing: 0.3px;
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+/* ── BASE ── */
 body {
-  transition: background-color 0.4s ease, color 0.4s ease;
-  margin: 0;
+  background-color: #000;
+  color: #f0ede8;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Keep monospace for code blocks */
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Vinyl gloss overlay on hover */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* ── RELEASE GRID CARDS ── */
 .release-cover-wrapper {
   position: relative;
   display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-.release-cover-wrapper:hover::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0) 60%
-  );
-  pointer-events: none;
-  border-radius: 10px;
-  z-index: 2;
 }
 
-/* Subtle zoom for cards or images */
+.release-cover-wrapper img {
+  width: 100%;
+  display: block;
+  transition: transform 0.4s ease, filter 0.3s ease;
+  filter: grayscale(0.15);
+}
+
+.release-cover-wrapper:hover img {
+  transform: scale(1.03);
+  filter: grayscale(0);
+}
+
+/* ── HOVER UTILITIES ── */
 .hover-zoom {
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease;
 }
-
 .hover-zoom:hover {
   transform: scale(1.03);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Button glow effect */
 .hover-button {
-  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.hover-button:hover {
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+/* ── PRESS BODY RICH TEXT ── */
+.press-body p {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.85;
+  color: rgba(240, 237, 232, 0.72);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 300;
+}
+.press-body h2 {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f0ede8;
+  margin: 40px 0 16px;
+}
+.press-body h3 {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f0ede8;
+  margin: 32px 0 12px;
+}
+.press-body a {
+  color: #f0ede8;
+  border-bottom: 1px solid #444;
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.press-body a:hover { border-color: #f0ede8; }
+.press-body blockquote {
+  border-left: 2px solid #333;
+  padding-left: 20px;
+  margin: 28px 0;
+  color: #777;
+  font-style: italic;
+}
+.press-body img {
+  width: 100%;
+  display: block;
+  margin: 32px 0;
+}
+.press-body ul, .press-body ol {
+  padding-left: 24px;
+  margin-bottom: 20px;
+  color: rgba(240, 237, 232, 0.72);
+  line-height: 1.85;
 }
