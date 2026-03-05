@@ -6,67 +6,72 @@ import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from 'react-icon
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
+/*
+  custom_buttons item shape:
+    { id: string, type: 'link' | 'embed', label?: string, url: string, icon?: string }
+  button_order: array of keys — streaming keys + custom item ids
+*/
+
 const CUSTOM_ICON_MAP = {
   link: '→', spotify: '◎', apple: '◈', youtube: '▶',
   instagram: '◻', tiktok: '◇', soundcloud: '◉', bandcamp: '◆',
 };
-
-const DEFAULT_ORDER = ['spotify', 'appleMusic', 'youtube', 'tiktok', 'instagram', 'press'];
-
+const DEFAULT_ORDER = ['spotify','appleMusic','youtube','tiktok','instagram','press'];
 const PLATFORM_META = {
-  spotify:    { label: 'SPOTIFY',     icon: <FaSpotify size={15} />  },
-  appleMusic: { label: 'APPLE MUSIC', icon: <FaApple size={15} />    },
-  youtube:    { label: 'YOUTUBE',     icon: <FaYoutube size={15} />  },
-  tiktok:     { label: 'TIKTOK',      icon: <FaTiktok size={15} />   },
+  spotify:    { label: 'SPOTIFY',     icon: <FaSpotify size={15} />   },
+  appleMusic: { label: 'APPLE MUSIC', icon: <FaApple size={15} />     },
+  youtube:    { label: 'YOUTUBE',     icon: <FaYoutube size={15} />   },
+  tiktok:     { label: 'TIKTOK',      icon: <FaTiktok size={15} />    },
   instagram:  { label: 'INSTAGRAM',   icon: <FaInstagram size={15} /> },
-  press:      { label: 'PRESS',       icon: null                      },
+  press:      { label: 'PRESS',       icon: null                       },
 };
 
-/* ── shared embed builder — defined at module level so it's always available ── */
+/* ── embed parsing ── */
 function buildEmbedData(url = '') {
-  if (!url || !url.trim()) return null;
+  if (!url?.trim()) return null;
   const u = url.trim();
   const spotify = u.match(/open\.spotify\.com\/(track|album|playlist|episode|artist)\/([A-Za-z0-9]+)/);
   const youtube = u.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
   const sc = u.includes('soundcloud.com/');
-  if (spotify) {
-    return { type: 'spotify', src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
-  }
-  if (youtube) {
-    return { type: 'youtube', src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1&playsinline=1` };
-  }
-  if (sc) {
-    return { type: 'soundcloud', src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true` };
-  }
+  if (spotify) return { type: 'spotify', src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
+  if (youtube) return { type: 'youtube', src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1&playsinline=1` };
+  if (sc) return { type: 'soundcloud', src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true` };
+  return null;
+}
+function detectEmbedService(url = '') {
+  if (url.includes('spotify.com')) return 'spotify';
+  if (url.includes('youtu')) return 'youtube';
+  if (url.includes('soundcloud.com')) return 'soundcloud';
   return null;
 }
 
-/* ── embed renderer (reused in both preview and panel) ── */
 function EmbedPlayer({ url, compact = false }) {
   const data = buildEmbedData(url);
-  if (!data) return (
-    <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.3, padding: '12px 0' }}>
-      Paste a Spotify, YouTube, or SoundCloud URL above
-    </p>
-  );
+  if (!data) return <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.3, padding: '8px 0' }}>Paste a Spotify, YouTube, or SoundCloud URL</p>;
   if (data.type === 'youtube') return (
     <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-      <iframe src={data.src} title="YouTube embed" frameBorder="0" allowFullScreen
+      <iframe src={data.src} title="YouTube" frameBorder="0" allowFullScreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
     </div>
   );
   if (data.type === 'spotify') return (
-    <iframe src={data.src} width="100%" height={compact ? 80 : 152} frameBorder="0"
-      title="Spotify embed"
+    <iframe src={data.src} width="100%" height={compact ? 80 : 152} frameBorder="0" title="Spotify"
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy" style={{ display: 'block', borderRadius: 0 }} />
+      loading="lazy" style={{ display: 'block' }} />
   );
-  if (data.type === 'soundcloud') return (
-    <iframe width="100%" height={compact ? 100 : 166} frameBorder="0"
-      title="SoundCloud embed" src={data.src} style={{ display: 'block' }} />
-  );
-  return null;
+  return <iframe width="100%" height={compact ? 100 : 166} frameBorder="0" title="SoundCloud" src={data.src} style={{ display: 'block' }} />;
+}
+
+/* ── uid generator ── */
+function uid() { return Math.random().toString(36).slice(2, 8); }
+
+/* ── migrate old embed_url into custom_buttons list ── */
+function migrateEmbedUrl(buttons, embedUrl) {
+  if (!embedUrl?.trim()) return buttons;
+  const alreadyMigrated = buttons.some(b => b.type === 'embed' && b.url === embedUrl.trim());
+  if (alreadyMigrated) return buttons;
+  return [...buttons, { id: uid(), type: 'embed', url: embedUrl.trim(), label: '' }];
 }
 
 /* ─── UI helpers ─── */
@@ -122,20 +127,53 @@ function EditorTile({ icon, label, active, onClick }) {
   );
 }
 
+/* ─── type toggle ─── */
+function TypeToggle({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', border: '1px solid rgba(240,237,232,0.2)', marginBottom: '12px' }}>
+      {['link', 'embed'].map(t => (
+        <button key={t} onClick={() => onChange(t)} style={{
+          flex: 1, padding: '9px', background: value === t ? 'rgba(240,237,232,0.1)' : 'transparent',
+          border: 'none', color: '#f0ede8', fontFamily: F, fontSize: '9px', fontWeight: 700,
+          letterSpacing: '0.25em', textTransform: 'uppercase', cursor: 'pointer',
+          borderRight: t === 'link' ? '1px solid rgba(240,237,232,0.2)' : 'none',
+          opacity: value === t ? 1 : 0.4, transition: 'background 0.15s, opacity 0.15s',
+        }}>
+          {t === 'link' ? '→ Link' : '▶ Embed'}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Preview Modal ─── */
-function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButtons, embedUrl, bio }) {
+function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButtons, bio }) {
   const socials = rosterArtist?.socials || {};
 
-  const orderedPlatforms = buttonOrder.map(key => {
-    if (key === 'press') return { key: 'press', label: 'PRESS', icon: null };
-    const url = socials[key];
-    if (!url || url === 'PLACEHOLDER') return null;
-    const meta = PLATFORM_META[key];
-    return meta ? { key, label: meta.label, icon: meta.icon } : null;
+  /* build full ordered item list */
+  const orderedItems = buttonOrder.map(key => {
+    /* streaming platform */
+    if (PLATFORM_META[key]) {
+      if (key === 'press') return { key: 'press', kind: 'platform', label: 'PRESS', icon: null };
+      const url = socials[key];
+      if (!url || url === 'PLACEHOLDER') return null;
+      return { key, kind: 'platform', label: PLATFORM_META[key].label, icon: PLATFORM_META[key].icon };
+    }
+    /* custom item */
+    const item = customButtons.find(b => b.id === key);
+    if (!item) return null;
+    if (item.type === 'embed') return { key, kind: 'embed', url: item.url, label: item.label };
+    if (item.type === 'link' && item.label && item.url) return { key, kind: 'link', label: item.label, icon: item.icon, url: item.url };
+    return null;
   }).filter(Boolean);
 
-  const validCustom = (customButtons || []).filter(b => b.label && b.url);
-  const embedData = buildEmbedData(embedUrl);
+  /* append any custom items not yet in order */
+  customButtons.forEach(b => {
+    if (!buttonOrder.includes(b.id)) {
+      if (b.type === 'embed') orderedItems.push({ key: b.id, kind: 'embed', url: b.url, label: b.label });
+      else if (b.label && b.url) orderedItems.push({ key: b.id, kind: 'link', label: b.label, icon: b.icon, url: b.url });
+    }
+  });
 
   const btnS = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
@@ -146,8 +184,7 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
   };
 
   return (
-    <div
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '375px', marginBottom: '10px' }}>
@@ -160,7 +197,6 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
 
       {/* phone shell */}
       <div style={{ width: '100%', maxWidth: '375px', height: '72vh', maxHeight: '760px', border: '1px solid rgba(240,237,232,0.18)', borderRadius: '38px', overflow: 'hidden', position: 'relative', background: '#000', boxShadow: '0 0 80px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.04)' }}>
-        {/* dynamic island */}
         <div style={{ position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', width: '100px', height: '26px', background: '#000', borderRadius: '20px', zIndex: 10, border: '1px solid #111' }} />
 
         <div style={{ width: '100%', height: '100%', overflowY: 'auto', background: '#000', color: '#f0ede8', WebkitOverflowScrolling: 'touch' }}>
@@ -185,7 +221,7 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
             </div>
           )}
 
-          {/* name */}
+          {/* name + bio */}
           <div style={{ padding: '16px 14px 12px', textAlign: 'center' }}>
             <h1 style={{ fontFamily: F, fontSize: '12px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', marginBottom: '6px', lineHeight: 1.3 }}>
               {(rosterArtist?.displayName || artist.display_name || '').toUpperCase()}
@@ -194,51 +230,68 @@ function PreviewModal({ onClose, artist, rosterArtist, buttonOrder, customButton
             <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.28em', textTransform: 'uppercase', opacity: 0.35, marginTop: bio ? '10px' : 0 }}>Choose music service</p>
           </div>
 
-          {/* buttons */}
+          {/* items */}
           <div style={{ paddingBottom: '14px' }}>
-            {orderedPlatforms.map((p, i) => (
-              <div key={i} style={btnS}>
-                {p.icon && <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>{p.icon}</span>}
-                {p.label}
-              </div>
-            ))}
-            {validCustom.map((btn, i) => (
-              <div key={`c${i}`} style={btnS}>
-                <span style={{ opacity: 0.7, fontSize: '12px' }}>{CUSTOM_ICON_MAP[btn.icon] || '→'}</span>
-                {btn.label.toUpperCase()}
-              </div>
-            ))}
+            {orderedItems.map((item, i) => {
+              if (item.kind === 'embed') {
+                const svc = detectEmbedService(item.url);
+                return (
+                  <div key={i} style={{ margin: '0 14px 10px', border: '1px solid rgba(240,237,232,0.15)', overflow: 'hidden' }}>
+                    {item.label && <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.4, padding: '8px 10px 4px', textAlign: 'center' }}>{item.label}</p>}
+                    <EmbedPlayer url={item.url} compact />
+                  </div>
+                );
+              }
+              return (
+                <div key={i} style={btnS}>
+                  {item.icon && <span style={{ display: 'flex', alignItems: 'center', fontSize: '13px' }}>{item.icon}</span>}
+                  {!item.icon && item.kind === 'link' && <span style={{ opacity: 0.7 }}>{CUSTOM_ICON_MAP[item.iconKey] || '→'}</span>}
+                  {item.label}
+                </div>
+              );
+            })}
           </div>
 
-          {/* embed */}
-          {embedData && (
-            <div style={{ borderTop: '1px solid #1a1a1a' }}>
-              <EmbedPlayer url={embedUrl} compact />
-            </div>
-          )}
-
-          {/* footer */}
           <div style={{ borderTop: '1px solid #1a1a1a', padding: '16px', textAlign: 'center' }}>
             <p style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.2 }}>Distributed by Yen Sound</p>
           </div>
         </div>
       </div>
-
       <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', opacity: 0.18, color: '#f0ede8', marginTop: '10px', textTransform: 'uppercase' }}>Tap outside to close</p>
     </div>
   );
 }
 
-/* ─── Draggable order row ─── */
-function OrderRow({ itemKey, index, hasUrl, onDragStart, onDragOver, onDragEnd }) {
-  const meta = PLATFORM_META[itemKey] || { label: itemKey, icon: null };
+/* ─── Order row — handles both platform keys and custom item ids ─── */
+function OrderRow({ itemKey, index, customButtons, socials, onDragStart, onDragOver, onDragEnd }) {
+  const platform = PLATFORM_META[itemKey];
+  let label, icon, dimmed = false;
+
+  if (platform) {
+    label = platform.label;
+    icon = platform.icon;
+    dimmed = itemKey !== 'press' && !(socials[itemKey] && socials[itemKey] !== 'PLACEHOLDER');
+  } else {
+    const item = customButtons.find(b => b.id === itemKey);
+    if (!item) return null;
+    if (item.type === 'embed') {
+      const svc = detectEmbedService(item.url);
+      label = item.label || (svc ? `${svc} embed` : 'Embed');
+      icon = <span style={{ fontSize: '11px', opacity: 0.6 }}>▶</span>;
+    } else {
+      label = item.label || 'Link';
+      icon = <span style={{ fontSize: '12px', opacity: 0.6 }}>{CUSTOM_ICON_MAP[item.icon] || '→'}</span>;
+    }
+  }
+
   return (
     <div draggable onDragStart={() => onDragStart(index)} onDragOver={e => onDragOver(e, index)} onDragEnd={onDragEnd}
-      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', marginBottom: '6px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none', opacity: hasUrl ? 1 : 0.3 }}>
+      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', marginBottom: '6px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none', opacity: dimmed ? 0.3 : 1 }}>
       <span style={{ fontFamily: F, fontSize: '12px', opacity: 0.3 }}>⠿</span>
-      <span style={{ display: 'flex', alignItems: 'center', minWidth: '18px' }}>{meta.icon}</span>
-      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1 }}>{meta.label}</span>
-      {!hasUrl && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
+      <span style={{ display: 'flex', alignItems: 'center', minWidth: '18px' }}>{icon}</span>
+      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1 }}>{label}</span>
+      {dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
+      {!platform && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.1em', opacity: 0.25, textTransform: 'uppercase' }}>custom</span>}
       <span style={{ fontFamily: F, fontSize: '9px', opacity: 0.2 }}>#{index + 1}</span>
     </div>
   );
@@ -253,15 +306,13 @@ export default function ArtistDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [bio, setBio] = useState('');
-  const [customButtons, setCustomButtons] = useState([]);
-  const [embedUrl, setEmbedUrl] = useState('');
+  const [customButtons, setCustomButtons] = useState([]);  // [{id, type, label, url, icon}]
   const [buttonOrder, setButtonOrder] = useState(DEFAULT_ORDER);
   const [activePanel, setActivePanel] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
   const [bioStatus, setBioStatus] = useState('idle');
   const [btnStatus, setBtnStatus] = useState('idle');
-  const [embedStatus, setEmbedStatus] = useState('idle');
   const [resetStatus, setResetStatus] = useState('idle');
   const [saveError, setSaveError] = useState(null);
 
@@ -277,14 +328,27 @@ export default function ArtistDashboard() {
       if (!error && data) {
         setArtist(data);
         setBio(data.bio || '');
-        setCustomButtons(data.custom_buttons || []);
-        setEmbedUrl(data.embed_url || '');
-        setButtonOrder(data.button_order?.length ? data.button_order : DEFAULT_ORDER);
+        /* migrate old embed_url into custom_buttons if needed */
+        const migrated = migrateEmbedUrl(data.custom_buttons || [], data.embed_url || '');
+        setCustomButtons(migrated);
+        /* ensure all custom item ids are in order */
+        const base = data.button_order?.length ? data.button_order : DEFAULT_ORDER;
+        const existingIds = migrated.map(b => b.id);
+        const merged = [...base, ...existingIds.filter(id => !base.includes(id))];
+        setButtonOrder(merged);
       }
       setLoading(false);
     }
     fetchArtist();
   }, [artistId]);
+
+  /* sync order whenever customButtons change (add new ids) */
+  useEffect(() => {
+    setButtonOrder(prev => {
+      const newIds = customButtons.map(b => b.id).filter(id => !prev.includes(id));
+      return newIds.length ? [...prev, ...newIds] : prev;
+    });
+  }, [customButtons]);
 
   async function saveBio() {
     setBioStatus('saving'); setSaveError(null);
@@ -292,31 +356,42 @@ export default function ArtistDashboard() {
     if (error) { setSaveError(error.message); setBioStatus('error'); } else setBioStatus('saved');
     setTimeout(() => setBioStatus('idle'), 2500);
   }
+
   async function saveButtons() {
     setBtnStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: customButtons, button_order: buttonOrder }).eq('id', artistId);
     if (error) { setSaveError(error.message); setBtnStatus('error'); } else setBtnStatus('saved');
     setTimeout(() => setBtnStatus('idle'), 2500);
   }
-  async function saveEmbed() {
-    setEmbedStatus('saving'); setSaveError(null);
-    const { error } = await supabase.from('artists').update({ embed_url: embedUrl }).eq('id', artistId);
-    if (error) { setSaveError(error.message); setEmbedStatus('error'); } else setEmbedStatus('saved');
-    setTimeout(() => setEmbedStatus('idle'), 2500);
-  }
+
   async function resetPage() {
-    if (!window.confirm('Remove all custom buttons, embeds, and reset button order?')) return;
+    if (!window.confirm('Remove all custom buttons, embeds, and reset order?')) return;
     setResetStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: [], embed_url: '', button_order: DEFAULT_ORDER }).eq('id', artistId);
     if (error) { setSaveError(error.message); setResetStatus('error'); }
-    else { setCustomButtons([]); setEmbedUrl(''); setButtonOrder(DEFAULT_ORDER); setResetStatus('saved'); }
+    else { setCustomButtons([]); setButtonOrder(DEFAULT_ORDER); setResetStatus('saved'); }
     setTimeout(() => setResetStatus('idle'), 2500);
   }
 
-  function addButton() { setCustomButtons(prev => [...prev, { label: '', url: '', icon: 'link' }]); }
-  function updateButton(i, field, val) { setCustomButtons(prev => prev.map((b, idx) => idx === i ? { ...b, [field]: val } : b)); }
-  function removeButton(i) { setCustomButtons(prev => prev.filter((_, idx) => idx !== i)); }
+  function addItem(type) {
+    const id = uid();
+    setCustomButtons(prev => [...prev, type === 'embed'
+      ? { id, type: 'embed', url: '', label: '' }
+      : { id, type: 'link', label: '', url: '', icon: 'link' }
+    ]);
+  }
+  function updateItem(id, field, val) {
+    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, [field]: val } : b));
+  }
+  function removeItem(id) {
+    setCustomButtons(prev => prev.filter(b => b.id !== id));
+    setButtonOrder(prev => prev.filter(k => k !== id));
+  }
+  function changeItemType(id, newType) {
+    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, type: newType } : b));
+  }
 
+  /* drag custom items */
   function onCDragStart(i) { dragCustomIdx.current = i; }
   function onCDragOver(e, i) {
     e.preventDefault();
@@ -325,6 +400,7 @@ export default function ArtistDashboard() {
   }
   function onCDragEnd() { dragCustomIdx.current = null; }
 
+  /* drag order */
   function onODragStart(i) { dragOrderIdx.current = i; }
   function onODragOver(e, i) {
     e.preventDefault();
@@ -348,18 +424,21 @@ export default function ArtistDashboard() {
     { id: 'releases',     label: 'My Releases',       icon: '♫', href: `/releases?artist=${encodeURIComponent(artist.filter_name || artistId)}`, internal: true },
   ];
 
-  /* 5 tiles — Buttons includes Order inside */
   const editorTiles = [
     { id: 'bio',     icon: '✎', label: 'Bio'     },
     { id: 'buttons', icon: '⊞', label: 'Buttons' },
-    { id: 'embed',   icon: '▶', label: 'Embed'   },
+    { id: 'order',   icon: '↕', label: 'Order'   },
     { id: 'preview', icon: '◉', label: 'Preview' },
     { id: 'reset',   icon: '↺', label: 'Reset'   },
   ];
 
   const tileHov   = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'; e.currentTarget.style.background = '#0a0a0a'; };
   const tileUnhov = e => { e.currentTarget.style.borderColor = 'rgba(240,237,232,0.15)'; e.currentTarget.style.background = 'transparent'; };
-  const embedPreview = buildEmbedData(embedUrl);
+
+  /* full order list for Order panel */
+  const fullOrderList = buttonOrder.filter(key =>
+    PLATFORM_META[key] || customButtons.find(b => b.id === key)
+  );
 
   return (
     <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '600px', margin: '0 auto' }}>
@@ -367,8 +446,7 @@ export default function ArtistDashboard() {
       {showPreview && (
         <PreviewModal onClose={() => setShowPreview(false)}
           artist={artist} rosterArtist={rosterArtist}
-          buttonOrder={buttonOrder} customButtons={customButtons}
-          embedUrl={embedUrl} bio={bio} />
+          buttonOrder={buttonOrder} customButtons={customButtons} bio={bio} />
       )}
 
       {/* logo + marquee */}
@@ -413,11 +491,10 @@ export default function ArtistDashboard() {
         </div>
       </div>
 
-      {/* my page editor */}
+      {/* my page */}
       <div style={{ padding: '40px 24px 0' }}>
         <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>My Page</p>
 
-        {/* 5-tile grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '24px' }}>
           {editorTiles.map(t => (
             t.id === 'preview'
@@ -426,17 +503,17 @@ export default function ArtistDashboard() {
           ))}
         </div>
 
-        {/* error banner */}
+        {/* error */}
         {saveError && (
           <div style={{ marginBottom: '16px', padding: '12px 16px', border: '1px solid rgba(220,80,80,0.4)', background: 'rgba(220,80,80,0.06)' }}>
-            <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.1em', color: 'rgba(255,120,120,0.9)', lineHeight: 1.6 }}>Save failed — {saveError}</p>
+            <p style={{ fontFamily: F, fontSize: '10px', color: 'rgba(255,120,120,0.9)', lineHeight: 1.6 }}>Save failed — {saveError}</p>
           </div>
         )}
 
-        {/* bio panel */}
+        {/* ── Bio ── */}
         {activePanel === 'bio' && (
           <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
-            <FieldLabel>Bio — shown under your name on your artist page</FieldLabel>
+            <FieldLabel>Bio — shown under your name</FieldLabel>
             <Textarea value={bio} onChange={setBio} placeholder="Write a short bio..." rows={6} />
             <div style={{ marginTop: '16px' }}>
               <ActionBtn onClick={saveBio} disabled={bioStatus === 'saving'}>
@@ -446,97 +523,122 @@ export default function ArtistDashboard() {
           </div>
         )}
 
-        {/* buttons + order panel */}
+        {/* ── Buttons (links + embeds) ── */}
         {activePanel === 'buttons' && (
           <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
+            <FieldLabel>Custom items — links and embeds · drag to reorder</FieldLabel>
 
-            {/* ── Button Order ── */}
-            <FieldLabel>Button Order — drag to rearrange streaming & social links</FieldLabel>
-            {buttonOrder.map((key, i) => (
-              <OrderRow key={key} itemKey={key} index={i}
-                hasUrl={key === 'press' ? true : !!(socials[key] && socials[key] !== 'PLACEHOLDER')}
-                onDragStart={onODragStart} onDragOver={onODragOver} onDragEnd={onODragEnd} />
-            ))}
-
-            {/* divider */}
-            <div style={{ borderTop: '1px solid #1a1a1a', margin: '24px 0' }} />
-
-            {/* ── Custom Buttons ── */}
-            <FieldLabel>Custom Buttons — appear after streaming links · drag to reorder</FieldLabel>
             {customButtons.length === 0 && (
-              <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', opacity: 0.25, textAlign: 'center', padding: '16px 0' }}>No custom buttons yet</p>
+              <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.15em', opacity: 0.25, textAlign: 'center', padding: '16px 0' }}>No items yet — add a link or embed below</p>
             )}
-            {customButtons.map((btn, i) => (
-              <div key={i} draggable onDragStart={() => onCDragStart(i)} onDragOver={e => onCDragOver(e, i)} onDragEnd={onCDragEnd}
-                style={{ marginBottom: '10px', padding: '14px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none' }}>
+
+            {customButtons.map((item, i) => (
+              <div key={item.id} draggable onDragStart={() => onCDragStart(i)} onDragOver={e => onCDragOver(e, i)} onDragEnd={onCDragEnd}
+                style={{ marginBottom: '12px', padding: '14px', border: '1px solid rgba(240,237,232,0.1)', background: '#050505', cursor: 'grab', userSelect: 'none' }}>
+
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', opacity: 0.3 }}>
                   <span style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.2em' }}>⠿ Drag</span>
                   <span style={{ fontFamily: F, fontSize: '9px', marginLeft: 'auto' }}>#{i + 1}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <FieldLabel>Label</FieldLabel>
-                    <Input value={btn.label} onChange={v => updateButton(i, 'label', v)} placeholder="e.g. BANDCAMP" />
-                  </div>
-                  <div style={{ width: '110px' }}>
-                    <FieldLabel>Icon</FieldLabel>
-                    <select value={btn.icon || 'link'} onChange={e => updateButton(i, 'icon', e.target.value)}
-                      style={{ width: '100%', background: '#000', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 8px', cursor: 'pointer', outline: 'none' }}>
-                      {Object.entries(CUSTOM_ICON_MAP).map(([k, v]) => <option key={k} value={k}>{v} {k}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <FieldLabel>URL</FieldLabel>
-                <Input value={btn.url} onChange={v => updateButton(i, 'url', v)} placeholder="https://..." />
+
+                {/* type toggle */}
+                <TypeToggle value={item.type} onChange={t => changeItemType(item.id, t)} />
+
+                {item.type === 'link' && (
+                  <>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                      <div style={{ flex: 1 }}>
+                        <FieldLabel>Label</FieldLabel>
+                        <Input value={item.label} onChange={v => updateItem(item.id, 'label', v)} placeholder="e.g. BANDCAMP" />
+                      </div>
+                      <div style={{ width: '110px' }}>
+                        <FieldLabel>Icon</FieldLabel>
+                        <select value={item.icon || 'link'} onChange={e => updateItem(item.id, 'icon', e.target.value)}
+                          style={{ width: '100%', background: '#000', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 8px', cursor: 'pointer', outline: 'none' }}>
+                          {Object.entries(CUSTOM_ICON_MAP).map(([k, v]) => <option key={k} value={k}>{v} {k}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <FieldLabel>URL</FieldLabel>
+                    <Input value={item.url} onChange={v => updateItem(item.id, 'url', v)} placeholder="https://..." />
+                  </>
+                )}
+
+                {item.type === 'embed' && (
+                  <>
+                    <div style={{ marginBottom: '10px' }}>
+                      <FieldLabel>Label (optional)</FieldLabel>
+                      <Input value={item.label} onChange={v => updateItem(item.id, 'label', v)} placeholder="e.g. Latest Track" />
+                    </div>
+                    <FieldLabel>Spotify, YouTube, or SoundCloud URL</FieldLabel>
+                    <Input value={item.url} onChange={v => updateItem(item.id, 'url', v)} placeholder="https://open.spotify.com/track/..." />
+                    {item.url && buildEmbedData(item.url) && (
+                      <div style={{ marginTop: '12px', opacity: 0.65 }}>
+                        <EmbedPlayer url={item.url} />
+                      </div>
+                    )}
+                    {item.url && !buildEmbedData(item.url) && (
+                      <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.35, marginTop: '6px', letterSpacing: '0.1em' }}>URL not recognised — try a direct Spotify/YouTube/SoundCloud link</p>
+                    )}
+                  </>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                  <button onClick={() => removeButton(i)}
+                  <button onClick={() => removeItem(item.id)}
                     style={{ background: 'transparent', border: '1px solid rgba(220,80,80,0.4)', color: 'rgba(220,80,80,0.8)', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', padding: '6px 12px', cursor: 'pointer' }}>
                     Remove
                   </button>
                 </div>
               </div>
             ))}
-            <button onClick={addButton}
-              style={{ width: '100%', padding: '13px', marginTop: '4px', marginBottom: '16px', background: 'transparent', border: '1px dashed rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase', cursor: 'pointer' }}
-              onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'}
-              onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.2)'}>
-              ＋ Add Button
-            </button>
+
+            {/* add buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px', marginBottom: '16px' }}>
+              <button onClick={() => addItem('link')}
+                style={{ padding: '13px', background: 'transparent', border: '1px dashed rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'}
+                onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.2)'}>
+                → Add Link
+              </button>
+              <button onClick={() => addItem('embed')}
+                style={{ padding: '13px', background: 'transparent', border: '1px dashed rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer' }}
+                onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.5)'}
+                onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(240,237,232,0.2)'}>
+                ▶ Add Embed
+              </button>
+            </div>
+
             <ActionBtn onClick={saveButtons} disabled={btnStatus === 'saving'}>
-              {btnStatus === 'saving' ? 'Saving...' : btnStatus === 'saved' ? '✓ Saved' : 'Save Buttons & Order'}
+              {btnStatus === 'saving' ? 'Saving...' : btnStatus === 'saved' ? '✓ Saved' : 'Save'}
             </ActionBtn>
           </div>
         )}
 
-        {/* embed panel */}
-        {activePanel === 'embed' && (
+        {/* ── Order ── */}
+        {activePanel === 'order' && (
           <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
-            <FieldLabel>Paste a Spotify, YouTube, or SoundCloud URL</FieldLabel>
-            <Input value={embedUrl} onChange={setEmbedUrl} placeholder="https://open.spotify.com/track/..." />
-            {embedUrl && (
-              <div style={{ marginTop: '16px' }}>
-                <FieldLabel>Preview</FieldLabel>
-                <EmbedPlayer url={embedUrl} />
-              </div>
+            <FieldLabel>Full page order — streaming links + all custom items</FieldLabel>
+            {fullOrderList.length === 0 && (
+              <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.25, textAlign: 'center', padding: '16px 0' }}>Add custom items first</p>
             )}
-            {embedUrl && !embedPreview && (
-              <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.4, marginTop: '8px', letterSpacing: '0.1em' }}>
-                URL not recognised — try a direct Spotify track/album, YouTube video, or SoundCloud track link
-              </p>
-            )}
-            <div style={{ marginTop: '16px' }}>
-              <ActionBtn onClick={saveEmbed} disabled={embedStatus === 'saving'}>
-                {embedStatus === 'saving' ? 'Saving...' : embedStatus === 'saved' ? '✓ Saved' : 'Save Embed'}
+            {fullOrderList.map((key, i) => (
+              <OrderRow key={key} itemKey={key} index={i}
+                customButtons={customButtons} socials={socials}
+                onDragStart={onODragStart} onDragOver={onODragOver} onDragEnd={onODragEnd} />
+            ))}
+            <div style={{ marginTop: '12px' }}>
+              <ActionBtn onClick={saveButtons} disabled={btnStatus === 'saving'}>
+                {btnStatus === 'saving' ? 'Saving...' : btnStatus === 'saved' ? '✓ Saved' : 'Save Order'}
               </ActionBtn>
             </div>
           </div>
         )}
 
-        {/* reset panel */}
+        {/* ── Reset ── */}
         {activePanel === 'reset' && (
           <div style={{ border: '1px solid rgba(220,80,80,0.2)', padding: '24px', marginBottom: '12px' }}>
             <p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.1em', lineHeight: 1.8, opacity: 0.6, marginBottom: '20px' }}>
-              Removes all custom buttons, embeds, and resets button order. Streaming links, releases and press posts remain.
+              Removes all custom buttons, embeds, and resets order. Streaming links, releases and press remain.
             </p>
             <ActionBtn onClick={resetPage} danger disabled={resetStatus === 'saving'}>
               {resetStatus === 'saving' ? 'Resetting...' : resetStatus === 'saved' ? '✓ Reset' : '↺ Reset Page to Default'}
@@ -545,7 +647,7 @@ export default function ArtistDashboard() {
         )}
       </div>
 
-      {/* view my page */}
+      {/* view page */}
       {artist.slug && (
         <div style={{ padding: '32px 24px 0', textAlign: 'center' }}>
           <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
