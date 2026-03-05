@@ -83,13 +83,10 @@ export default function ArtistPage() {
     alignItems: "center",
     justifyContent: "center",
     gap: "12px",
-    width: "100%",
-    padding: "20px 24px",
-    marginBottom: "0",
-    borderTop: "none",
-    borderLeft: "none",
-    borderRight: "none",
-    borderBottom: "2px solid rgba(240,237,232,0.85)",
+    width: "calc(100% - 48px)",
+    margin: "0 24px 10px",
+    padding: "18px 24px",
+    border: "2px solid rgba(240,237,232,0.8)",
     background: "transparent",
     fontFamily: F,
     fontSize: "11px",
@@ -106,14 +103,30 @@ export default function ArtistPage() {
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
 
-      {/* ── Spinning logo — centered ── */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "32px 24px 0" }}>
-        <img
-          src="/spinning yen logo white.gif"
-          alt="YEN SOUND"
-          className="yen-spin"
-          style={{ width: "34px", height: "34px", opacity: 0.55 }}
-        />
+      {/* ── Spinning logo + marquee ── */}
+      <div style={{ paddingTop: "36px", paddingBottom: "0" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+          <img
+            src="/spinning yen logo white.gif"
+            alt="YEN SOUND"
+            className="yen-spin"
+            style={{ width: "52px", height: "52px", opacity: 0.55 }}
+          />
+        </div>
+        {/* Marquee */}
+        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
+          <div style={{
+            display: "inline-flex", gap: "0",
+            animation: "marquee 18s linear infinite",
+            whiteSpace: "nowrap",
+          }}>
+            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
+              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Full-bleed square cover ── */}
@@ -136,7 +149,7 @@ export default function ArtistPage() {
       </div>
 
       {/* ── Platform buttons ── */}
-      <div>
+      <div style={{ padding: "24px 0 16px" }}>
         {platforms.map((p, i) =>
           p.internal ? (
             <Link key={i} to={p.url} style={btnStyle}
