@@ -141,6 +141,7 @@ function RichEditor({ value, onChange }) {
           ref={editorRef}
           contentEditable
           suppressContentEditableWarning
+          data-yen-editor
           onInput={emit}
           onBlur={emit}
           style={{
@@ -319,7 +320,12 @@ export default function AdminDashboard() {
   const slugify = str => str.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
 
   const handleSavePost = async () => {
-    if (!postForm.title || !postForm.body) {
+    // Read body directly from the editor DOM in case blur hasn't fired
+    const editorEl = document.querySelector("[data-yen-editor]");
+    const liveBody = editorEl ? editorEl.innerHTML : postForm.body;
+    const finalBody = liveBody.trim();
+
+    if (!postForm.title || !finalBody) {
       setPostSubmitStatus("error:Title and body are required."); return;
     }
     setPostSubmitting(true); setPostSubmitStatus(null);
@@ -328,7 +334,7 @@ export default function AdminDashboard() {
       cover_url: postForm.cover_url.trim() || null,
       date: postForm.date || new Date().toISOString().slice(0, 10),
       excerpt: postForm.excerpt.trim() || null,
-      body: postForm.body.trim(),
+      body: finalBody,
       slug: postForm.slug.trim() || slugify(postForm.title),
     };
     let err;
