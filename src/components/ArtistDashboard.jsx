@@ -281,6 +281,130 @@ function OrderRow({ itemKey, index, customButtons, socials, dragHandlers, isActi
 /* ═══════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════ */
+/* ─── MiniPreview — defined outside main component so it's a stable reference ───
+   If it were defined inside ArtistDashboard, every keystroke would re-create it
+   as a new component type, causing remount → focus loss → keyboard closes on iOS.
+─────────────────────────────────────────────────────────────────────────────── */
+function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials, artistDisplayName, currentPhoto }) {
+  const isLight = theme === 'light';
+  const previewBg = isLight ? '#f5f3ef' : '#000';
+  const previewFg = isLight ? '#0a0a0a' : '#f0ede8';
+  const previewMuted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
+  const previewBorder = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
+  const previewBtnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
+  const logoFilter = isLight ? 'invert(1)' : 'none';
+  const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+  const orderedItems = buttonOrder.map(key => {
+    if (PLATFORM_META[key]) {
+      if (key === 'press') return { key: 'press', kind: 'platform', label: 'PRESS', icon: null };
+      const url = socials[key];
+      if (!url || url === 'PLACEHOLDER') return null;
+      return { key, kind: 'platform', label: PLATFORM_META[key].label, icon: PLATFORM_META[key].icon };
+    }
+    const item = customButtons.find(b => b.id === key);
+    if (!item) return null;
+    if (item.type === 'embed') return { key, kind: 'embed', url: item.url, label: item.label };
+    if (item.type === 'link' && item.label && item.url) return { key, kind: 'link', label: item.label };
+    return null;
+  }).filter(Boolean);
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{
+        width: '220px', flexShrink: 0,
+        border: '6px solid #1a1a1a', borderRadius: '28px',
+        overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7)',
+        position: 'relative', background: previewBg,
+        transition: 'background 0.3s',
+      }}>
+        <div style={{ position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', width: '48px', height: '10px', background: '#1a1a1a', borderRadius: '8px', zIndex: 10 }} />
+
+        <div style={{ height: '420px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', background: previewBg }}>
+
+          <div style={{ overflow: 'hidden', borderBottom: `1px solid ${previewBorder}`, padding: '5px 0', marginTop: '24px' }}>
+            <div style={{ display: 'inline-flex', animation: 'marquee 18s linear infinite', whiteSpace: 'nowrap' }}>
+              {Array(4).fill('YEN SOUND ®   ').map((t, i) => (
+                <span key={i} style={{ fontFamily: F, fontSize: '5px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: previewMuted, paddingRight: '20px' }}>{t}</span>
+              ))}
+            </div>
+          </div>
+
+          {currentPhoto
+            ? <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden' }}>
+                <img src={currentPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+              </div>
+            : <div style={{ width: '100%', aspectRatio: '1', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: F, fontSize: '7px', color: previewMuted, letterSpacing: '0.15em' }}>No Photo</span>
+              </div>
+          }
+
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: `1px solid ${previewBorder}` }}>
+            <img src="/spinning yen logo white.gif" alt="" style={{ width: '14px', height: '14px', opacity: 0.4, filter: logoFilter }} />
+          </div>
+
+          <div style={{ padding: '10px 10px 0', textAlign: 'center' }}>
+            <p style={{ fontFamily: F, fontSize: '8px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: previewFg, marginBottom: bio ? '5px' : 0, lineHeight: 1.3 }}>
+              {artistDisplayName}
+            </p>
+            {bio && (
+              <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, lineHeight: 1.6, letterSpacing: '0.04em' }}>
+                {bio.slice(0, 80)}{bio.length > 80 ? '…' : ''}
+              </p>
+            )}
+          </div>
+
+          <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.25em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '8px 0 5px' }}>
+            Choose music service
+          </p>
+
+          <div style={{ padding: '0 8px 16px' }}>
+            {orderedItems.length === 0 && (
+              <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, textAlign: 'center', padding: '6px 0' }}>No links set</p>
+            )}
+            {orderedItems.map((item, i) => {
+              if (item.kind === 'embed') {
+                const embedData = buildEmbedData(item.url);
+                return (
+                  <div key={i} style={{ marginBottom: '5px', border: `1px solid ${previewBorder}`, overflow: 'hidden' }}>
+                    {item.label && (
+                      <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '4px 0 2px' }}>{item.label}</p>
+                    )}
+                    {embedData?.type === 'youtube' && (
+                      <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+                        <iframe src={embedData.src} title="yt" frameBorder="0" allowFullScreen
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }} />
+                      </div>
+                    )}
+                    {embedData?.type === 'spotify' && (
+                      <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sp"
+                        style={{ display: 'block', pointerEvents: 'none' }} />
+                    )}
+                    {embedData?.type === 'soundcloud' && (
+                      <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sc"
+                        style={{ display: 'block', pointerEvents: 'none' }} />
+                    )}
+                    {!embedData && (
+                      <div style={{ padding: '8px', textAlign: 'center' }}>
+                        <span style={{ fontFamily: F, fontSize: '6px', color: previewMuted }}>▶ {item.label || 'Embed'}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: F, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ArtistDashboard() {
   const { artistId } = useParams();
   const [artist, setArtist] = useState(null);
@@ -438,139 +562,11 @@ export default function ArtistDashboard() {
     PLATFORM_META[key] || customButtons.find(b => b.id === key)
   );
 
-  /* ── Mini live preview (used inside editor drawer) ── */
-  const MiniPreview = () => {
-    const isLight = theme === 'light';
-    const previewBg = isLight ? '#f5f3ef' : '#000';
-    const previewFg = isLight ? '#0a0a0a' : '#f0ede8';
-    const previewMuted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
-    const previewBorder = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
-    const previewBtnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
-    const logoFilter = isLight ? 'invert(1)' : 'none';
-
-    const orderedItems = buttonOrder.map(key => {
-      if (PLATFORM_META[key]) {
-        if (key === 'press') return { key: 'press', kind: 'platform', label: 'PRESS', icon: null };
-        const url = socials[key];
-        if (!url || url === 'PLACEHOLDER') return null;
-        return { key, kind: 'platform', label: PLATFORM_META[key].label, icon: PLATFORM_META[key].icon };
-      }
-      const item = customButtons.find(b => b.id === key);
-      if (!item) return null;
-      if (item.type === 'embed') return { key, kind: 'embed', url: item.url, label: item.label };
-      if (item.type === 'link' && item.label && item.url) return { key, kind: 'link', label: item.label };
-      return null;
-    }).filter(Boolean);
-
-    const currentPhoto = (typeof photoUrl === 'string' && !photoUrl.startsWith('blob:') && photoUrl) || rosterArtist?.image;
-    const artistDisplayName = (rosterArtist?.displayName || artist.display_name || '').toUpperCase();
-
-    return (
-      /* outer centering — keeps phone narrow */
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        {/* phone shell */}
-        <div style={{
-          width: '220px', flexShrink: 0,
-          border: '6px solid #1a1a1a', borderRadius: '28px',
-          overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7)',
-          position: 'relative', background: previewBg,
-          transition: 'background 0.3s',
-        }}>
-          {/* notch */}
-          <div style={{ position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', width: '48px', height: '10px', background: '#1a1a1a', borderRadius: '8px', zIndex: 10 }} />
-
-          {/* scrollable page content */}
-          <div style={{ height: '420px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', background: previewBg }}>
-
-            {/* marquee */}
-            <div style={{ overflow: 'hidden', borderBottom: `1px solid ${previewBorder}`, padding: '5px 0', marginTop: '24px' }}>
-              <div style={{ display: 'inline-flex', animation: 'marquee 18s linear infinite', whiteSpace: 'nowrap' }}>
-                {Array(4).fill('YEN SOUND ®   ').map((t, i) => (
-                  <span key={i} style={{ fontFamily: F, fontSize: '5px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: previewMuted, paddingRight: '20px' }}>{t}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* profile photo */}
-            {currentPhoto && (
-              <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden' }}>
-                <img src={currentPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
-              </div>
-            )}
-            {!currentPhoto && (
-              <div style={{ width: '100%', aspectRatio: '1', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: F, fontSize: '7px', color: previewMuted, letterSpacing: '0.15em' }}>No Photo</span>
-              </div>
-            )}
-
-            {/* spinning logo divider */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: `1px solid ${previewBorder}` }}>
-              <img src="/spinning yen logo white.gif" alt="" style={{ width: '14px', height: '14px', opacity: 0.4, filter: logoFilter }} />
-            </div>
-
-            {/* name + bio */}
-            <div style={{ padding: '10px 10px 0', textAlign: 'center' }}>
-              <p style={{ fontFamily: F, fontSize: '8px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: previewFg, marginBottom: bio ? '5px' : 0, lineHeight: 1.3 }}>
-                {artistDisplayName}
-              </p>
-              {bio && (
-                <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, lineHeight: 1.6, letterSpacing: '0.04em' }}>
-                  {bio.slice(0, 80)}{bio.length > 80 ? '…' : ''}
-                </p>
-              )}
-            </div>
-
-            {/* choose music service */}
-            <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.25em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '8px 0 5px' }}>
-              Choose music service
-            </p>
-
-            {/* links + embeds */}
-            <div style={{ padding: '0 8px 16px' }}>
-              {orderedItems.length === 0 && (
-                <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, textAlign: 'center', padding: '6px 0' }}>No links set</p>
-              )}
-              {orderedItems.map((item, i) => {
-                if (item.kind === 'embed') {
-                  const embedData = buildEmbedData(item.url);
-                  return (
-                    <div key={i} style={{ marginBottom: '5px', border: `1px solid ${previewBorder}`, overflow: 'hidden' }}>
-                      {item.label && (
-                        <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '4px 0 2px' }}>{item.label}</p>
-                      )}
-                      {embedData?.type === 'youtube' && (
-                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
-                          <iframe src={embedData.src} title="yt" frameBorder="0" allowFullScreen
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }} />
-                        </div>
-                      )}
-                      {embedData?.type === 'spotify' && (
-                        <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sp"
-                          style={{ display: 'block', pointerEvents: 'none' }} />
-                      )}
-                      {embedData?.type === 'soundcloud' && (
-                        <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sc"
-                          style={{ display: 'block', pointerEvents: 'none' }} />
-                      )}
-                      {!embedData && (
-                        <div style={{ padding: '8px', textAlign: 'center' }}>
-                          <span style={{ fontFamily: F, fontSize: '6px', color: previewMuted }}>▶ {item.label || 'Embed'}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-                return (
-                  <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontFamily: F, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  /* ── Mini live preview — stable top-level component, props passed in ── */
+  const miniPreviewProps = {
+    theme, bio, photoUrl, buttonOrder, customButtons, socials,
+    artistDisplayName: (rosterArtist?.displayName || artist.display_name || '').toUpperCase(),
+    currentPhoto: (typeof photoUrl === 'string' && !photoUrl.startsWith('blob:') && photoUrl) || rosterArtist?.image,
   };
 
   /* ── Editor Accordion Section ── */
@@ -627,7 +623,7 @@ export default function ArtistDashboard() {
           {/* live mini-preview */}
           <div style={{ padding: '20px 20px 0' }}>
             <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '10px', textAlign: 'center' }}>Live Preview</p>
-            <MiniPreview />
+            <MiniPreview {...miniPreviewProps} />
             {artist.slug && (
               <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
                 style={{ display: 'block', textAlign: 'center', marginTop: '10px', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none' }}
