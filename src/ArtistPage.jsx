@@ -131,6 +131,7 @@ export default function ArtistPage() {
 
   const socials = artist.socials || {};
   const profileImage = pageData?.profile_image || artist.image;
+  const bio = pageData?.bio || "";
 
   /* merge legacy embed into custom buttons */
   const rawButtons = pageData?.custom_buttons || [];
