@@ -113,7 +113,7 @@ export default function ArtistPage() {
       }));
     }
     async function fetchPageData() {
-      const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order,profile_image").eq("slug", slug).single();
+      const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order,profile_image,theme").eq("slug", slug).single();
       if (data) setPageData(data);
     }
     fetchPress();
@@ -132,6 +132,16 @@ export default function ArtistPage() {
   const socials = artist.socials || {};
   const profileImage = pageData?.profile_image || artist.image;
   const bio = pageData?.bio || "";
+
+  /* ── theme ── */
+  const isLight = pageData?.theme === "light";
+  const bg       = isLight ? "#f5f3ef" : "#000";
+  const fg       = isLight ? "#0a0a0a" : "#f0ede8";
+  const fgMuted  = isLight ? "rgba(10,10,10,0.45)" : "rgba(240,237,232,0.35)";
+  const border   = isLight ? "rgba(10,10,10,0.12)"  : "rgba(240,237,232,0.15)";
+  const btnBorder= isLight ? "rgba(10,10,10,0.7)"   : "rgba(240,237,232,0.8)";
+  const hoverBg  = isLight ? "#e8e5e0" : "#111";
+  const logoFilter = isLight ? "invert(1)" : "none";
 
   /* merge legacy embed into custom buttons */
   const rawButtons = pageData?.custom_buttons || [];
@@ -167,19 +177,19 @@ export default function ArtistPage() {
   const btnStyle = {
     display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
     width: "calc(100% - 48px)", margin: "0 24px 10px", padding: "18px 24px",
-    border: "2px solid rgba(240,237,232,0.8)", background: "transparent",
+    border: `2px solid ${btnBorder}`, background: "transparent",
     fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.3em",
-    textTransform: "uppercase", color: "#f0ede8", textDecoration: "none",
+    textTransform: "uppercase", color: fg, textDecoration: "none",
     cursor: "pointer", transition: "background 0.15s", boxSizing: "border-box",
   };
 
   return (
-    <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
+    <div style={{ backgroundColor: bg, minHeight: "100vh", color: fg, maxWidth: "600px", margin: "0 auto", transition: "background-color 0.3s, color 0.3s" }}>
 
       {/* logo */}
       <div style={{ paddingTop: "36px" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
-          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55, filter: logoFilter }} />
         </div>
       </div>
 
@@ -190,28 +200,28 @@ export default function ArtistPage() {
 
       {/* name + bio */}
       <div style={{ padding: "28px 24px 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "14px", lineHeight: 1.3 }}>
+        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: fg, marginBottom: "14px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
         {bio && (
-          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto" }}>
+          <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, color: fgMuted, maxWidth: "440px", margin: "0 auto" }}>
             {bio}
           </p>
         )}
       </div>
 
       {/* marquee */}
-      <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0", margin: "28px 0 0" }}>
+      <div style={{ overflow: "hidden", borderTop: `1px solid ${border}`, borderBottom: `1px solid ${border}`, padding: "7px 0", margin: "28px 0 0" }}>
         <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
           {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-            <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
+            <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", color: fgMuted, paddingRight: "40px" }}>{t}</span>
           ))}
         </div>
       </div>
 
       {/* choose music service */}
       <div style={{ padding: "24px 24px 16px", textAlign: "center" }}>
-        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
+        <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", color: fgMuted }}>
           Choose music service
         </p>
       </div>
@@ -225,13 +235,13 @@ export default function ArtistPage() {
           if (item.kind === "platform") {
             return item.internal ? (
               <Link key={item.key} to={item.url} style={btnStyle}
-                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOver={e => e.currentTarget.style.background = hoverBg}
                 onMouseOut={e => e.currentTarget.style.background = "transparent"}>
                 {item.icon}{item.label}
               </Link>
             ) : (
               <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
-                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOver={e => e.currentTarget.style.background = hoverBg}
                 onMouseOut={e => e.currentTarget.style.background = "transparent"}>
                 {item.icon}{item.label}
               </a>
@@ -240,7 +250,7 @@ export default function ArtistPage() {
           if (item.kind === "link") {
             return (
               <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
-                onMouseOver={e => e.currentTarget.style.background = "#111"}
+                onMouseOver={e => e.currentTarget.style.background = hoverBg}
                 onMouseOut={e => e.currentTarget.style.background = "transparent"}>
                 <span style={{ opacity: 0.8 }}>{CUSTOM_ICON_MAP[item.icon] || "→"}</span>
                 {item.label}
@@ -253,20 +263,20 @@ export default function ArtistPage() {
 
       {/* releases */}
       {artistReleases.length > 0 && (
-        <div style={{ padding: "48px 24px 24px", borderTop: "1px solid #1a1a1a" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
+        <div style={{ padding: "48px 24px 24px", borderTop: `1px solid ${border}` }}>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", color: fgMuted, marginBottom: "24px", textAlign: "center" }}>
             Releases · {artistReleases.length}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "28px 16px" }}>
             {visible.map((r, i) => (
-              <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "10px" }}>
+              <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: fg }}>
+                <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: isLight ? "#ddd" : "#111", marginBottom: "10px" }}>
                   <img src={r.cover} alt={r.title}
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" }}
                     onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
                     onMouseOut={e => e.currentTarget.style.transform = "scale(1)"} />
                 </div>
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.35, marginBottom: "2px" }}>{r.type} · {r.date?.slice(0, 4)}</p>
+                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", color: fgMuted, marginBottom: "2px" }}>{r.type} · {r.date?.slice(0, 4)}</p>
                 <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1.2 }}>{r.title}</p>
               </Link>
             ))}
@@ -274,7 +284,7 @@ export default function ArtistPage() {
           {artistReleases.length > LIMIT && (
             <div style={{ marginTop: "32px", textAlign: "center" }}>
               <button onClick={() => setShowAllReleases(v => !v)}
-                style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", background: "transparent", border: "2px solid rgba(240,237,232,0.5)", color: "#f0ede8", padding: "12px 24px", cursor: "pointer", opacity: 0.6 }}
+                style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", background: "transparent", border: `2px solid ${btnBorder}`, color: fg, padding: "12px 24px", cursor: "pointer", opacity: 0.6 }}
                 onMouseOver={e => e.currentTarget.style.opacity = 1}
                 onMouseOut={e => e.currentTarget.style.opacity = 0.6}>
                 {showAllReleases ? "Show less" : `Show all (${artistReleases.length})`}
@@ -286,24 +296,24 @@ export default function ArtistPage() {
 
       {/* press */}
       {pressPosts.length > 0 && (
-        <div style={{ padding: "40px 24px 80px", borderTop: "1px solid #1a1a1a" }}>
-          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.3, marginBottom: "24px", textAlign: "center" }}>
+        <div style={{ padding: "40px 24px 80px", borderTop: `1px solid ${border}` }}>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", color: fgMuted, marginBottom: "24px", textAlign: "center" }}>
             Press · {pressPosts.length}
           </p>
           {pressPosts.map((p) => (
             <Link key={p.id} to={`/press/${p.slug}`}
-              style={{ textDecoration: "none", color: "#f0ede8", display: "flex", gap: "16px", alignItems: "center", padding: "16px 0", borderBottom: "1px solid #1a1a1a", transition: "opacity 0.2s" }}
+              style={{ textDecoration: "none", color: fg, display: "flex", gap: "16px", alignItems: "center", padding: "16px 0", borderBottom: `1px solid ${border}`, transition: "opacity 0.2s" }}
               onMouseOver={e => e.currentTarget.style.opacity = 0.65}
               onMouseOut={e => e.currentTarget.style.opacity = 1}>
               {p.cover_url && (
-                <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111" }}>
+                <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: isLight ? "#ddd" : "#111" }}>
                   <img src={p.cover_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </div>
               )}
               <div style={{ flex: 1, minWidth: 0, direction: "rtl", textAlign: "right" }}>
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.3, marginBottom: "3px" }}>{formatDate(p.date)}</p>
+                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.15em", textTransform: "uppercase", color: fgMuted, marginBottom: "3px" }}>{formatDate(p.date)}</p>
                 <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, lineHeight: 1.25, marginBottom: "3px" }}>{p.title}</p>
-                {p.excerpt && <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, opacity: 0.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.excerpt}</p>}
+                {p.excerpt && <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 300, color: fgMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.excerpt}</p>}
               </div>
             </Link>
           ))}
@@ -313,7 +323,7 @@ export default function ArtistPage() {
       {/* back */}
       <div style={{ padding: "0 24px 60px", textAlign: "center" }}>
         <button onClick={() => navigate("/roster")}
-          style={{ background: "none", border: "none", color: "#f0ede8", cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: 0 }}
+          style={{ background: "none", border: "none", color: fg, cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: 0 }}
           onMouseOver={e => e.currentTarget.style.opacity = 0.7}
           onMouseOut={e => e.currentTarget.style.opacity = 0.25}>
           ← Roster
