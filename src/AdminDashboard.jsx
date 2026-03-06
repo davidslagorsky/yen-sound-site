@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
+import roster from "./rosterData";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
@@ -214,6 +215,7 @@ function RichEditor({ value, onChange }) {
 function SlugManager({ artists }) {
   const [slugs, setSlugs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tableError, setTableError] = useState(null);
   const [newSlug, setNewSlug] = useState("");
   const [newDest, setNewDest] = useState("");
   const [addStatus, setAddStatus] = useState(null);
@@ -221,8 +223,12 @@ function SlugManager({ artists }) {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from("slugs").select("*").order("created_at", { ascending: false });
-      if (data) setSlugs(data);
+      const { data, error } = await supabase.from("slugs").select("*").order("created_at", { ascending: false });
+      if (error) {
+        setTableError(error.message);
+      } else {
+        setSlugs(data || []);
+      }
       setLoading(false);
     }
     load();
@@ -231,39 +237,79 @@ function SlugManager({ artists }) {
   async function addSlug() {
     const slug = newSlug.trim().toLowerCase().replace(/\s+/g, "-");
     const dest = newDest.trim();
-    if (!slug || !dest) { setAddStatus("error:Slug and destination required."); return; }
-    setAddStatus(null);
+    if (!slug || !dest) { setAddStatus("error:Slug and destination are both required."); return; }
+    setAddStatus("saving");
     const { data, error } = await supabase.from("slugs").insert([{ slug, destination: dest }]).select().single();
-    if (error) setAddStatus("error:" + error.message);
-    else { setSlugs(p => [data, ...p]); setNewSlug(""); setNewDest(""); setAddStatus("success"); }
-    setTimeout(() => setAddStatus(null), 2500);
+    if (error) {
+      setAddStatus("error:" + error.message);
+    } else {
+      setSlugs(p => [data, ...p]);
+      setNewSlug(""); setNewDest("");
+      setAddStatus("success");
+    }
+    setTimeout(() => setAddStatus(null), 3000);
   }
 
   async function deleteSlug(id, slug) {
     if (!window.confirm(`Delete slug "/${slug}"?`)) return;
     const { error } = await supabase.from("slugs").delete().eq("id", id);
     if (!error) setSlugs(p => p.filter(s => s.id !== id));
-    else alert("Error: " + error.message);
+    else alert("Delete error: " + error.message);
   }
 
-  function copyLink(slug) {
-    navigator.clipboard.writeText(`https://yensound.com/${slug}`);
-    setCopiedId(slug); setTimeout(() => setCopiedId(null), 1500);
+  function copyLink(path) {
+    navigator.clipboard.writeText(`https://yensound.com/${path}`);
+    setCopiedId(path); setTimeout(() => setCopiedId(null), 1500);
   }
 
-  /* Artist slugs from the artists table */
   const artistSlugs = artists.filter(a => a.slug);
+
+  /* Table doesn't exist yet — show SQL setup instructions */
+  if (tableError) return (
+    <div>
+      <p style={{ fontFamily: F, fontSize: "10px", color: "rgba(255,100,100,0.85)", marginBottom: "16px", lineHeight: 1.7 }}>
+        ⚠ Supabase error: {tableError}
+      </p>
+      <FieldLabel>Run this SQL in your Supabase dashboard → SQL Editor</FieldLabel>
+      <pre style={{ background: "#080808", border: "1px solid #1a1a1a", padding: "16px", fontFamily: "monospace", fontSize: "11px", color: "rgba(100,255,180,0.85)", overflowX: "auto", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+{`CREATE TABLE slugs (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug text UNIQUE NOT NULL,
+  destination text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE slugs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read" ON slugs
+  FOR SELECT USING (true);
+
+CREATE POLICY "Anon insert" ON slugs
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anon delete" ON slugs
+  FOR DELETE USING (true);`}
+      </pre>
+      <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.4, marginTop: "12px", letterSpacing: "0.1em" }}>
+        After running, reload this page.
+      </p>
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
 
-      {/* Artist slugs (read-only view) */}
-      <div style={{ marginBottom: "24px" }}>
-        <FieldLabel>Artist Page Slugs</FieldLabel>
-        {artistSlugs.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "12px 0" }}>No artist slugs set. Add a slug to an artist via Supabase or the artist dashboard.</p>}
+      {/* Artist page slugs (read-only) */}
+      <div style={{ marginBottom: "28px" }}>
+        <FieldLabel>Artist Page Slugs — /artist/:slug</FieldLabel>
+        {artistSlugs.length === 0 && (
+          <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "10px 0" }}>No artist slugs set yet.</p>
+        )}
         {artistSlugs.map(a => (
           <DataRow key={a.id} label={`/artist/${a.slug}`} sub={a.display_name}>
-            <GhostBtn onClick={() => copyLink(`artist/${a.slug}`)}>{copiedId === `artist/${a.slug}` ? "Copied" : "Copy"}</GhostBtn>
+            <GhostBtn onClick={() => copyLink(`artist/${a.slug}`)}>
+              {copiedId === `artist/${a.slug}` ? "Copied" : "Copy"}
+            </GhostBtn>
             <GhostBtn href={`/artist/${a.slug}`}>View</GhostBtn>
           </DataRow>
         ))}
@@ -271,23 +317,130 @@ function SlugManager({ artists }) {
 
       {/* Custom redirect slugs */}
       <div>
-        <FieldLabel>Custom Redirect Slugs</FieldLabel>
+        <FieldLabel>Custom Redirects — /:slug → any URL</FieldLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
           <Input value={newSlug} onChange={setNewSlug} placeholder="short path (e.g. presskit)" />
-          <Input value={newDest} onChange={setNewDest} placeholder="destination URL (https://...)" />
-          <ActionBtn onClick={addSlug}>Add Slug</ActionBtn>
-          <StatusMsg status={addStatus} noun="Slug added" />
+          <Input value={newDest} onChange={setNewDest} placeholder="destination (https://...)" />
+          <ActionBtn onClick={addSlug} disabled={addStatus === "saving"}>
+            {addStatus === "saving" ? "Saving..." : "Add Redirect"}
+          </ActionBtn>
+          <StatusMsg status={addStatus} noun="Redirect saved — visit /shortpath to test" />
         </div>
 
         {loading && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25 }}>Loading...</p>}
-        {!loading && slugs.length === 0 && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "12px 0" }}>No custom slugs yet.</p>}
+        {!loading && slugs.length === 0 && (
+          <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, padding: "10px 0" }}>No custom redirects yet.</p>
+        )}
         {slugs.map(s => (
           <DataRow key={s.id} label={`/${s.slug}`} sub={s.destination}>
-            <GhostBtn onClick={() => copyLink(s.slug)}>{copiedId === s.slug ? "Copied" : "Copy"}</GhostBtn>
+            <GhostBtn onClick={() => copyLink(s.slug)}>
+              {copiedId === s.slug ? "Copied" : "Copy"}
+            </GhostBtn>
             <GhostBtn danger onClick={() => deleteSlug(s.id, s.slug)}>Delete</GhostBtn>
           </DataRow>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   PHOTOS PANEL
+   Manages profile_image overrides per artist.
+   Falls back to rosterData.image on the site if not set.
+   Requires: ALTER TABLE artists ADD COLUMN IF NOT EXISTS profile_image text;
+══════════════════════════════════════════════ */
+
+function PhotosPanel({ artists, onUpdate }) {
+  const [edits, setEdits] = useState({});         // { artistId: urlString }
+  const [statuses, setStatuses] = useState({});   // { artistId: 'saving'|'saved'|'error' }
+
+  async function save(artistId) {
+    const url = (edits[artistId] ?? "").trim();
+    setStatuses(p => ({ ...p, [artistId]: "saving" }));
+    const { error } = await supabase
+      .from("artists")
+      .update({ profile_image: url || null })
+      .eq("id", artistId);
+    if (error) {
+      setStatuses(p => ({ ...p, [artistId]: "error" }));
+      alert("Save error: " + error.message);
+    } else {
+      setStatuses(p => ({ ...p, [artistId]: "saved" }));
+      onUpdate({ id: artistId, profile_image: url || null });
+      setTimeout(() => setStatuses(p => ({ ...p, [artistId]: "idle" })), 2500);
+    }
+  }
+
+  // Build merged list: every roster artist, with Supabase override if exists
+  const rows = roster.map(r => {
+    const dbArtist = artists.find(a => a.slug === r.slug || a.display_name?.toLowerCase() === r.displayName?.toLowerCase());
+    return {
+      rosterEntry: r,
+      dbArtist,
+      currentImage: dbArtist?.profile_image || r.image,
+    };
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <FieldLabel>Artist Profile Images — paste any image URL to override</FieldLabel>
+      {rows.map(({ rosterEntry: r, dbArtist, currentImage }) => {
+        const id = dbArtist?.id;
+        const editVal = edits[id] ?? dbArtist?.profile_image ?? "";
+        const status = statuses[id] || "idle";
+        const previewUrl = editVal.trim() || currentImage;
+
+        return (
+          <div key={r.slug || r.name} style={{ display: "flex", gap: "14px", alignItems: "flex-start", padding: "16px", border: "1px solid rgba(240,237,232,0.1)", background: "#050505" }}>
+            {/* thumbnail */}
+            <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111", border: "1px solid #1a1a1a" }}>
+              {previewUrl
+                ? <img src={previewUrl} alt={r.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
+                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.2, fontFamily: F, fontSize: "9px" }}>?</div>
+              }
+            </div>
+
+            {/* name + input */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>
+                {r.displayName}
+                {dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.4, marginLeft: "8px", fontWeight: 400 }}>custom</span>}
+                {!dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.25, marginLeft: "8px", fontWeight: 400 }}>from rosterData</span>}
+              </p>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  value={editVal}
+                  onChange={e => setEdits(p => ({ ...p, [id]: e.target.value }))}
+                  placeholder={id ? "https://..." : "Artist not in Supabase yet"}
+                  disabled={!id}
+                  style={{ flex: 1, background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "8px 10px", outline: "none", opacity: id ? 1 : 0.3 }}
+                  onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
+                  onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+                />
+                {id && (
+                  <button
+                    onClick={() => save(id)}
+                    disabled={status === "saving"}
+                    style={{ flexShrink: 0, padding: "8px 14px", background: "transparent", border: "1px solid rgba(240,237,232,0.5)", color: "#f0ede8", fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer", opacity: status === "saving" ? 0.4 : 1 }}
+                  >
+                    {status === "saving" ? "..." : status === "saved" ? "✓" : "Save"}
+                  </button>
+                )}
+              </div>
+              {!id && <p style={{ fontFamily: F, fontSize: "8px", opacity: 0.3, marginTop: "4px", letterSpacing: "0.1em" }}>Add this artist to Supabase to enable image override</p>}
+              {dbArtist?.profile_image && (
+                <button
+                  onClick={() => { setEdits(p => ({ ...p, [id]: "" })); save(id); }}
+                  style={{ marginTop: "4px", background: "none", border: "none", color: "rgba(220,80,80,0.6)", fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}
+                >
+                  ↺ revert to rosterData
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -483,10 +636,11 @@ export default function AdminDashboard() {
   );
 
   const tiles = [
-    { id: "releases",  icon: "♫",  label: "Releases"  },
-    { id: "artists",   icon: "◈",  label: "Artists"   },
-    { id: "press",     icon: "✎",  label: "Press"     },
-    { id: "slugs",     icon: "⌘",  label: "Slugs"     },
+    { id: "releases", icon: "♫", label: "Releases" },
+    { id: "artists",  icon: "◈", label: "Artists"  },
+    { id: "press",    icon: "✎", label: "Press"    },
+    { id: "slugs",    icon: "⌘", label: "Slugs"    },
+    { id: "photos",   icon: "◻", label: "Photos"   },
   ];
 
   const toggle = id => setActivePanel(p => p === id ? null : id);
@@ -665,6 +819,11 @@ export default function AdminDashboard() {
           <Panel>
             <SlugManager artists={artists} />
           </Panel>
+        )}
+
+        {/* ── Photos ── */}
+        {activePanel === "photos" && (
+          <PhotosPanel artists={artists} onUpdate={updated => setArtists(p => p.map(a => a.id === updated.id ? { ...a, profile_image: updated.profile_image } : a))} />
         )}
       </div>
     </div>
