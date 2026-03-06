@@ -176,30 +176,36 @@ export default function ArtistPage() {
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
 
-      {/* logo + marquee */}
+      {/* logo */}
       <div style={{ paddingTop: "36px" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
           <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
         </div>
-        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
-            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
-            ))}
-          </div>
-        </div>
+      </div>
+
+      {/* name above cover */}
+      <div style={{ padding: "0 24px 16px", textAlign: "center" }}>
+        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", lineHeight: 1.3 }}>
+          {artistName.toUpperCase()}
+        </h1>
       </div>
 
       {/* cover */}
-      <div style={{ width: "100%", marginTop: "24px" }}>
+      <div style={{ width: "100%" }}>
         <img src={profileImage} alt={artistName} style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
       </div>
 
-      {/* name + bio */}
+      {/* marquee under cover */}
+      <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
+        <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
+          {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
+            <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* bio */}
       <div style={{ padding: "28px 24px 24px", textAlign: "center" }}>
-        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
-          {artistName.toUpperCase()}
-        </h1>
         {bio && (
           <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.08em", lineHeight: 1.7, opacity: 0.6, maxWidth: "440px", margin: "0 auto 16px" }}>
             {bio}
