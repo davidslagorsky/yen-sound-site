@@ -444,7 +444,7 @@ export default function ArtistDashboard() {
     const previewBg = isLight ? '#f5f3ef' : '#000';
     const previewFg = isLight ? '#0a0a0a' : '#f0ede8';
     const previewMuted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
-    const previewBorder = isLight ? 'rgba(10,10,10,0.1)' : 'rgba(240,237,232,0.1)';
+    const previewBorder = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
     const previewBtnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
     const logoFilter = isLight ? 'invert(1)' : 'none';
 
@@ -463,42 +463,111 @@ export default function ArtistDashboard() {
     }).filter(Boolean);
 
     const currentPhoto = (typeof photoUrl === 'string' && !photoUrl.startsWith('blob:') && photoUrl) || rosterArtist?.image;
+    const artistDisplayName = (rosterArtist?.displayName || artist.display_name || '').toUpperCase();
 
     return (
-      <div style={{ background: previewBg, borderRadius: '12px', overflow: 'hidden', border: `1px solid ${previewBorder}`, transition: 'background 0.3s' }}>
-        {/* tiny header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 0 8px', borderBottom: `1px solid ${previewBorder}` }}>
-          <img src="/spinning yen logo white.gif" alt="YEN SOUND" style={{ width: '18px', height: '18px', opacity: 0.5, filter: logoFilter }} />
-        </div>
-        {/* photo strip */}
-        {currentPhoto && (
-          <div style={{ width: '100%', aspectRatio: '2.5', overflow: 'hidden' }}>
-            <img src={currentPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
-          </div>
-        )}
-        {/* name + bio */}
-        <div style={{ padding: '10px 12px 6px', textAlign: 'center' }}>
-          <p style={{ fontFamily: F, fontSize: '9px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: previewFg, marginBottom: bio ? '4px' : 0 }}>
-            {(rosterArtist?.displayName || artist.display_name || '').toUpperCase()}
-          </p>
-          {bio && <p style={{ fontFamily: F, fontSize: '7px', color: previewMuted, lineHeight: 1.5, letterSpacing: '0.04em' }}>{bio.slice(0, 60)}{bio.length > 60 ? '…' : ''}</p>}
-        </div>
-        {/* buttons preview */}
-        <div style={{ padding: '4px 10px 10px' }}>
-          {orderedItems.slice(0, 4).map((item, i) => (
-            <div key={i} style={{ padding: '6px 8px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              {item.kind === 'embed'
-                ? <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.15em', color: previewMuted, textTransform: 'uppercase' }}>▶ {item.label || 'Embed'}</span>
-                : <span style={{ fontFamily: F, fontSize: '7px', fontWeight: 700, letterSpacing: '0.18em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
-              }
+      /* outer centering — keeps phone narrow */
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        {/* phone shell */}
+        <div style={{
+          width: '220px', flexShrink: 0,
+          border: '6px solid #1a1a1a', borderRadius: '28px',
+          overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7)',
+          position: 'relative', background: previewBg,
+          transition: 'background 0.3s',
+        }}>
+          {/* notch */}
+          <div style={{ position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', width: '48px', height: '10px', background: '#1a1a1a', borderRadius: '8px', zIndex: 10 }} />
+
+          {/* scrollable page content */}
+          <div style={{ height: '420px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', background: previewBg }}>
+
+            {/* marquee */}
+            <div style={{ overflow: 'hidden', borderBottom: `1px solid ${previewBorder}`, padding: '5px 0', marginTop: '24px' }}>
+              <div style={{ display: 'inline-flex', animation: 'marquee 18s linear infinite', whiteSpace: 'nowrap' }}>
+                {Array(4).fill('YEN SOUND ®   ').map((t, i) => (
+                  <span key={i} style={{ fontFamily: F, fontSize: '5px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: previewMuted, paddingRight: '20px' }}>{t}</span>
+                ))}
+              </div>
             </div>
-          ))}
-          {orderedItems.length > 4 && (
-            <p style={{ fontFamily: F, fontSize: '6px', letterSpacing: '0.15em', color: previewMuted, textAlign: 'center', marginTop: '2px' }}>+{orderedItems.length - 4} more</p>
-          )}
-          {orderedItems.length === 0 && (
-            <p style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.15em', color: previewMuted, textAlign: 'center', padding: '4px 0' }}>No links set</p>
-          )}
+
+            {/* profile photo */}
+            {currentPhoto && (
+              <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden' }}>
+                <img src={currentPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} />
+              </div>
+            )}
+            {!currentPhoto && (
+              <div style={{ width: '100%', aspectRatio: '1', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: F, fontSize: '7px', color: previewMuted, letterSpacing: '0.15em' }}>No Photo</span>
+              </div>
+            )}
+
+            {/* spinning logo divider */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0', borderBottom: `1px solid ${previewBorder}` }}>
+              <img src="/spinning yen logo white.gif" alt="" style={{ width: '14px', height: '14px', opacity: 0.4, filter: logoFilter }} />
+            </div>
+
+            {/* name + bio */}
+            <div style={{ padding: '10px 10px 0', textAlign: 'center' }}>
+              <p style={{ fontFamily: F, fontSize: '8px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: previewFg, marginBottom: bio ? '5px' : 0, lineHeight: 1.3 }}>
+                {artistDisplayName}
+              </p>
+              {bio && (
+                <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, lineHeight: 1.6, letterSpacing: '0.04em' }}>
+                  {bio.slice(0, 80)}{bio.length > 80 ? '…' : ''}
+                </p>
+              )}
+            </div>
+
+            {/* choose music service */}
+            <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.25em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '8px 0 5px' }}>
+              Choose music service
+            </p>
+
+            {/* links + embeds */}
+            <div style={{ padding: '0 8px 16px' }}>
+              {orderedItems.length === 0 && (
+                <p style={{ fontFamily: F, fontSize: '6px', color: previewMuted, textAlign: 'center', padding: '6px 0' }}>No links set</p>
+              )}
+              {orderedItems.map((item, i) => {
+                if (item.kind === 'embed') {
+                  const embedData = buildEmbedData(item.url);
+                  return (
+                    <div key={i} style={{ marginBottom: '5px', border: `1px solid ${previewBorder}`, overflow: 'hidden' }}>
+                      {item.label && (
+                        <p style={{ fontFamily: F, fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '4px 0 2px' }}>{item.label}</p>
+                      )}
+                      {embedData?.type === 'youtube' && (
+                        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}>
+                          <iframe src={embedData.src} title="yt" frameBorder="0" allowFullScreen
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }} />
+                        </div>
+                      )}
+                      {embedData?.type === 'spotify' && (
+                        <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sp"
+                          style={{ display: 'block', pointerEvents: 'none' }} />
+                      )}
+                      {embedData?.type === 'soundcloud' && (
+                        <iframe src={embedData.src} width="100%" height="60" frameBorder="0" title="sc"
+                          style={{ display: 'block', pointerEvents: 'none' }} />
+                      )}
+                      {!embedData && (
+                        <div style={{ padding: '8px', textAlign: 'center' }}>
+                          <span style={{ fontFamily: F, fontSize: '6px', color: previewMuted }}>▶ {item.label || 'Embed'}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontFamily: F, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     );
