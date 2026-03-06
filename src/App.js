@@ -367,7 +367,7 @@ function SlugRedirect({ releases }) {
 
   const reserved = [
     "press","about","releases","roster","merch","admin","ipod",
-    "rsvp","sigh","voice","artist-login","artist-dashboard",
+    "rsvp","voice","artist-login","artist-dashboard",
     "enter-shower","rigshi-fam","001","release"
   ];
 
@@ -461,7 +461,6 @@ function App() {
             <Route path="/001" element={<Capsule001 />} />
             <Route path="/release/:slug" element={<ReleasePage />} />
             <Route path="/rsvp" element={<RSVP />} />
-            <Route path="/sigh" element={<Navigate to="/artist/sigh" replace />} />
             <Route path="/voice" element={<VoiceLessons />} />
             <Route path="/press" element={<Press />} />
             <Route path="/press/:slug" element={<PostPage />} />
