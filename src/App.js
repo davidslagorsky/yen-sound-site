@@ -417,6 +417,28 @@ function App() {
   useEffect(() => {
     document.body.style.backgroundColor = "#000";
     document.body.style.color = "#f0ede8";
+    // Load site background from Supabase site_settings
+    (async () => {
+      try {
+        const { data } = await supabase.from("site_settings").select("value").eq("key", "background").single();
+        if (data?.value) {
+          const bg = data.value;
+          if (bg.type === "image") {
+            document.body.style.backgroundImage = `url(${bg.value})`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundPosition = "center center";
+            document.body.style.backgroundAttachment = "fixed"; // parallax on desktop
+            document.body.style.backgroundRepeat = "no-repeat";
+            document.body.style.backgroundColor = "#000";
+          } else if (bg.type === "gradient") {
+            document.body.style.backgroundImage = bg.value;
+            document.body.style.backgroundAttachment = "fixed";
+          } else if (bg.type === "color" && bg.value) {
+            document.body.style.backgroundColor = bg.value;
+          }
+        }
+      } catch (_) { /* no settings table yet — keep default black */ }
+    })();
   }, []);
 
   useEffect(() => {
