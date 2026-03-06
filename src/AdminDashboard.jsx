@@ -470,6 +470,7 @@ export default function AdminDashboard() {
   });
   const [releaseStatus, setReleaseStatus] = useState(null);
   const [releaseSubmitting, setReleaseSubmitting] = useState(false);
+  const [editingRelease, setEditingRelease] = useState(null); // release object being edited
 
   /* artist form */
   const [artistForm, setArtistForm] = useState({ id: "", password: "", display_name: "", filter_name: "", upload_url: "", slug: "" });
@@ -541,6 +542,54 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("releases").delete().eq("id", id);
     if (!error) setReleases(p => p.filter(r => r.id !== id));
     else alert(error.message);
+  };
+  const handleEditRelease = async (r) => {
+    // fetch full release from Supabase to get all fields
+    const { data } = await supabase.from("releases").select("*").eq("id", r.id).single();
+    const d = data || r;
+    setEditingRelease(d);
+    setReleaseForm({
+      title: d.title || "", artist: d.artist || "", type: d.type || "Single",
+      date: d.date || "", release_at: d.release_at || "",
+      slug: d.slug || "", cover: d.cover || "",
+      smart_link: d.smart_link || "", spotify_url: d.spotify_url || "",
+      apple_url: d.apple_url || "", youtube_url: d.youtube_url || "",
+      embed_youtube_id: d.embed_youtube_id || "", embed_spotify: d.embed_spotify || "",
+      background_url: d.background_url || "",
+      socials_instagram: d.socials?.instagram || "",
+      socials_tiktok: d.socials?.tiktok || "",
+      socials_youtube: d.socials?.youtube || "",
+      socials_website: d.socials?.website || "",
+    });
+    setReleaseStatus(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const handleUpdateRelease = async () => {
+    if (!editingRelease) return;
+    setReleaseSubmitting(true); setReleaseStatus(null);
+    const { error } = await supabase.from("releases").update({
+      title: releaseForm.title, artist: releaseForm.artist, type: releaseForm.type,
+      date: releaseForm.date, release_at: releaseForm.release_at || null,
+      slug: releaseForm.slug, cover: releaseForm.cover || null,
+      smart_link: releaseForm.smart_link || null, spotify_url: releaseForm.spotify_url || null,
+      apple_url: releaseForm.apple_url || null, youtube_url: releaseForm.youtube_url || null,
+      embed_youtube_id: releaseForm.embed_youtube_id || null, embed_spotify: releaseForm.embed_spotify || null,
+      background_url: releaseForm.background_url || null,
+      socials: {
+        instagram: releaseForm.socials_instagram || "PLACEHOLDER",
+        tiktok: releaseForm.socials_tiktok || "PLACEHOLDER",
+        youtube: releaseForm.socials_youtube || "PLACEHOLDER",
+        website: releaseForm.socials_website || "PLACEHOLDER",
+      },
+    }).eq("id", editingRelease.id);
+    if (error) setReleaseStatus("error:" + error.message);
+    else {
+      setReleaseStatus("success");
+      setReleases(p => p.map(r => r.id === editingRelease.id ? { ...r, title: releaseForm.title, artist: releaseForm.artist, date: releaseForm.date } : r));
+      setEditingRelease(null);
+      setReleaseForm({ title: "", artist: "", type: "Single", date: "", release_at: "", slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "", youtube_url: "", embed_youtube_id: "", embed_spotify: "", background_url: "", socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: "" });
+    }
+    setReleaseSubmitting(false);
   };
 
   /* ── Artist handlers ── */
@@ -683,26 +732,26 @@ export default function AdminDashboard() {
         {activePanel === "releases" && (
           <>
             <Panel>
-              <FieldLabel>Add Release</FieldLabel>
+              <FieldLabel>{editingRelease ? `Editing: ${editingRelease.title}` : "Add Release"}</FieldLabel>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {[
-                  { name: "title",           placeholder: "Title *"                       },
-                  { name: "artist",          placeholder: "Artist *"                      },
-                  { name: "slug",            placeholder: "Slug * (e.g. bahaimhaele)"     },
-                  { name: "date",            placeholder: "Date * (YYYY-MM-DD)"           },
-                  { name: "release_at",      placeholder: "Release At (countdown)"        },
-                  { name: "cover",           placeholder: "Cover image URL"               },
-                  { name: "smart_link",      placeholder: "Smart Link URL"                },
-                  { name: "spotify_url",     placeholder: "Spotify URL"                   },
-                  { name: "apple_url",       placeholder: "Apple Music URL"               },
-                  { name: "youtube_url",     placeholder: "YouTube URL"                   },
-                  { name: "embed_youtube_id",placeholder: "YouTube Embed ID"              },
-                  { name: "embed_spotify",   placeholder: "Spotify Embed URL"             },
-                  { name: "background_url",  placeholder: "Background image URL"          },
-                  { name: "socials_instagram",placeholder: "Instagram URL"               },
-                  { name: "socials_tiktok",  placeholder: "TikTok URL"                    },
-                  { name: "socials_youtube", placeholder: "YouTube channel URL"           },
-                  { name: "socials_website", placeholder: "Website URL"                   },
+                  { name: "title",            placeholder: "Title *"                   },
+                  { name: "artist",           placeholder: "Artist *"                  },
+                  { name: "slug",             placeholder: "Slug * (e.g. bahaimhaele)" },
+                  { name: "date",             placeholder: "Date * (YYYY-MM-DD)"       },
+                  { name: "release_at",       placeholder: "Release At (countdown)"    },
+                  { name: "cover",            placeholder: "Cover image URL"           },
+                  { name: "smart_link",       placeholder: "Smart Link URL"            },
+                  { name: "spotify_url",      placeholder: "Spotify URL"               },
+                  { name: "apple_url",        placeholder: "Apple Music URL"           },
+                  { name: "youtube_url",      placeholder: "YouTube URL"               },
+                  { name: "embed_youtube_id", placeholder: "YouTube Embed ID"          },
+                  { name: "embed_spotify",    placeholder: "Spotify Embed URL"         },
+                  { name: "background_url",   placeholder: "Background image URL"      },
+                  { name: "socials_instagram",placeholder: "Instagram URL"             },
+                  { name: "socials_tiktok",   placeholder: "TikTok URL"               },
+                  { name: "socials_youtube",  placeholder: "YouTube channel URL"       },
+                  { name: "socials_website",  placeholder: "Website URL"               },
                 ].map(f => <NamedInput key={f.name} name={f.name} value={releaseForm[f.name]} onChange={handleReleaseChange} placeholder={f.placeholder} />)}
                 <select name="type" value={releaseForm.type} onChange={handleReleaseChange}
                   style={{ background: "#000", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px", cursor: "pointer", outline: "none", width: "100%" }}>
@@ -710,10 +759,19 @@ export default function AdminDashboard() {
                   <option value="Album">Album</option>
                   <option value="EP">EP</option>
                 </select>
-                <ActionBtn onClick={handleAddRelease} disabled={releaseSubmitting}>
-                  {releaseSubmitting ? "Adding..." : "Add Release"}
-                </ActionBtn>
-                <StatusMsg status={releaseStatus} noun="Release added" />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <ActionBtn onClick={editingRelease ? handleUpdateRelease : handleAddRelease} disabled={releaseSubmitting}>
+                    {releaseSubmitting ? "Saving..." : editingRelease ? "Update Release" : "Add Release"}
+                  </ActionBtn>
+                  {editingRelease && (
+                    <ActionBtn onClick={() => {
+                      setEditingRelease(null);
+                      setReleaseForm({ title: "", artist: "", type: "Single", date: "", release_at: "", slug: "", cover: "", smart_link: "", spotify_url: "", apple_url: "", youtube_url: "", embed_youtube_id: "", embed_spotify: "", background_url: "", socials_instagram: "", socials_tiktok: "", socials_youtube: "", socials_website: "" });
+                      setReleaseStatus(null);
+                    }}>Cancel</ActionBtn>
+                  )}
+                </div>
+                <StatusMsg status={releaseStatus} noun={editingRelease ? "Release updated" : "Release added"} />
               </div>
             </Panel>
 
@@ -723,6 +781,7 @@ export default function AdminDashboard() {
                 {releases.map(r => (
                   <DataRow key={r.id} label={r.title} sub={`${r.artist} · ${r.date}`}>
                     <GhostBtn href={`/release/${r.slug || r.id}`}>View</GhostBtn>
+                    <GhostBtn onClick={() => { handleEditRelease(r); setActivePanel("releases"); }}>Edit</GhostBtn>
                     <GhostBtn danger onClick={() => handleDeleteRelease(r.id, r.title)}>Delete</GhostBtn>
                   </DataRow>
                 ))}
