@@ -108,33 +108,37 @@ function ShareButton({ release }) {
   );
 }
 
-/* ── artist social icon row ── */
-const SOCIAL_MAP = {
-  instagram: FaInstagram, spotify: FaSpotify, appleMusic: FaApple,
-  youtube: FaYoutube, tiktok: SiTiktok, soundcloud: FaSoundcloud,
+/* ── artist social buttons — full-width bordered, same as ArtistPage ── */
+const SOCIAL_LABEL = {
+  spotify: "SPOTIFY", appleMusic: "APPLE MUSIC", youtube: "YOUTUBE",
+  tiktok: "TIKTOK", instagram: "INSTAGRAM", soundcloud: "SOUNDCLOUD",
+  bandcamp: "BANDCAMP", website: "WEBSITE",
+};
+const SOCIAL_ICON_MAP = {
+  spotify: FaSpotify, appleMusic: FaApple, youtube: FaYoutube,
+  tiktok: SiTiktok, instagram: FaInstagram, soundcloud: FaSoundcloud,
   bandcamp: FaBandcamp, website: FaGlobe,
 };
-function SocialRow({ socials = {} }) {
-  const entries = Object.entries(socials).filter(([k, v]) => SOCIAL_MAP[k] && isReal(v));
+
+function SocialButtons({ socials = {} }) {
+  const entries = Object.entries(socials).filter(([k, v]) => SOCIAL_ICON_MAP[k] && isReal(v));
   if (!entries.length) return null;
   return (
-    <div style={{ display: "flex", gap: "0", justifyContent: "center" }}>
+    <>
       {entries.map(([key, val]) => {
-        const Icon = SOCIAL_MAP[key];
+        const Icon = SOCIAL_ICON_MAP[key];
         return (
-          <a key={key} href={val} target="_blank" rel="noreferrer" aria-label={key}
-            style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "14px", borderRight: "1px solid #1a1a1a", color: "#f0ede8", textDecoration: "none", opacity: 0.4, transition: "opacity 0.2s", fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", gap: "8px" }}
-            onMouseOver={e => e.currentTarget.style.opacity = 1}
-            onMouseOut={e => e.currentTarget.style.opacity = 0.4}>
-            <Icon size={14} />
+          <a key={key} href={val} target="_blank" rel="noreferrer" style={borderedBtn}
+            onMouseOver={e => e.currentTarget.style.background = "#111"}
+            onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+            <Icon size={17} /><span>{SOCIAL_LABEL[key] || key.toUpperCase()}</span>
           </a>
         );
       })}
-    </div>
+    </>
   );
 }
 
-/* ── per-artist social rows ── */
 function ArtistSocialSection({ release }) {
   const hasByArtist = Array.isArray(release.socialsByArtist) && release.socialsByArtist.length > 0;
   const hasGeneral = release.socials && Object.keys(release.socials).length > 0;
@@ -143,21 +147,29 @@ function ArtistSocialSection({ release }) {
   if (hasByArtist) {
     return (
       <>
-        {release.socialsByArtist.map((row, i) => (
+        {release.socialsByArtist.map((row, i) =>
           row && typeof row === "object" ? (
-            <div key={i} style={{ borderTop: "1px solid #1a1a1a" }}>
+            <div key={i} style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
               {row.name && (
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, padding: "10px 24px 0", textAlign: "center" }}>{row.name}</p>
+                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: "0 24px 10px", textAlign: "center" }}>{row.name}</p>
               )}
-              <SocialRow socials={row.socials || {}} />
+              <SocialButtons socials={row.socials || {}} />
             </div>
           ) : null
-        ))}
-        {hasGeneral && <div style={{ borderTop: "1px solid #1a1a1a" }}><SocialRow socials={release.socials} /></div>}
+        )}
+        {hasGeneral && (
+          <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
+            <SocialButtons socials={release.socials} />
+          </div>
+        )}
       </>
     );
   }
-  return <div style={{ borderTop: "1px solid #1a1a1a" }}><SocialRow socials={release.socials} /></div>;
+  return (
+    <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
+      <SocialButtons socials={release.socials} />
+    </div>
+  );
 }
 
 /* ── shared button style — matches ArtistPage ── */
@@ -307,50 +319,44 @@ export default function ReleasePage() {
 
       <div style={{ position: "relative", zIndex: 2, maxWidth: "600px", margin: "0 auto" }}>
 
-        {/* ── Spinning logo + marquee ── */}
-        <div style={{ paddingTop: "36px", paddingBottom: "0" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-            <img
-              src="/spinning yen logo white.gif"
-              alt="YEN SOUND"
-              className="yen-spin"
-              style={{ width: "52px", height: "52px", opacity: 0.55 }}
-            />
-          </div>
-          {/* Marquee */}
-          <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-            <div style={{
-              display: "inline-flex", gap: "0",
-              animation: "marquee 18s linear infinite",
-              whiteSpace: "nowrap",
-            }}>
-              {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-                <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>
-                  {t}
-                </span>
-              ))}
-            </div>
+        {/* ── Spinning logo ── */}
+        <div style={{ paddingTop: "36px" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+            <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
           </div>
         </div>
 
         {/* ── Cover — full-bleed square ── */}
-        <div style={{ width: "100%", marginTop: "24px" }}>
+        <div style={{ width: "100%" }}>
           <img src={release.cover} alt={release.title}
             style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover" }} />
         </div>
 
         {/* ── Title block ── */}
-        <div style={{ padding: "28px 24px 24px", textAlign: "center" }}>
-          <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "10px", lineHeight: 1.3 }}>
+        <div style={{ padding: "28px 24px 0", textAlign: "center" }}>
+          <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", lineHeight: 1.3 }}>
             {release.artist} — {release.title}
           </h1>
+        </div>
+
+        {/* ── Marquee ── */}
+        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0", margin: "28px 0 0" }}>
+          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
+            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
+              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Choose music service ── */}
+        <div style={{ padding: "24px 24px 8px", textAlign: "center" }}>
           <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
             Choose music service
           </p>
         </div>
 
         {/* ── Platform buttons ── */}
-        <div style={{ padding: "24px 0 16px" }}>
+        <div style={{ padding: "8px 0 16px" }}>
           {hasSpotify && (
             <a href={release.spotifyUrl} target="_blank" rel="noreferrer" style={borderedBtn}
               onMouseOver={e => e.currentTarget.style.background = "#111"}
