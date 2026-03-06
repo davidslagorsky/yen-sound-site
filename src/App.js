@@ -20,7 +20,6 @@ import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
-import Sigh from "./pages/Sigh";
 import VoiceLessons from "./pages/VoiceLessons";
 import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
