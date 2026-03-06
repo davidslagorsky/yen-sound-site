@@ -4,6 +4,32 @@ import { supabase } from '../supabaseClient';
 import roster from '../rosterData';
 import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from 'react-icons/fa';
 
+// ── Cloudinary config (free tier: 25GB, no card needed) ──
+const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME';
+const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'YOUR_UNSIGNED_PRESET';
+
+async function uploadSquarePhoto(file, folder, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  formData.append('folder', folder);
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const d = JSON.parse(xhr.responseText);
+        // Auto face-detect + square crop, auto format & quality
+        const squareUrl = d.secure_url.replace('/upload/', '/upload/c_fill,g_face,w_600,h_600,f_auto,q_auto/');
+        resolve(squareUrl);
+      } else reject(new Error('Upload failed'));
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(formData);
+  });
+}
+
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 /*
@@ -393,6 +419,11 @@ export default function ArtistDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [bio, setBio] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState(0);
+  const [photoStatus, setPhotoStatus] = useState('idle'); // idle|saving|saved|error
+  const photoFileRef = useRef(null);
   const [customButtons, setCustomButtons] = useState([]);  // [{id, type, label, url, icon}]
   const [buttonOrder, setButtonOrder] = useState(DEFAULT_ORDER);
   const [activePanel, setActivePanel] = useState(null);
@@ -415,6 +446,7 @@ export default function ArtistDashboard() {
       if (!error && data) {
         setArtist(data);
         setBio(data.bio || '');
+        setPhotoUrl(data.profile_image || '');
         /* migrate old embed_url into custom_buttons if needed */
         const migrated = migrateEmbedUrl(data.custom_buttons || [], data.embed_url || '');
         setCustomButtons(migrated);
@@ -442,6 +474,29 @@ export default function ArtistDashboard() {
     const { error } = await supabase.from('artists').update({ bio }).eq('id', artistId);
     if (error) { setSaveError(error.message); setBioStatus('error'); } else setBioStatus('saved');
     setTimeout(() => setBioStatus('idle'), 2500);
+  }
+
+  async function savePhoto(url) {
+    setPhotoStatus('saving'); setSaveError(null);
+    const { error } = await supabase.from('artists').update({ profile_image: url || null }).eq('id', artistId);
+    if (error) { setSaveError(error.message); setPhotoStatus('error'); }
+    else { setPhotoStatus('saved'); setPhotoUrl(url); setTimeout(() => setPhotoStatus('idle'), 2500); }
+  }
+
+  async function handlePhotoFile(file) {
+    if (!file) return;
+    if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') { alert('Cloudinary not configured — paste a URL instead.'); return; }
+    const objectUrl = URL.createObjectURL(file);
+    setPhotoUrl(objectUrl);
+    setPhotoUploading(true); setPhotoProgress(0);
+    try {
+      const url = await uploadSquarePhoto(file, `yen-sound/artists/${artistId}`, setPhotoProgress);
+      setPhotoUploading(false);
+      await savePhoto(url);
+    } catch (err) {
+      setPhotoUploading(false); setPhotoStatus('error');
+      alert('Upload failed: ' + err.message);
+    }
   }
 
   async function saveButtons() {
@@ -501,6 +556,7 @@ export default function ArtistDashboard() {
     { id: 'bio',     icon: '✎', label: 'Bio'     },
     { id: 'buttons', icon: '⊞', label: 'Buttons' },
     { id: 'order',   icon: '↕', label: 'Order'   },
+    { id: 'photo',   icon: '◻', label: 'Photo'   },
     { id: 'preview', icon: '◉', label: 'Preview' },
     { id: 'reset',   icon: '↺', label: 'Reset'   },
   ];
@@ -568,7 +624,7 @@ export default function ArtistDashboard() {
       <div style={{ padding: '40px 24px 0' }}>
         <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>My Page</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
           {editorTiles.map(t => (
             t.id === 'preview'
               ? <EditorTile key={t.id} icon={t.icon} label={t.label} active={false} onClick={() => setShowPreview(true)} />
@@ -727,6 +783,69 @@ export default function ArtistDashboard() {
             <ActionBtn onClick={resetPage} danger disabled={resetStatus === 'saving'}>
               {resetStatus === 'saving' ? 'Resetting...' : resetStatus === 'saved' ? '✓ Reset' : '↺ Reset Page to Default'}
             </ActionBtn>
+          </div>
+        )}
+
+        {/* ── Photo ── */}
+        {activePanel === 'photo' && (
+          <div style={{ border: '1px solid rgba(240,237,232,0.15)', padding: '24px', marginBottom: '12px' }}>
+            <FieldLabel>Profile Photo — auto-cropped to square</FieldLabel>
+
+            {/* square preview */}
+            <div
+              onClick={() => photoFileRef.current?.click()}
+              style={{ width: '120px', height: '120px', margin: '0 auto 16px', overflow: 'hidden', background: '#111', border: '1px solid rgba(240,237,232,0.2)', cursor: 'pointer', position: 'relative' }}
+            >
+              {photoUrl
+                ? <img src={photoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2, fontFamily: F, fontSize: '9px', letterSpacing: '0.2em' }}>No Photo</div>
+              }
+              {photoUploading && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <div style={{ width: '60px', height: '2px', background: '#222' }}>
+                    <div style={{ width: `${photoProgress}%`, height: '100%', background: '#f0ede8', transition: 'width 0.2s' }} />
+                  </div>
+                  <span style={{ fontFamily: F, fontSize: '8px', color: '#f0ede8', opacity: 0.7 }}>{photoProgress}%</span>
+                </div>
+              )}
+              {!photoUploading && (
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.55)', padding: '4px 0', textAlign: 'center' }}>
+                  <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.15em', color: '#f0ede8', opacity: 0.6, textTransform: 'uppercase' }}>Click to Upload</span>
+                </div>
+              )}
+            </div>
+            <input ref={photoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handlePhotoFile(e.target.files?.[0])} />
+
+            <p style={{ fontFamily: F, fontSize: '8px', opacity: 0.35, letterSpacing: '0.1em', lineHeight: 1.7, textAlign: 'center', marginBottom: '16px' }}>
+              Any shape photo will be auto-cropped to a square (face-aware). Stored free on Cloudinary.
+            </p>
+
+            {/* URL paste fallback */}
+            <FieldLabel>Or paste image URL</FieldLabel>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                value={typeof photoUrl === 'string' && photoUrl.startsWith('blob:') ? '' : photoUrl}
+                onChange={e => setPhotoUrl(e.target.value)}
+                placeholder="https://..."
+                style={{ flex: 1, background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 12px', outline: 'none' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'}
+              />
+              <button
+                onClick={() => savePhoto(photoUrl.trim())}
+                disabled={photoStatus === 'saving' || photoUploading}
+                style={{ flexShrink: 0, padding: '10px 16px', background: 'transparent', border: '1px solid rgba(240,237,232,0.5)', color: '#f0ede8', fontFamily: F, fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', opacity: photoStatus === 'saving' ? 0.4 : 1 }}
+              >
+                {photoStatus === 'saving' ? '...' : photoStatus === 'saved' ? '✓' : 'Save'}
+              </button>
+            </div>
+
+            {photoStatus === 'saved' && <p style={{ fontFamily: F, fontSize: '10px', color: 'rgba(100,255,180,0.85)', letterSpacing: '0.1em' }}>✓ Photo saved</p>}
+            {artist.profile_image && (
+              <button onClick={() => savePhoto('')} style={{ marginTop: '8px', background: 'none', border: 'none', color: 'rgba(220,80,80,0.6)', fontFamily: F, fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', padding: 0 }}>
+                ↺ Remove photo
+              </button>
+            )}
           </div>
         )}
       </div>
