@@ -201,7 +201,7 @@ export default function ArtistPage() {
       </div>
 
       {/* spinning logo — small divider */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "16px 0", borderBottom: `1px solid ${border}` }}>
+      <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
         <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "28px", height: "28px", opacity: 0.4, filter: logoFilter }} />
       </div>
 
