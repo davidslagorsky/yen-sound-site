@@ -113,7 +113,7 @@ export default function ArtistPage() {
       }));
     }
     async function fetchPageData() {
-      const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order").eq("slug", slug).single();
+      const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order,profile_image").eq("slug", slug).single();
       if (data) setPageData(data);
     }
     fetchPress();
@@ -130,7 +130,7 @@ export default function ArtistPage() {
   );
 
   const socials = artist.socials || {};
-  const bio = pageData?.bio || "";
+  const profileImage = pageData?.profile_image || artist.image;
 
   /* merge legacy embed into custom buttons */
   const rawButtons = pageData?.custom_buttons || [];
@@ -191,7 +191,7 @@ export default function ArtistPage() {
 
       {/* cover */}
       <div style={{ width: "100%", marginTop: "24px" }}>
-        <img src={artist.image} alt={artistName} style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
+        <img src={profileImage} alt={artistName} style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
       </div>
 
       {/* name + bio */}
