@@ -345,102 +345,358 @@ CREATE POLICY "Anon delete" ON slugs
 }
 
 /* ══════════════════════════════════════════════
+   CLOUDINARY PHOTO UPLOAD HELPER
+   Free tier: 25 GB storage/bandwidth, no credit card.
+   Setup: create a free account at cloudinary.com,
+   then create an "unsigned" upload preset and paste
+   your cloud_name + preset below (or use env vars).
+══════════════════════════════════════════════ */
+
+// ── configure these two values ──
+const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || "YOUR_CLOUD_NAME";
+const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || "YOUR_UNSIGNED_PRESET";
+
+/**
+ * Uploads a file to Cloudinary and returns a square-cropped URL.
+ * Uses "fill" gravity so any non-square image is intelligently cropped.
+ */
+async function uploadToCloudinary(file, onProgress) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  formData.append("folder", "yen-sound/artists");
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+    xhr.upload.onprogress = e => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        // Return a square-cropped version via Cloudinary URL transforms
+        const squareUrl = data.secure_url.replace("/upload/", "/upload/c_fill,g_face,w_600,h_600,f_auto,q_auto/");
+        resolve({ url: squareUrl, publicId: data.public_id });
+      } else {
+        reject(new Error("Upload failed: " + xhr.responseText));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(formData);
+  });
+}
+
+/* ── single-artist photo upload row ── */
+function ArtistPhotoRow({ rosterEntry: r, dbArtist, currentImage, onSaved }) {
+  const id = dbArtist?.id;
+  const [urlInput, setUrlInput] = useState(dbArtist?.profile_image ?? "");
+  const [preview, setPreview] = useState(currentImage);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState("idle"); // idle | saving | saved | error
+  const fileRef = useRef(null);
+
+  async function handleFile(file) {
+    if (!file) return;
+    // Client-side preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+    setUploading(true); setProgress(0); setStatus("idle");
+    try {
+      const { url } = await uploadToCloudinary(file, setProgress);
+      setUrlInput(url);
+      setPreview(url);
+      setUploading(false);
+      await saveUrl(id, url, onSaved);
+    } catch (err) {
+      setUploading(false);
+      setStatus("error");
+      alert("Upload error: " + err.message);
+    }
+  }
+
+  async function saveUrl(artistId, url, cb) {
+    if (!artistId) return;
+    setStatus("saving");
+    const { error } = await supabase.from("artists").update({ profile_image: url || null }).eq("id", artistId);
+    if (error) { setStatus("error"); alert("Save error: " + error.message); }
+    else { setStatus("saved"); cb({ id: artistId, profile_image: url || null }); setTimeout(() => setStatus("idle"), 2500); }
+  }
+
+  async function handleRevert() {
+    setUrlInput(""); setPreview(r.image);
+    await saveUrl(id, null, onSaved);
+  }
+
+  const configured = CLOUDINARY_CLOUD_NAME !== "YOUR_CLOUD_NAME";
+
+  return (
+    <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", padding: "16px", border: "1px solid rgba(240,237,232,0.1)", background: "#050505" }}>
+      {/* square thumbnail */}
+      <div
+        style={{ width: "64px", height: "64px", flexShrink: 0, overflow: "hidden", background: "#111", border: "1px solid #1a1a1a", cursor: id ? "pointer" : "default", position: "relative" }}
+        onClick={() => id && configured && fileRef.current?.click()}
+        title={id && configured ? "Click to upload new photo" : ""}
+      >
+        {preview
+          ? <img src={preview} alt={r.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }} />
+          : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.2, fontFamily: F, fontSize: "9px" }}>?</div>
+        }
+        {uploading && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+            <div style={{ width: "36px", height: "2px", background: "#222" }}>
+              <div style={{ width: `${progress}%`, height: "100%", background: "#f0ede8", transition: "width 0.2s" }} />
+            </div>
+            <span style={{ fontFamily: F, fontSize: "7px", letterSpacing: "0.15em", color: "#f0ede8", opacity: 0.7 }}>{progress}%</span>
+          </div>
+        )}
+        {id && configured && !uploading && (
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", padding: "3px 0", textAlign: "center" }}>
+            <span style={{ fontFamily: F, fontSize: "6px", letterSpacing: "0.15em", color: "#f0ede8", opacity: 0.6, textTransform: "uppercase" }}>Upload</span>
+          </div>
+        )}
+      </div>
+
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFile(e.target.files?.[0])} />
+
+      {/* name + url input */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>
+          {r.displayName}
+          {dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.4, marginLeft: "8px", fontWeight: 400 }}>custom</span>}
+          {!dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.25, marginLeft: "8px", fontWeight: 400 }}>from rosterData</span>}
+        </p>
+
+        {!configured && (
+          <p style={{ fontFamily: F, fontSize: "8px", opacity: 0.4, letterSpacing: "0.1em", lineHeight: 1.6, marginBottom: "6px" }}>
+            ⚠ Set REACT_APP_CLOUDINARY_CLOUD_NAME + REACT_APP_CLOUDINARY_UPLOAD_PRESET in .env to enable uploads. URL paste still works.
+          </p>
+        )}
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <input
+            value={urlInput}
+            onChange={e => { setUrlInput(e.target.value); setPreview(e.target.value || currentImage); }}
+            placeholder={id ? "https://... or click thumbnail to upload" : "Artist not in Supabase yet"}
+            disabled={!id}
+            style={{ flex: 1, background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "8px 10px", outline: "none", opacity: id ? 1 : 0.3 }}
+            onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
+            onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+          />
+          {id && (
+            <button
+              onClick={() => saveUrl(id, urlInput.trim(), onSaved)}
+              disabled={status === "saving" || uploading}
+              style={{ flexShrink: 0, padding: "8px 14px", background: "transparent", border: "1px solid rgba(240,237,232,0.5)", color: "#f0ede8", fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer", opacity: (status === "saving" || uploading) ? 0.4 : 1 }}
+            >
+              {status === "saving" ? "..." : status === "saved" ? "✓" : "Save"}
+            </button>
+          )}
+        </div>
+        {!id && <p style={{ fontFamily: F, fontSize: "8px", opacity: 0.3, marginTop: "4px", letterSpacing: "0.1em" }}>Add this artist to Supabase to enable image override</p>}
+        {id && dbArtist?.profile_image && (
+          <button onClick={handleRevert} style={{ marginTop: "4px", background: "none", border: "none", color: "rgba(220,80,80,0.6)", fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}>
+            ↺ revert to rosterData
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
    PHOTOS PANEL
    Manages profile_image overrides per artist.
    Falls back to rosterData.image on the site if not set.
    Requires: ALTER TABLE artists ADD COLUMN IF NOT EXISTS profile_image text;
 ══════════════════════════════════════════════ */
-
 function PhotosPanel({ artists, onUpdate }) {
-  const [edits, setEdits] = useState({});         // { artistId: urlString }
-  const [statuses, setStatuses] = useState({});   // { artistId: 'saving'|'saved'|'error' }
-
-  async function save(artistId) {
-    const url = (edits[artistId] ?? "").trim();
-    setStatuses(p => ({ ...p, [artistId]: "saving" }));
-    const { error } = await supabase
-      .from("artists")
-      .update({ profile_image: url || null })
-      .eq("id", artistId);
-    if (error) {
-      setStatuses(p => ({ ...p, [artistId]: "error" }));
-      alert("Save error: " + error.message);
-    } else {
-      setStatuses(p => ({ ...p, [artistId]: "saved" }));
-      onUpdate({ id: artistId, profile_image: url || null });
-      setTimeout(() => setStatuses(p => ({ ...p, [artistId]: "idle" })), 2500);
-    }
-  }
-
-  // Build merged list: every roster artist, with Supabase override if exists
   const rows = roster.map(r => {
     const dbArtist = artists.find(a => a.slug === r.slug || a.display_name?.toLowerCase() === r.displayName?.toLowerCase());
-    return {
-      rosterEntry: r,
-      dbArtist,
-      currentImage: dbArtist?.profile_image || r.image,
-    };
+    return { rosterEntry: r, dbArtist, currentImage: dbArtist?.profile_image || r.image };
   });
 
   return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <FieldLabel>Artist Profile Images — click thumbnail to upload (auto-squared) or paste URL</FieldLabel>
+      {rows.map(({ rosterEntry: r, dbArtist, currentImage }) => (
+        <ArtistPhotoRow key={r.slug || r.name} rosterEntry={r} dbArtist={dbArtist} currentImage={currentImage} onSaved={onUpdate} />
+      ))}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════
+   SITE BACKGROUND PANEL
+   Stores bg settings in Supabase site_settings table.
+   Run this SQL first:
+     CREATE TABLE IF NOT EXISTS site_settings (
+       key text PRIMARY KEY,
+       value jsonb
+     );
+     INSERT INTO site_settings (key, value) VALUES ('background', '{"type":"color","value":"#000000"}'::jsonb)
+       ON CONFLICT (key) DO NOTHING;
+     ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+     CREATE POLICY "Public read" ON site_settings FOR SELECT USING (true);
+     CREATE POLICY "Anon write" ON site_settings FOR ALL USING (true) WITH CHECK (true);
+══════════════════════════════════════════════ */
+
+const BG_PRESETS = [
+  { label: "Pure Black",       value: "#000000", type: "color"    },
+  { label: "Warm Dark",        value: "#0a0805", type: "color"    },
+  { label: "Dark Navy",        value: "#050810", type: "color"    },
+  { label: "Deep Forest",      value: "#050a06", type: "color"    },
+  { label: "Black → Charcoal", value: "linear-gradient(135deg,#000 0%,#1a1a1a 100%)", type: "gradient" },
+  { label: "Black → Deep Blue",value: "linear-gradient(180deg,#000 0%,#080c18 100%)", type: "gradient" },
+  { label: "Radial Warm",      value: "radial-gradient(ellipse at 50% 0%,#1a1008 0%,#000 70%)", type: "gradient" },
+];
+
+function SiteBackgroundPanel() {
+  const [bg, setBg] = useState({ type: "color", value: "#000000" });
+  const [imgUrl, setImgUrl] = useState("");
+  const [imgUploadStatus, setImgUploadStatus] = useState("idle");
+  const [imgProgress, setImgProgress] = useState(0);
+  const [saveStatus, setSaveStatus] = useState("idle");
+  const [loading, setLoading] = useState(true);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("site_settings").select("value").eq("key", "background").single();
+      if (data?.value) {
+        setBg(data.value);
+        if (data.value.type === "image") setImgUrl(data.value.value || "");
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  async function save(newBg) {
+    setSaveStatus("saving");
+    const { error } = await supabase.from("site_settings").upsert({ key: "background", value: newBg });
+    if (error) { setSaveStatus("error"); alert("Save error: " + error.message); }
+    else { setSaveStatus("saved"); setTimeout(() => setSaveStatus("idle"), 2500); }
+  }
+
+  async function handleBgImageFile(file) {
+    if (!file) return;
+    if (CLOUDINARY_CLOUD_NAME === "YOUR_CLOUD_NAME") { alert("Configure Cloudinary env vars first."); return; }
+    setImgUploadStatus("uploading"); setImgProgress(0);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("folder", "yen-sound/backgrounds");
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+      xhr.upload.onprogress = e => { if (e.lengthComputable) setImgProgress(Math.round((e.loaded / e.total) * 100)); };
+      xhr.onload = async () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          // Deliver a high-quality, auto-format version — no cropping for backgrounds
+          const url = data.secure_url.replace("/upload/", "/upload/f_auto,q_auto/");
+          setImgUrl(url);
+          const newBg = { type: "image", value: url };
+          setBg(newBg);
+          setImgUploadStatus("done");
+          await save(newBg);
+        } else {
+          setImgUploadStatus("error");
+          alert("Upload failed");
+        }
+      };
+      xhr.onerror = () => { setImgUploadStatus("error"); alert("Network error"); };
+      xhr.send(formData);
+    } catch (err) {
+      setImgUploadStatus("error");
+      alert(err.message);
+    }
+  }
+
+  function applyPreset(preset) {
+    const newBg = { type: preset.type, value: preset.value };
+    setBg(newBg);
+    save(newBg);
+  }
+
+  const previewStyle = bg.type === "image"
+    ? { backgroundImage: `url(${bg.value})`, backgroundSize: "cover", backgroundPosition: "center" }
+    : bg.type === "gradient"
+      ? { background: bg.value }
+      : { backgroundColor: bg.value };
+
+  if (loading) return <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25 }}>Loading...</p>;
+
+  return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <FieldLabel>Artist Profile Images — paste any image URL to override</FieldLabel>
-      {rows.map(({ rosterEntry: r, dbArtist, currentImage }) => {
-        const id = dbArtist?.id;
-        const editVal = edits[id] ?? dbArtist?.profile_image ?? "";
-        const status = statuses[id] || "idle";
-        const previewUrl = editVal.trim() || currentImage;
+      <FieldLabel>Site Background — applies site-wide, adapts to all screen sizes</FieldLabel>
 
-        return (
-          <div key={r.slug || r.name} style={{ display: "flex", gap: "14px", alignItems: "flex-start", padding: "16px", border: "1px solid rgba(240,237,232,0.1)", background: "#050505" }}>
-            {/* thumbnail */}
-            <div style={{ width: "56px", height: "56px", flexShrink: 0, overflow: "hidden", background: "#111", border: "1px solid #1a1a1a" }}>
-              {previewUrl
-                ? <img src={previewUrl} alt={r.displayName} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
-                : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.2, fontFamily: F, fontSize: "9px" }}>?</div>
-              }
-            </div>
+      {/* Live preview swatch */}
+      <div style={{ width: "100%", height: "80px", border: "1px solid rgba(240,237,232,0.15)", ...previewStyle, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+        <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.25em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.5, background: "rgba(0,0,0,0.5)", padding: "4px 10px" }}>Preview</span>
+        {saveStatus === "saved" && (
+          <span style={{ position: "absolute", top: "8px", right: "10px", fontFamily: F, fontSize: "8px", letterSpacing: "0.2em", color: "rgba(100,255,180,0.9)" }}>✓ Saved</span>
+        )}
+      </div>
 
-            {/* name + input */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "8px" }}>
-                {r.displayName}
-                {dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.4, marginLeft: "8px", fontWeight: 400 }}>custom</span>}
-                {!dbArtist?.profile_image && <span style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", opacity: 0.25, marginLeft: "8px", fontWeight: 400 }}>from rosterData</span>}
-              </p>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input
-                  value={editVal}
-                  onChange={e => setEdits(p => ({ ...p, [id]: e.target.value }))}
-                  placeholder={id ? "https://..." : "Artist not in Supabase yet"}
-                  disabled={!id}
-                  style={{ flex: 1, background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "8px 10px", outline: "none", opacity: id ? 1 : 0.3 }}
-                  onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
-                />
-                {id && (
-                  <button
-                    onClick={() => save(id)}
-                    disabled={status === "saving"}
-                    style={{ flexShrink: 0, padding: "8px 14px", background: "transparent", border: "1px solid rgba(240,237,232,0.5)", color: "#f0ede8", fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer", opacity: status === "saving" ? 0.4 : 1 }}
-                  >
-                    {status === "saving" ? "..." : status === "saved" ? "✓" : "Save"}
-                  </button>
-                )}
-              </div>
-              {!id && <p style={{ fontFamily: F, fontSize: "8px", opacity: 0.3, marginTop: "4px", letterSpacing: "0.1em" }}>Add this artist to Supabase to enable image override</p>}
-              {dbArtist?.profile_image && (
-                <button
-                  onClick={() => { setEdits(p => ({ ...p, [id]: "" })); save(id); }}
-                  style={{ marginTop: "4px", background: "none", border: "none", color: "rgba(220,80,80,0.6)", fontFamily: F, fontSize: "8px", letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", padding: 0 }}
-                >
-                  ↺ revert to rosterData
-                </button>
-              )}
-            </div>
+      {/* Preset colors/gradients */}
+      <div>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>Presets</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
+          {BG_PRESETS.map(p => (
+            <button key={p.label} onClick={() => applyPreset(p)} style={{
+              padding: "10px 12px", border: bg.value === p.value ? "1px solid rgba(240,237,232,0.6)" : "1px solid rgba(240,237,232,0.15)",
+              background: "transparent", color: "#f0ede8", fontFamily: F, fontSize: "9px", letterSpacing: "0.15em",
+              textTransform: "uppercase", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "10px"
+            }}>
+              <span style={{ width: "18px", height: "18px", flexShrink: 0, display: "block", ...(p.type === "gradient" ? { background: p.value } : { backgroundColor: p.value }), border: "1px solid rgba(255,255,255,0.1)" }} />
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Custom color */}
+      <div>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>Custom Color</p>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input type="color" value={bg.type === "color" ? bg.value : "#000000"}
+            onChange={e => setBg({ type: "color", value: e.target.value })}
+            style={{ width: "44px", height: "44px", border: "1px solid rgba(240,237,232,0.2)", background: "transparent", cursor: "pointer", padding: "2px" }} />
+          <ActionBtn onClick={() => save(bg)} disabled={saveStatus === "saving"} small>
+            {saveStatus === "saving" ? "Saving..." : "Apply Color"}
+          </ActionBtn>
+        </div>
+      </div>
+
+      {/* Background image upload */}
+      <div>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "10px" }}>Background Image</p>
+        <p style={{ fontFamily: F, fontSize: "8px", opacity: 0.35, letterSpacing: "0.08em", lineHeight: 1.7, marginBottom: "12px" }}>
+          Uses CSS <code style={{ opacity: 0.7 }}>background-size: cover</code> — works perfectly on all screen sizes. Landscape images recommended (1920×1080 or wider).
+        </p>
+
+        {/* upload or paste URL */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+          <input
+            value={imgUrl}
+            onChange={e => { setImgUrl(e.target.value); }}
+            placeholder="Paste image URL..."
+            style={{ flex: 1, background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px", outline: "none" }}
+            onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
+            onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            <button onClick={() => fileRef.current?.click()}
+              style={{ padding: "11px", background: "transparent", border: "1px dashed rgba(240,237,232,0.25)", color: "#f0ede8", fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", cursor: "pointer" }}>
+              {imgUploadStatus === "uploading" ? `${imgProgress}%` : "↑ Upload File"}
+            </button>
+            <ActionBtn onClick={() => { if (imgUrl.trim()) { const nb = { type: "image", value: imgUrl.trim() }; setBg(nb); save(nb); } }} disabled={!imgUrl.trim() || saveStatus === "saving"} small>
+              Apply URL
+            </ActionBtn>
           </div>
-        );
-      })}
+          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleBgImageFile(e.target.files?.[0])} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -690,6 +946,7 @@ export default function AdminDashboard() {
     { id: "press",    icon: "✎", label: "Press"    },
     { id: "slugs",    icon: "⌘", label: "Slugs"    },
     { id: "photos",   icon: "◻", label: "Photos"   },
+    { id: "bg",       icon: "▣", label: "Background"},
   ];
 
   const toggle = id => setActivePanel(p => p === id ? null : id);
@@ -720,7 +977,7 @@ export default function AdminDashboard() {
       {/* tile grid */}
       <div style={{ padding: "0 24px" }}>
         <SectionLabel>Manage</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", marginBottom: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
           {tiles.map(t => <DashTile key={t.id} icon={t.icon} label={t.label} active={activePanel === t.id} onClick={() => toggle(t.id)} />)}
         </div>
       </div>
@@ -882,7 +1139,16 @@ export default function AdminDashboard() {
 
         {/* ── Photos ── */}
         {activePanel === "photos" && (
-          <PhotosPanel artists={artists} onUpdate={updated => setArtists(p => p.map(a => a.id === updated.id ? { ...a, profile_image: updated.profile_image } : a))} />
+          <Panel>
+            <PhotosPanel artists={artists} onUpdate={updated => setArtists(p => p.map(a => a.id === updated.id ? { ...a, profile_image: updated.profile_image } : a))} />
+          </Panel>
+        )}
+
+        {/* ── Background ── */}
+        {activePanel === "bg" && (
+          <Panel>
+            <SiteBackgroundPanel />
+          </Panel>
         )}
       </div>
     </div>
