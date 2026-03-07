@@ -39,17 +39,7 @@ const Header = () => {
     paddingBottom: "4px",
   });
 
-  const activeDotStyle = (isActive) => isActive ? {
-    content: '""',
-    position: "absolute",
-    bottom: "-2px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "4px",
-    height: "4px",
-    borderRadius: "50%",
-    background: fg,
-  } : null;
+
 
   return (
     <header style={{
