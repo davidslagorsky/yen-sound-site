@@ -301,12 +301,12 @@ export default function ArtistPage() {
       </div>
 
       {/* spinning logo */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
+      <div style={{ display: "flex", justifyContent: "center", padding: "10px 0 6px" }}>
         <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "28px", height: "28px", opacity: 0.4, filter: logoFilter }} />
       </div>
 
       {/* artist title + bio */}
-      <div style={{ padding: "24px 24px 0", textAlign: "center" }}>
+      <div style={{ padding: "8px 24px 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: fg, marginBottom: "14px", lineHeight: 1.3 }}>
           {artistName.toUpperCase()}
         </h1>
