@@ -20,7 +20,7 @@ import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
-import { PageThemeProvider } from "./hooks/PageThemeContext";
+import { PageThemeProvider, usePageTheme } from "./hooks/PageThemeContext";
 import VoiceLessons from "./pages/VoiceLessons";
 import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
@@ -410,6 +410,29 @@ function SlugRedirect({ releases }) {
   return <Navigate to={resolved} replace />;
 }
 
+/* ---------------- Body theme sync ---------------- */
+// Must be inside PageThemeProvider. Flips document.body bg/color when an
+// artist page switches to light mode, and restores dark on all other pages.
+function BodyThemeSync() {
+  const { theme } = usePageTheme();
+  useEffect(() => {
+    if (theme === "light") {
+      document.body.style.backgroundColor = "#f5f3ef";
+      document.body.style.backgroundImage = "none";
+      document.body.style.color = "#0a0a0a";
+    } else {
+      document.body.style.color = "#f0ede8";
+      // Restore original bg — re-run the site_settings fetch would be heavy,
+      // so we just clear inline styles and let the <body> class/CSS take over.
+      // If there was a custom site background it was set on mount and will
+      // still be in the cascade once we remove the inline override.
+      document.body.style.backgroundColor = "#000";
+      document.body.style.backgroundImage = "";
+    }
+  }, [theme]);
+  return null;
+}
+
 /* ---------------- App ---------------- */
 function App() {
   const currentLocation = useLocation();
@@ -462,6 +485,7 @@ function App() {
   return (
     <HelmetProvider>
       <PageThemeProvider>
+      <BodyThemeSync />
       <CursorPlus />
       <GrainOverlay />
       <Header />
