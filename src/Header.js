@@ -5,10 +5,10 @@ import { usePageTheme } from "./hooks/PageThemeContext";
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 const LINKS = [
-  { to: "/releases", label: "Releases" },
-  { to: "/roster",   label: "Roster" },
-  { to: "/press",    label: "Press" },
-  { to: "/merch",    label: "Merch" },
+  { to: "/releases",     label: "Releases" },
+  { to: "/roster",       label: "Roster" },
+  { to: "/press",        label: "Press" },
+  { to: "/merch",        label: "Merch" },
   { to: "/artist-login", label: "Artist Login" },
 ];
 
@@ -16,14 +16,14 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme } = usePageTheme();
 
-  const isLight = theme === "light";
-  const fg      = isLight ? "#0a0a0a" : "#f0ede8";
-  const headerBg = isLight
+  const isLight     = theme === "light";
+  const fg          = isLight ? "#0a0a0a" : "#f0ede8";
+  const headerBg    = isLight
     ? "linear-gradient(to bottom, rgba(245,243,239,0.95) 0%, rgba(245,243,239,0) 100%)"
     : "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%)";
-  const mobileBg  = isLight ? "rgba(245,243,239,0.98)" : "rgba(0,0,0,0.97)";
-  const mobileBorder = isLight ? "#ddd" : "#1a1a1a";
-  const mobileRowBorder = isLight ? "#e8e5e0" : "#111";
+  const mobileBg    = isLight ? "rgba(245,243,239,0.98)" : "rgba(0,0,0,0.97)";
+  const mobileLine  = isLight ? "#ddd"      : "#1a1a1a";
+  const mobileRow   = isLight ? "#e8e5e0"   : "#111";
 
   const linkStyle = ({ isActive }) => ({
     fontFamily: F,
@@ -49,6 +49,7 @@ const Header = () => {
       background: headerBg,
       transition: "background 0.3s",
     }}>
+
       {/* Logo */}
       <NavLink to="/" style={() => ({
         fontFamily: F,
@@ -88,7 +89,7 @@ const Header = () => {
           position: "fixed",
           top: "54px", left: 0, right: 0,
           background: mobileBg,
-          borderBottom: `1px solid ${mobileBorder}`,
+          borderBottom: `1px solid ${mobileLine}`,
           display: "flex",
           flexDirection: "column",
           zIndex: 101,
@@ -110,7 +111,7 @@ const Header = () => {
                 color: fg,
                 opacity: isActive ? 1 : 0.55,
                 padding: "18px 28px",
-                borderBottom: `1px solid ${mobileRowBorder}`,
+                borderBottom: `1px solid ${mobileRow}`,
                 display: "block",
                 transition: "color 0.3s",
               })}>
@@ -122,100 +123,7 @@ const Header = () => {
 
       {/* Close menu on outside tap */}
       {menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 100 }}
-          aria-hidden
-        />
-      )}
-
-      <style>{`
-        @media (max-width: 640px) {
-          .yen-nav-desktop { display: none !important; }
-          .yen-nav-mobile-btn { display: flex !important; }
-        }
-      `}</style>
-    </header>
-  );
-};
-
-export default Header;
-
-      {/* Logo */}
-      <NavLink to="/" style={() => ({
-        fontFamily: F,
-        fontSize: "11px",
-        fontWeight: 700,
-        letterSpacing: "0.28em",
-        textTransform: "uppercase",
-        textDecoration: "none",
-        color: "#f0ede8",
-      })}>
-        YEN SOUND
-      </NavLink>
-
-      {/* Desktop nav */}
-      <nav style={{ display: "flex", gap: "28px", alignItems: "center" }} className="yen-nav-desktop">
-        {LINKS.map(({ to, label }) => (
-          <NavLink key={to} to={to} style={linkStyle}>{label}</NavLink>
-        ))}
-      </nav>
-
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="yen-nav-mobile-btn"
-        style={{ background: "none", border: "none", cursor: "pointer", display: "none", flexDirection: "column", gap: "5px", padding: "4px", zIndex: 102 }}
-        aria-label="Menu"
-      >
-        <span style={{ display: "block", width: "22px", height: "1px", background: "#f0ede8", transition: "transform 0.2s, opacity 0.2s", transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none" }} />
-        <span style={{ display: "block", width: "22px", height: "1px", background: "#f0ede8", transition: "opacity 0.2s", opacity: menuOpen ? 0 : 1 }} />
-        <span style={{ display: "block", width: "22px", height: "1px", background: "#f0ede8", transition: "transform 0.2s, opacity 0.2s", transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none" }} />
-      </button>
-
-      {/* Mobile dropdown — compact, from top */}
-      {menuOpen && (
-        <div style={{
-          position: "fixed",
-          top: "54px", left: 0, right: 0,
-          background: "rgba(0,0,0,0.97)",
-          borderBottom: "1px solid #1a1a1a",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 101,
-          backdropFilter: "blur(12px)",
-        }} className="yen-nav-mobile-menu">
-          {LINKS.map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setMenuOpen(false)}
-              style={({ isActive }) => ({
-                fontFamily: F,
-                fontSize: "11px",
-                fontWeight: isActive ? 700 : 400,
-                letterSpacing: "0.25em",
-                textTransform: "uppercase",
-                textDecoration: "none",
-                color: "#f0ede8",
-                opacity: isActive ? 1 : 0.55,
-                padding: "18px 28px",
-                borderBottom: "1px solid #111",
-                display: "block",
-              })}>
-              {label}
-            </NavLink>
-          ))}
-        </div>
-      )}
-
-      {/* Close menu on outside tap */}
-      {menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 100 }}
-          aria-hidden
-        />
+        <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 100 }} aria-hidden />
       )}
 
       <style>{`
