@@ -25,7 +25,9 @@ const roster = [
     socials: {
       instagram: "https://www.instagram.com/yalzzii/",
       spotify: "https://open.spotify.com/artist/3mI1CyAI1IOTGRYqXfX5fT?si=ANlgaFsIRpaJdq2qrgaz0g",
-      tiktok: "https://www.tiktok.com/@yalzzii"
+      appleMusic: "https://music.apple.com/il/artist/%D7%99%D7%94%D7%9C%D7%99/1700488305?l=he",
+      tiktok: "https://www.tiktok.com/@yalzzii",
+      youtube: "https://www.youtube.com/watch?v=hRo2y0U-N_k"
     }
   },
   {
@@ -68,7 +70,10 @@ const roster = [
     releasesLink: "/releases?artist=רומי רוט",
     socials: {
       instagram: "https://www.instagram.com/romi_roth/",
-      spotify: "https://open.spotify.com/artist/0Z8PiPMaNbBF1wIht8qmNv?si=cKmAj-u-StGBKd05tDFE0g"
+      spotify: "https://open.spotify.com/artist/0Z8PiPMaNbBF1wIht8qmNv?si=cKmAj-u-StGBKd05tDFE0g",
+      appleMusic: "https://music.apple.com/il/artist/%D7%A8%D7%95%D7%9E%D7%99-%D7%A8%D7%95%D7%98/1835259399?l=he",
+      tiktok: "https://www.tiktok.com/@romi_roth",
+      youtube: "https://www.youtube.com/@romi_roth"
     }
   },
   {
@@ -82,7 +87,9 @@ const roster = [
     socials: {
       instagram: "https://www.instagram.com/alonmylo/",
       spotify: "https://open.spotify.com/artist/7eA0BzIcfh0boxSZkHivNM?si=zjB6UfAvSsGN3NUxl9px9A",
-      appleMusic: "https://music.apple.com/il/artist/alon-mylo/1629238483?l=he"
+      appleMusic: "https://music.apple.com/il/artist/alon-mylo/1629238483?l=he",
+      tiktok: "https://www.tiktok.com/@spaceprincepope",
+      youtube: "https://www.youtube.com/@Alonmylo"
     }
   },
   {
@@ -96,7 +103,9 @@ const roster = [
     socials: {
       instagram: "https://instagram.com/kizels",
       spotify: "https://open.spotify.com/artist/0ZxV3yaIkex9CDaP43WhuY?si=4PhYoLG2R7-9fimeGRJs7Q",
-      appleMusic: "https://music.apple.com/il/artist/kizels/1257722331?l=he"
+      appleMusic: "https://music.apple.com/il/artist/kizels/1257722331?l=he",
+      tiktok: "https://www.tiktok.com/@kizels",
+      youtube: "https://www.youtube.com/channel/UC7ma1m68GZoy7STYPAwgmYQ"
     }
   },
   {
@@ -110,7 +119,8 @@ const roster = [
     socials: {
       instagram: "https://www.instagram.com/roynismo_/",
       spotify: "https://open.spotify.com/artist/6BneFQrxc97112ZGRaO5Cs?si=zWSZXrohRyySl1ERxzGznQ",
-      appleMusic: "https://music.apple.com/il/artist/%D7%A8%D7%95%D7%99-%D7%A0%D7%99%D7%A1%D7%9E%D7%95/1774740610?l=he"
+      appleMusic: "https://music.apple.com/il/artist/%D7%A8%D7%95%D7%99-%D7%A0%D7%99%D7%A1%D7%9E%D7%95/1774740610?l=he",
+      youtube: "https://www.youtube.com/@roynismo_yt"
     }
   },
   {
@@ -124,7 +134,9 @@ const roster = [
     socials: {
       instagram: "https://www.instagram.com/_al0ni/",
       spotify: "https://open.spotify.com/artist/1O9j7fwUrhSRJ0dbW9fDGV?si=vrjA6iGFSsGomwco2r5XsA",
-      tiktok: "https://www.tiktok.com/@aloni8745"
+      appleMusic: "https://music.apple.com/il/artist/%D7%90%D7%9C%D7%95%D7%A0%D7%99/1630644230?l=he",
+      tiktok: "https://www.tiktok.com/@aloni8745",
+      youtube: "https://www.youtube.com/@aloni-n9d"
     }
   },
   {
@@ -152,6 +164,8 @@ const roster = [
     releasesLink: "/releases?artist=coco",
     socials: {
       instagram: "https://www.instagram.com/_itscoco__/",
+      spotify: "https://open.spotify.com/artist/6BxwlMx56pRg0qDoaZLNWb?si=qV73Gs0ySDCRxzzcQY-WCA",
+      appleMusic: "https://music.apple.com/il/artist/coco/1880456394?l=he",
       youtube: "https://www.youtube.com/@its-coco-x"
     }
   },
