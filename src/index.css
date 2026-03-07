@@ -113,7 +113,7 @@ html { scroll-behavior: smooth; }
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: #f0ede8;
-  opacity: 0.3;
+  opacity: 0.5;
 }
 
 /* Mobile: full-bleed */
@@ -143,15 +143,14 @@ html { scroll-behavior: smooth; }
   transform: scale(1.04);
 }
 
-/* ── LATEST RELEASES MARQUEE ── */
 .yen-releases-track {
   display: flex;
   align-items: center;
   white-space: nowrap;
+  -webkit-animation: marquee 24s linear infinite;
   animation: marquee 24s linear infinite;
   will-change: transform;
-  touch-action: none;
-  pointer-events: none;
+  /* iOS fix: don't block pointer events on the track itself */
 }
 .yen-releases-track a {
   pointer-events: auto;
@@ -166,10 +165,9 @@ html { scroll-behavior: smooth; }
 .yen-marquee-track {
   display: flex;
   white-space: nowrap;
+  -webkit-animation: marquee 22s linear infinite;
   animation: marquee 22s linear infinite;
   will-change: transform;
-  touch-action: none;
-  pointer-events: none;
 }
 .yen-marquee-track:hover { animation-play-state: paused; }
 .yen-marquee-track span { pointer-events: none; }
@@ -185,9 +183,24 @@ html { scroll-behavior: smooth; }
   flex-shrink: 0;
 }
 
+@-webkit-keyframes marquee {
+  from { -webkit-transform: translateX(0); transform: translateX(0); }
+  to   { -webkit-transform: translateX(-33.333%); transform: translateX(-33.333%); }
+}
 @keyframes marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-33.333%); }
+}
+
+/* ── SHIMMER PLACEHOLDER ── */
+.yen-shimmer {
+  background: linear-gradient(90deg, #111 25%, #1c1c1c 50%, #111 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* ── SPINNING LOGO (release page) ── */
