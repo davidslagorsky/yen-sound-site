@@ -4,6 +4,7 @@ import roster from "./rosterData";
 import releases from "./releases";
 import { supabase } from "./supabase";
 import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icons/fa";
+import { usePageTheme } from "./hooks/PageThemeContext";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const DEFAULT_ORDER = ["spotify","appleMusic","youtube","tiktok","instagram","press"];
@@ -162,6 +163,10 @@ export default function ArtistPage() {
   // null = not yet loaded; object = loaded (even if empty)
   const [pageData, setPageData] = useState(null);
   const [pageLoaded, setPageLoaded] = useState(false);
+  const { setTheme: setPageTheme } = usePageTheme();
+
+  // Reset header to dark when leaving an artist page
+  useEffect(() => () => setPageTheme("dark"), [setPageTheme]);
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -198,6 +203,7 @@ export default function ArtistPage() {
       const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order,profile_image,theme").eq("slug", slug).single();
       setPageData(data || {});
       setPageLoaded(true);
+      setPageTheme(data?.theme === "light" ? "light" : "dark");
     }
     fetchPress();
     fetchPageData();
