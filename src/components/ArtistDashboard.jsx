@@ -104,8 +104,8 @@ function migrateEmbedUrl(buttons, embedUrl) {
 const inputStyle = {
   width: '100%', boxSizing: 'border-box', background: 'transparent',
   border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8',
-  fontFamily: F, fontSize: '11px', letterSpacing: '0.05em',
-  padding: '10px 12px', outline: 'none', borderRadius: 0, WebkitAppearance: 'none',
+  fontFamily: F, fontSize: '16px', letterSpacing: '0.05em',
+  padding: '12px 12px', outline: 'none', borderRadius: 0, WebkitAppearance: 'none',
 };
 function focusBorder(e) { e.target.style.borderColor = 'rgba(240,237,232,0.6)'; }
 function blurBorder(e)  { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; }
@@ -117,12 +117,13 @@ function FieldLabel({ children }) {
 function ActionBtn({ onClick, children, danger = false, disabled = false }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: 'block', width: '100%', padding: '16px 24px',
+      display: 'block', width: '100%', padding: '16px 24px', minHeight: '52px',
       border: danger ? '2px solid rgba(220,80,80,0.6)' : '2px solid rgba(240,237,232,0.8)',
       background: 'transparent', color: danger ? 'rgba(220,80,80,0.9)' : '#f0ede8',
       fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.3em',
       textTransform: 'uppercase', cursor: disabled ? 'default' : 'pointer',
       transition: 'background 0.15s', opacity: disabled ? 0.4 : 1, boxSizing: 'border-box',
+      WebkitTapHighlightColor: 'transparent',
     }}
       onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(220,80,80,0.08)' : '#111'; }}
       onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}>
@@ -142,12 +143,12 @@ function Section({ id, activePanel, setActivePanel, label, icon, children }) {
     <div style={{ borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
       <button
         onClick={() => setActivePanel(open ? null : id)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: open ? '#0d0d0d' : 'transparent', border: 'none', color: '#f0ede8', cursor: 'pointer', transition: 'background 0.15s' }}>
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '18px 20px', minHeight: '56px', background: open ? '#0d0d0d' : 'transparent', border: 'none', color: '#f0ede8', cursor: 'pointer', transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}>
         <span style={{ fontFamily: F, fontSize: '15px', opacity: 0.7, lineHeight: 1 }}>{icon}</span>
         <span style={{ fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>{label}</span>
         <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRight: '1.5px solid rgba(240,237,232,0.4)', borderBottom: '1.5px solid rgba(240,237,232,0.4)', transform: open ? 'rotate(225deg) translateY(-2px)' : 'rotate(45deg)', transition: 'transform 0.2s', marginRight: '4px' }} />
       </button>
-      {open && <div style={{ padding: '4px 20px 24px' }}>{children}</div>}
+      {open && <div style={{ padding: '4px 20px 28px' }}>{children}</div>}
     </div>
   );
 }
@@ -697,16 +698,16 @@ export default function ArtistDashboard() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '600px', margin: '0 auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
       {/* ── Editor drawer ── */}
       {showPreview && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#050505', overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column' }}>
 
           {/* sticky header */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#050505', borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', background: '#050505', borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
             <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.4 }}>Edit My Page</p>
-            <button onClick={() => setShowPreview(false)} style={{ background: 'none', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', cursor: 'pointer', fontFamily: F, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', padding: '6px 14px' }}>Done</button>
+            <button onClick={() => setShowPreview(false)} style={{ background: 'none', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', cursor: 'pointer', fontFamily: F, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', padding: '10px 18px', minHeight: '44px' }}>Done</button>
           </div>
 
           {/* preview */}
@@ -850,7 +851,7 @@ export default function ArtistDashboard() {
       )}
 
       {/* logo + marquee */}
-      <div style={{ paddingTop: '36px' }}>
+      <div style={{ paddingTop: 'calc(36px + env(safe-area-inset-top))' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
           <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: '52px', height: '52px', opacity: 0.55 }} />
         </div>
@@ -878,7 +879,7 @@ export default function ArtistDashboard() {
                 <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.85 }}>{folder.label}</span>
               </>
             );
-            const base = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 16px', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', textDecoration: 'none', cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', background: 'transparent' };
+            const base = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', minHeight: '110px', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', textDecoration: 'none', cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', background: 'transparent', WebkitTapHighlightColor: 'transparent' };
             if (folder.download) return <a key={folder.id} href={folder.href} download style={base} onMouseEnter={tileHov} onMouseLeave={tileUnhov}>{inner}</a>;
             if (folder.internal) return <Link key={folder.id} to={folder.href} style={base} onMouseEnter={tileHov} onMouseLeave={tileUnhov}>{inner}</Link>;
             if (!folder.href) return <div key={folder.id} style={{ ...base, opacity: 0.3, cursor: 'default' }}>{inner}</div>;
@@ -890,7 +891,7 @@ export default function ArtistDashboard() {
       <div style={{ padding: '40px 24px 0' }}>
         <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.2, textAlign: 'center', marginBottom: '16px' }}>My Page</p>
         <button onClick={() => { setActivePanel(null); setShowPreview(true); }}
-          style={{ width: '100%', padding: '22px 24px', border: '2px solid rgba(240,237,232,0.8)', background: 'transparent', color: '#f0ede8', fontFamily: F, fontSize: '12px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background 0.15s' }}
+          style={{ width: '100%', padding: '24px 24px', minHeight: '68px', border: '2px solid rgba(240,237,232,0.8)', background: 'transparent', color: '#f0ede8', fontFamily: F, fontSize: '12px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}
           onMouseOver={e => e.currentTarget.style.background = '#111'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
           Edit My Page
         </button>
