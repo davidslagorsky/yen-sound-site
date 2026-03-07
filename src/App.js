@@ -333,18 +333,22 @@ const Releases = ({ releases }) => {
           }}>
             {filtered.map((r, i) => (
               <Link key={i} to={`/release/${r.slug}`} style={{ textDecoration: "none", color: "#f0ede8" }}>
-                <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#111", marginBottom: "14px" }}>
+                <div className="yen-shimmer" style={{ width: "100%", aspectRatio: "1", overflow: "hidden", marginBottom: "14px", position: "relative" }}>
                   <img src={r.cover} alt={r.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.6s ease" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.6s ease", position: "relative", zIndex: 1 }}
+                    onLoad={e => { e.currentTarget.closest(".yen-shimmer")?.classList.remove("yen-shimmer"); }}
                     onMouseOver={e => e.currentTarget.style.transform = "scale(1.04)"}
                     onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
                   />
                 </div>
                 <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.45, marginBottom: "4px" }}>
-                  {r.artist}
+                  {r.date ? new Date(r.date).getFullYear() : r.artist}
                 </p>
-                <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.3, opacity: 0.9 }}>
+                <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.3, opacity: 0.9, marginBottom: "2px" }}>
                   {r.title}
+                </p>
+                <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.45 }}>
+                  {r.artist}
                 </p>
               </Link>
             ))}
