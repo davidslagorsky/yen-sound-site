@@ -116,7 +116,7 @@ function Input({ value, onChange, placeholder, type = 'text' }) {
 }
 function Textarea({ value, onChange, onBlur, placeholder, rows = 5 }) {
   return (
-    <textarea value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} rows={rows}
+    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
       style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', lineHeight: 1.6, transition: 'border-color 0.15s', WebkitAppearance: 'none', borderRadius: 0 }}
       onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
       onBlur={e => { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; onBlur && onBlur(); }} />
