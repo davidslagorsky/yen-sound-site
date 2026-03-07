@@ -114,12 +114,12 @@ function Input({ value, onChange, placeholder, type = 'text' }) {
       onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
   );
 }
-function Textarea({ value, onChange, placeholder, rows = 5 }) {
+function Textarea({ value, onChange, onBlur, placeholder, rows = 5 }) {
   return (
-    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+    <textarea value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} placeholder={placeholder} rows={rows}
       style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', lineHeight: 1.6, transition: 'border-color 0.15s', WebkitAppearance: 'none', borderRadius: 0 }}
       onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
+      onBlur={e => { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; onBlur && onBlur(); }} />
   );
 }
 function ActionBtn({ onClick, children, danger = false, disabled = false }) {
@@ -516,6 +516,10 @@ export default function ArtistDashboard() {
   const [resetStatus, setResetStatus] = useState('idle');
   const [saveError, setSaveError] = useState(null);
 
+  // Frozen snapshot for the preview — only updates on blur/save, never on keystroke.
+  // This prevents any re-render of MiniPreview while the iOS keyboard is open.
+  const [previewSnapshot, setPreviewSnapshot] = useState(null);
+
   const { handlers: customHandlers, activeIdx: customActiveIdx } = useTouchSort(setCustomButtons);
   const { handlers: orderHandlers, activeIdx: orderActiveIdx } = useTouchSort(setButtonOrder);
 
@@ -534,12 +538,20 @@ export default function ArtistDashboard() {
         setCustomButtons(migrated);
         const base = data.button_order?.length ? data.button_order : DEFAULT_ORDER;
         const existingIds = migrated.map(b => b.id);
-        setButtonOrder([...base, ...existingIds.filter(id => !base.includes(id))]);
+        const order = [...base, ...existingIds.filter(id => !base.includes(id))];
+        setButtonOrder(order);
+        // Seed preview snapshot so it shows correct content immediately
+        setPreviewSnapshot({ bio: data.bio || '', customButtons: migrated, buttonOrder: order, theme: data.theme || 'dark', photoUrl: data.profile_image || '' });
       }
       setLoading(false);
     }
     fetchArtist();
   }, [artistId]);
+
+  // Call this to push current state into the preview (on blur, after save, etc.)
+  function refreshPreview() {
+    setPreviewSnapshot({ bio, customButtons, buttonOrder, theme, photoUrl });
+  }
 
   useEffect(() => {
     setButtonOrder(prev => {
@@ -551,7 +563,7 @@ export default function ArtistDashboard() {
   async function saveBio() {
     setBioStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ bio }).eq('id', artistId);
-    if (error) { setSaveError(error.message); setBioStatus('error'); } else setBioStatus('saved');
+    if (error) { setSaveError(error.message); setBioStatus('error'); } else { setBioStatus('saved'); refreshPreview(); }
     setTimeout(() => setBioStatus('idle'), 2500);
   }
 
@@ -559,7 +571,7 @@ export default function ArtistDashboard() {
     setPhotoStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ profile_image: url || null }).eq('id', artistId);
     if (error) { setSaveError(error.message); setPhotoStatus('error'); }
-    else { setPhotoStatus('saved'); setPhotoUrl(url); setTimeout(() => setPhotoStatus('idle'), 2500); }
+    else { setPhotoStatus('saved'); setPhotoUrl(url); setPreviewSnapshot(prev => ({ ...(prev || {}), photoUrl: url })); setTimeout(() => setPhotoStatus('idle'), 2500); }
   }
 
   async function handlePhotoFile(file) {
@@ -582,13 +594,13 @@ export default function ArtistDashboard() {
     setTheme(val); setThemeStatus('saving');
     const { error } = await supabase.from('artists').update({ theme: val }).eq('id', artistId);
     if (error) { setThemeStatus('error'); alert('Save error: ' + error.message); }
-    else { setThemeStatus('saved'); setTimeout(() => setThemeStatus('idle'), 2500); }
+    else { setThemeStatus('saved'); setPreviewSnapshot(prev => ({ ...(prev || {}), theme: val })); setTimeout(() => setThemeStatus('idle'), 2500); }
   }
 
   async function saveButtons() {
     setBtnStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: customButtons, button_order: buttonOrder }).eq('id', artistId);
-    if (error) { setSaveError(error.message); setBtnStatus('error'); } else setBtnStatus('saved');
+    if (error) { setSaveError(error.message); setBtnStatus('error'); } else { setBtnStatus('saved'); refreshPreview(); }
     setTimeout(() => setBtnStatus('idle'), 2500);
   }
 
@@ -643,12 +655,16 @@ export default function ArtistDashboard() {
 
   const fullOrderList = buttonOrder.filter(key => PLATFORM_META[key] || customButtons.find(b => b.id === key));
 
+  const snap = previewSnapshot || { bio, customButtons, buttonOrder, theme, photoUrl };
   const miniPreviewProps = {
-    theme, bio, buttonOrder, customButtons, socials,
-    photoUrl,
+    theme: snap.theme,
+    bio: snap.bio,
+    buttonOrder: snap.buttonOrder,
+    customButtons: snap.customButtons,
+    socials,
+    photoUrl: snap.photoUrl,
     artistDisplayName: (rosterArtist?.displayName || artist.display_name || '').toUpperCase(),
-    // Only use Cloudinary/pasted URL — never the blob: URL. Falls back to roster image.
-    currentPhoto: (typeof photoUrl === 'string' && photoUrl && !photoUrl.startsWith('blob:') ? photoUrl : null) || rosterArtist?.image || null,
+    currentPhoto: (typeof snap.photoUrl === 'string' && snap.photoUrl && !snap.photoUrl.startsWith('blob:') ? snap.photoUrl : null) || rosterArtist?.image || null,
   };
 
   /* Section accordion — safe inside render because it holds no state and contains no inputs */
@@ -680,15 +696,22 @@ export default function ArtistDashboard() {
           </div>
 
           <div style={{ padding: '20px 20px 0' }}>
-            <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '10px', textAlign: 'center' }}>Live Preview</p>
+            <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '10px', textAlign: 'center' }}>Preview</p>
             <MiniPreview {...miniPreviewProps} />
-            {artist.slug && (
-              <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
-                style={{ display: 'block', textAlign: 'center', marginTop: '10px', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none' }}
-                onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
-                Open full page →
-              </a>
-            )}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px', alignItems: 'center' }}>
+              <button onClick={refreshPreview}
+                style={{ background: 'none', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35, cursor: 'pointer', padding: '4px 10px' }}
+                onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
+                Refresh
+              </button>
+              {artist.slug && (
+                <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
+                  style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none' }}
+                  onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
+                  Open full page →
+                </a>
+              )}
+            </div>
           </div>
 
           {saveError && (
@@ -700,7 +723,7 @@ export default function ArtistDashboard() {
           <div style={{ marginTop: '20px', borderTop: '1px solid rgba(240,237,232,0.1)' }}>
 
             <Section id="bio" label="Bio" icon="✎">
-              <Textarea value={bio} onChange={setBio} placeholder="Write a short bio..." rows={5} />
+              <Textarea value={bio} onChange={setBio} onBlur={refreshPreview} placeholder="Write a short bio..." rows={5} />
               <div style={{ marginTop: '12px' }}>
                 <ActionBtn onClick={saveBio} disabled={bioStatus === 'saving'}>
                   {bioStatus === 'saving' ? 'Saving...' : bioStatus === 'saved' ? 'Saved' : 'Save Bio'}
