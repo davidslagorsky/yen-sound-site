@@ -208,7 +208,7 @@ export default function ArtistPage() {
     }
     fetchPress();
     fetchPageData();
-  }, [artist, artistName, slug]);
+  }, [artist, artistName, slug, setPageTheme]);
 
   const LIMIT = 12;
   const visible = showAllReleases ? artistReleases : artistReleases.slice(0, LIMIT);
