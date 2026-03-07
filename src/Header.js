@@ -35,7 +35,21 @@ const Header = () => {
     color: fg,
     opacity: isActive ? 1 : 0.45,
     transition: "opacity 0.2s, color 0.3s",
+    position: "relative",
+    paddingBottom: "4px",
   });
+
+  const activeDotStyle = (isActive) => isActive ? {
+    content: '""',
+    position: "absolute",
+    bottom: "-2px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "4px",
+    height: "4px",
+    borderRadius: "50%",
+    background: fg,
+  } : null;
 
   return (
     <header style={{
@@ -67,7 +81,26 @@ const Header = () => {
       {/* Desktop nav */}
       <nav style={{ display: "flex", gap: "28px", alignItems: "center" }} className="yen-nav-desktop">
         {LINKS.map(({ to, label }) => (
-          <NavLink key={to} to={to} style={linkStyle}>{label}</NavLink>
+          <NavLink key={to} to={to} style={linkStyle}>
+            {({ isActive }) => (
+              <span style={{ position: "relative", paddingBottom: "6px" }}>
+                {label}
+                {isActive && (
+                  <span style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "4px",
+                    height: "4px",
+                    borderRadius: "50%",
+                    background: fg,
+                    display: "block",
+                  }} />
+                )}
+              </span>
+            )}
+          </NavLink>
         ))}
       </nav>
 
