@@ -6,7 +6,6 @@ import { supabase } from "./supabase";
 import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icons/fa";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
-
 const DEFAULT_ORDER = ["spotify","appleMusic","youtube","tiktok","instagram","press"];
 
 const PLATFORM_ICON = {
@@ -20,12 +19,15 @@ const PLATFORM_LABEL = {
   spotify: "SPOTIFY", appleMusic: "APPLE MUSIC", youtube: "YOUTUBE",
   tiktok: "TIKTOK", instagram: "INSTAGRAM", press: "PRESS",
 };
-const CUSTOM_ICON_MAP = {
-  link: "→", spotify: "◎", apple: "◈", youtube: "▶",
-  instagram: "◻", tiktok: "◇", soundcloud: "◉", bandcamp: "◆",
+
+const ICON_RENDER = {
+  spotify: <FaSpotify size={15} />,
+  apple:   <FaApple size={15} />,
+  youtube: <FaYoutube size={15} />,
+  link:    <span style={{ fontFamily: F, fontSize: "14px", lineHeight: 1 }}>—</span>,
+  cd:      <span style={{ fontFamily: F, fontSize: "14px", lineHeight: 1 }}>◎</span>,
 };
 
-/* ── embed parser — same as dashboard ── */
 function buildEmbedData(url = "") {
   if (!url?.trim()) return null;
   const u = url.trim();
@@ -38,7 +40,6 @@ function buildEmbedData(url = "") {
   return null;
 }
 
-/* ── migrate old embed_url into custom_buttons shape ── */
 function migrateEmbedUrl(buttons, embedUrl) {
   if (!embedUrl?.trim()) return buttons;
   const alreadyMigrated = buttons.some(b => b.type === "embed" && b.url === embedUrl.trim());
@@ -46,16 +47,14 @@ function migrateEmbedUrl(buttons, embedUrl) {
   return [...buttons, { id: "__legacy_embed__", type: "embed", url: embedUrl.trim(), label: "" }];
 }
 
-/* ── inline embed card ── */
-function EmbedCard({ item }) {
+/* ── Embed card ── */
+function EmbedCard({ item, fg, border }) {
   const data = buildEmbedData(item.url);
   if (!data) return null;
   return (
-    <div style={{ margin: "0 24px 10px", border: "1px solid rgba(240,237,232,0.15)", overflow: "hidden" }}>
+    <div style={{ margin: "0 24px 10px", border: `1px solid ${border}`, overflow: "hidden" }}>
       {item.label && (
-        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>
-          {item.label}
-        </p>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>{item.label}</p>
       )}
       {data.type === "youtube" ? (
         <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
@@ -74,12 +73,95 @@ function EmbedCard({ item }) {
   );
 }
 
+/* ── Password-locked link ── */
+function LockedLink({ item, btnStyle, fg, hoverBg }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  function attempt() {
+    if (input === (item.password || "")) {
+      setUnlocked(true);
+      setError(false);
+      window.open(item.url, "_blank", "noreferrer");
+    } else {
+      setError(true);
+      setInput("");
+      setTimeout(() => setError(false), 1800);
+    }
+  }
+
+  if (unlocked) {
+    return (
+      <a href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
+        onMouseOver={e => e.currentTarget.style.background = hoverBg}
+        onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+        {item.label?.toUpperCase() || "LINK"}
+      </a>
+    );
+  }
+
+  return (
+    <div style={{ margin: "0 24px 10px" }}>
+      {!open ? (
+        <button onClick={() => setOpen(true)} style={{ ...btnStyle, margin: 0, width: "100%", gap: "12px" }}
+          onMouseOver={e => e.currentTarget.style.background = hoverBg}
+          onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+          <span style={{ opacity: 0.5, fontFamily: F, fontSize: "13px" }}>lock</span>
+          {item.label?.toUpperCase() || "LOCKED"}
+        </button>
+      ) : (
+        <div style={{ border: `2px solid ${error ? "rgba(220,80,80,0.7)" : "rgba(240,237,232,0.25)"}`, padding: "16px", transition: "border-color 0.2s" }}>
+          <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.45, marginBottom: "12px", textAlign: "center" }}>
+            {item.label?.toUpperCase() || "LOCKED"} — Enter password
+          </p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              type="password"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && attempt()}
+              autoFocus
+              placeholder="Password"
+              style={{
+                flex: 1, background: "transparent", border: "1px solid rgba(240,237,232,0.2)",
+                color: fg, fontFamily: F, fontSize: "13px", padding: "10px 12px",
+                outline: "none", letterSpacing: "0.15em",
+                borderColor: error ? "rgba(220,80,80,0.6)" : "rgba(240,237,232,0.2)",
+              }}
+            />
+            <button onClick={attempt} style={{
+              padding: "10px 16px", background: "transparent", border: "1px solid rgba(240,237,232,0.4)",
+              color: fg, fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.2em",
+              textTransform: "uppercase", cursor: "pointer",
+            }}>
+              Enter
+            </button>
+          </div>
+          {error && (
+            <p style={{ fontFamily: F, fontSize: "9px", color: "rgba(220,80,80,0.8)", letterSpacing: "0.15em", textAlign: "center", marginTop: "8px" }}>
+              Wrong password
+            </p>
+          )}
+          <button onClick={() => { setOpen(false); setInput(""); setError(false); }}
+            style={{ display: "block", margin: "10px auto 0", background: "none", border: "none", color: fg, fontFamily: F, fontSize: "8px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.3, cursor: "pointer" }}>
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ArtistPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [showAllReleases, setShowAllReleases] = useState(false);
   const [pressPosts, setPressPosts] = useState([]);
+  // null = not yet loaded; object = loaded (even if empty)
   const [pageData, setPageData] = useState(null);
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
@@ -114,7 +196,8 @@ export default function ArtistPage() {
     }
     async function fetchPageData() {
       const { data } = await supabase.from("artists").select("bio,custom_buttons,embed_url,button_order,profile_image,theme").eq("slug", slug).single();
-      if (data) setPageData(data);
+      setPageData(data || {});
+      setPageLoaded(true);
     }
     fetchPress();
     fetchPageData();
@@ -129,8 +212,12 @@ export default function ArtistPage() {
     </div>
   );
 
-  const socials = artist.socials || {};
-  const profileImage = pageData?.profile_image || artist.image;
+  // Wait until Supabase data is fetched before deciding which image to show.
+  // This prevents a flash of the roster placeholder → uploaded image.
+  const profileImage = pageLoaded
+    ? (pageData?.profile_image || artist.image)
+    : (pageData?.profile_image || null); // null = render nothing until known
+
   const bio = pageData?.bio || "";
 
   /* ── theme ── */
@@ -143,33 +230,33 @@ export default function ArtistPage() {
   const hoverBg  = isLight ? "#e8e5e0" : "#111";
   const logoFilter = isLight ? "invert(1)" : "none";
 
-  /* merge legacy embed into custom buttons */
+  /* merge legacy embed */
   const rawButtons = pageData?.custom_buttons || [];
   const customButtons = migrateEmbedUrl(rawButtons, pageData?.embed_url || "");
 
-  /* build order: saved order, fall back to default + append any unordered custom items */
   const savedOrder = pageData?.button_order?.length ? pageData.button_order : DEFAULT_ORDER;
   const allCustomIds = customButtons.map(b => b.id);
   const buttonOrder = [...savedOrder, ...allCustomIds.filter(id => !savedOrder.includes(id))];
 
-  /* build final ordered item list */
   const orderedItems = buttonOrder.map(key => {
-    /* streaming platform */
     if (PLATFORM_LABEL[key]) {
       if (key === "press") return pressPosts.length > 0 ? { kind: "platform", key: "press", label: "PRESS", icon: null, url: "/press", internal: true } : null;
-      const url = socials[key];
+      const url = (artist.socials || {})[key];
       if (!url || url === "PLACEHOLDER") return null;
       return { kind: "platform", key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICON[key], url, internal: false };
     }
-    /* custom item */
     const item = customButtons.find(b => b.id === key);
     if (!item) return null;
     if (item.type === "embed") {
       if (!item.url?.trim()) return null;
       return { kind: "embed", key, item };
     }
+    if (item.type === "locked") {
+      if (!item.url?.trim()) return null;
+      return { kind: "locked", key, item };
+    }
     if (item.type === "link" && item.label && item.url) {
-      return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon, url: item.url };
+      return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon || null, url: item.url };
     }
     return null;
   }).filter(Boolean);
@@ -186,7 +273,7 @@ export default function ArtistPage() {
   return (
     <div style={{ backgroundColor: bg, minHeight: "100vh", color: fg, maxWidth: "600px", margin: "0 auto", transition: "background-color 0.3s, color 0.3s" }}>
 
-      {/* marquee — top */}
+      {/* marquee */}
       <div style={{ overflow: "hidden", borderBottom: `1px solid ${border}`, padding: "7px 0" }}>
         <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
           {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
@@ -195,12 +282,18 @@ export default function ArtistPage() {
         </div>
       </div>
 
-      {/* profile picture — full width */}
-      <div style={{ width: "100%" }}>
-        <img src={profileImage} alt={artistName} style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover", objectPosition: "top" }} />
+      {/* profile picture — only render once we know which URL to use */}
+      <div style={{ width: "100%", aspectRatio: "1", background: isLight ? "#ddd" : "#111", overflow: "hidden" }}>
+        {profileImage && (
+          <img
+            src={profileImage}
+            alt={artistName}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }}
+          />
+        )}
       </div>
 
-      {/* spinning logo — small divider */}
+      {/* spinning logo */}
       <div style={{ display: "flex", justifyContent: "center", padding: "16px 0" }}>
         <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "28px", height: "28px", opacity: 0.4, filter: logoFilter }} />
       </div>
@@ -224,11 +317,14 @@ export default function ArtistPage() {
         </p>
       </div>
 
-      {/* ── ordered items: platforms, links, embeds ── */}
+      {/* ordered items */}
       <div style={{ paddingBottom: "24px" }}>
-        {orderedItems.map((item, i) => {
+        {orderedItems.map((item) => {
           if (item.kind === "embed") {
-            return <EmbedCard key={item.key} item={item.item} />;
+            return <EmbedCard key={item.key} item={item.item} fg={fg} border={border} />;
+          }
+          if (item.kind === "locked") {
+            return <LockedLink key={item.key} item={item.item} btnStyle={btnStyle} fg={fg} hoverBg={hoverBg} />;
           }
           if (item.kind === "platform") {
             return item.internal ? (
@@ -250,7 +346,7 @@ export default function ArtistPage() {
               <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
                 onMouseOver={e => e.currentTarget.style.background = hoverBg}
                 onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-                <span style={{ opacity: 0.8 }}>{CUSTOM_ICON_MAP[item.icon] || "→"}</span>
+                {item.icon && ICON_RENDER[item.icon] ? <span style={{ opacity: 0.75 }}>{ICON_RENDER[item.icon]}</span> : null}
                 {item.label}
               </a>
             );
@@ -324,7 +420,7 @@ export default function ArtistPage() {
           style={{ background: "none", border: "none", color: fg, cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: 0 }}
           onMouseOver={e => e.currentTarget.style.opacity = 0.7}
           onMouseOut={e => e.currentTarget.style.opacity = 0.25}>
-          ← Roster
+          Roster
         </button>
       </div>
     </div>
