@@ -4,7 +4,6 @@ import { supabase } from '../supabaseClient';
 import roster from '../rosterData';
 import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from 'react-icons/fa';
 
-// ── Cloudinary config ──
 const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME';
 const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'YOUR_UNSIGNED_PRESET';
 
@@ -30,21 +29,20 @@ async function uploadSquarePhoto(file, folder, onProgress) {
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-// Icon options — no icon by default
 const ICON_OPTIONS = [
-  { value: '',         label: 'None' },
-  { value: 'spotify',  label: 'Spotify' },
-  { value: 'apple',    label: 'Apple Music' },
-  { value: 'youtube',  label: 'YouTube' },
-  { value: 'link',     label: 'Link' },
-  { value: 'cd',       label: 'CD' },
+  { value: '',        label: 'None' },
+  { value: 'spotify', label: 'Spotify' },
+  { value: 'apple',   label: 'Apple Music' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'link',    label: 'Link' },
+  { value: 'cd',      label: 'CD' },
 ];
 const ICON_RENDER = {
   spotify: <FaSpotify size={13} />,
   apple:   <FaApple size={13} />,
   youtube: <FaYoutube size={13} />,
-  link:    <span style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '13px' }}>—</span>,
-  cd:      <span style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: '13px' }}>◎</span>,
+  link:    <span style={{ fontSize: '13px' }}>—</span>,
+  cd:      <span style={{ fontSize: '13px' }}>◎</span>,
 };
 
 const DEFAULT_ORDER = ['spotify','appleMusic','youtube','tiktok','instagram','press'];
@@ -97,31 +95,25 @@ function uid() { return Math.random().toString(36).slice(2, 8); }
 
 function migrateEmbedUrl(buttons, embedUrl) {
   if (!embedUrl?.trim()) return buttons;
-  const alreadyMigrated = buttons.some(b => b.type === 'embed' && b.url === embedUrl.trim());
-  if (alreadyMigrated) return buttons;
+  const already = buttons.some(b => b.type === 'embed' && b.url === embedUrl.trim());
+  if (already) return buttons;
   return [...buttons, { id: uid(), type: 'embed', url: embedUrl.trim(), label: '' }];
 }
 
-/* ─── UI helpers ─── */
+/* ─── Shared input styles ─── */
+const inputStyle = {
+  width: '100%', boxSizing: 'border-box', background: 'transparent',
+  border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8',
+  fontFamily: F, fontSize: '11px', letterSpacing: '0.05em',
+  padding: '10px 12px', outline: 'none', borderRadius: 0, WebkitAppearance: 'none',
+};
+function focusBorder(e) { e.target.style.borderColor = 'rgba(240,237,232,0.6)'; }
+function blurBorder(e)  { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; }
+
 function FieldLabel({ children }) {
   return <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px' }}>{children}</p>;
 }
-function Input({ value, onChange, placeholder, type = 'text' }) {
-  return (
-    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: '100%', boxSizing: 'border-box', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', transition: 'border-color 0.15s', WebkitAppearance: 'none', borderRadius: 0 }}
-      onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-      onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
-  );
-}
-function Textarea({ value, onChange, onBlur, placeholder, rows = 5 }) {
-  return (
-    <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-      style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', letterSpacing: '0.05em', padding: '10px 12px', outline: 'none', lineHeight: 1.6, transition: 'border-color 0.15s', WebkitAppearance: 'none', borderRadius: 0 }}
-      onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-      onBlur={e => { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; onBlur && onBlur(); }} />
-  );
-}
+
 function ActionBtn({ onClick, children, danger = false, disabled = false }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
@@ -133,189 +125,129 @@ function ActionBtn({ onClick, children, danger = false, disabled = false }) {
       transition: 'background 0.15s', opacity: disabled ? 0.4 : 1, boxSizing: 'border-box',
     }}
       onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(220,80,80,0.08)' : '#111'; }}
-      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+      onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}>
       {children}
     </button>
   );
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Section — MUST be top-level. If defined inside render(), React
+   creates a new component type on every parent re-render, which
+   unmounts/remounts children → focused inputs lose focus → keyboard closes.
+══════════════════════════════════════════════════════════════ */
+function Section({ id, activePanel, setActivePanel, label, icon, children }) {
+  const open = activePanel === id;
+  return (
+    <div style={{ borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
+      <button
+        onClick={() => setActivePanel(open ? null : id)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: open ? '#0d0d0d' : 'transparent', border: 'none', color: '#f0ede8', cursor: 'pointer', transition: 'background 0.15s' }}>
+        <span style={{ fontFamily: F, fontSize: '15px', opacity: 0.7, lineHeight: 1 }}>{icon}</span>
+        <span style={{ fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>{label}</span>
+        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRight: '1.5px solid rgba(240,237,232,0.4)', borderBottom: '1.5px solid rgba(240,237,232,0.4)', transform: open ? 'rotate(225deg) translateY(-2px)' : 'rotate(45deg)', transition: 'transform 0.2s', marginRight: '4px' }} />
+      </button>
+      {open && <div style={{ padding: '4px 20px 24px' }}>{children}</div>}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BioEditor — top-level, local state for typing.
+   Parent state only updated on blur → zero parent re-renders while typing.
+══════════════════════════════════════════════════════════════ */
+function BioEditor({ initialBio, onSave, saveStatus }) {
+  const [local, setLocal] = useState(initialBio);
+  // Sync if parent resets (e.g. after load)
+  const prev = useRef(initialBio);
+  if (initialBio !== prev.current) { prev.current = initialBio; setLocal(initialBio); }
+
+  return (
+    <>
+      <textarea
+        value={local}
+        onChange={e => setLocal(e.target.value)}
+        onBlur={() => onSave(local, false)}
+        placeholder="Write a short bio..."
+        rows={5}
+        style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6, width: '100%', boxSizing: 'border-box' }}
+        onFocus={focusBorder}
+      />
+      <div style={{ marginTop: '12px' }}>
+        <ActionBtn onClick={() => onSave(local, true)} disabled={saveStatus === 'saving'}>
+          {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : 'Save Bio'}
+        </ActionBtn>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TypeToggle
+══════════════════════════════════════════════════════════════ */
 function TypeToggle({ value, onChange }) {
   const types = [['link', '→ Link'], ['locked', 'Locked'], ['embed', '▶ Embed']];
   return (
     <div style={{ display: 'flex', border: '1px solid rgba(240,237,232,0.2)', marginBottom: '12px' }}>
-      {types.map(([t, label], i) => (
+      {types.map(([t, lbl], i) => (
         <button key={t} onClick={() => onChange(t)} style={{
           flex: 1, padding: '9px 4px', background: value === t ? 'rgba(240,237,232,0.1)' : 'transparent',
           border: 'none', color: '#f0ede8', fontFamily: F, fontSize: '8px', fontWeight: 700,
           letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer',
           borderRight: i < types.length - 1 ? '1px solid rgba(240,237,232,0.2)' : 'none',
           opacity: value === t ? 1 : 0.35, transition: 'background 0.15s, opacity 0.15s',
-        }}>{label}</button>
+        }}>{lbl}</button>
       ))}
     </div>
   );
 }
 
-/* ─── Touch-aware sortable hook ─── */
-function useTouchSort(setList) {
-  const dragIdx = useRef(null);
-  const longPressTimer = useRef(null);
-  const isDragging = useRef(false);
-  const rowRefs = useRef([]);
-  const startY = useRef(0);
-  const [activeIdx, setActiveIdx] = useState(null);
-
-  function getRowAtY(y) {
-    let closest = null, closestDist = Infinity;
-    rowRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      const dist = Math.abs(y - mid);
-      if (dist < closestDist) { closestDist = dist; closest = i; }
-    });
-    return closest;
-  }
-
-  function moveItem(from, to) {
-    if (from === to || from === null || to === null) return;
-    setList(prev => {
-      const a = [...prev];
-      const [m] = a.splice(from, 1);
-      a.splice(to, 0, m);
-      return a;
-    });
-    dragIdx.current = to;
-    setActiveIdx(to);
-  }
-
-  function handlers(index) {
-    return {
-      ref: el => { rowRefs.current[index] = el; },
-      draggable: true,
-      onDragStart: () => { dragIdx.current = index; setActiveIdx(index); },
-      onDragOver: e => { e.preventDefault(); if (dragIdx.current !== null && dragIdx.current !== index) moveItem(dragIdx.current, index); },
-      onDragEnd: () => { dragIdx.current = null; setActiveIdx(null); },
-      onTouchStart: e => {
-        startY.current = e.touches[0].clientY;
-        longPressTimer.current = setTimeout(() => {
-          isDragging.current = true;
-          dragIdx.current = index;
-          setActiveIdx(index);
-          if (navigator.vibrate) navigator.vibrate(30);
-        }, 400);
-      },
-      onTouchMove: e => {
-        if (!isDragging.current) {
-          if (Math.abs(e.touches[0].clientY - startY.current) > 8) clearTimeout(longPressTimer.current);
-          return;
-        }
-        e.preventDefault();
-        const target = getRowAtY(e.touches[0].clientY);
-        if (target !== null && dragIdx.current !== null && target !== dragIdx.current) moveItem(dragIdx.current, target);
-      },
-      onTouchEnd: () => {
-        clearTimeout(longPressTimer.current);
-        isDragging.current = false;
-        dragIdx.current = null;
-        setActiveIdx(null);
-      },
-    };
-  }
-
-  return { handlers, activeIdx };
-}
-
-/* ─── OrderRow ─── */
-function OrderRow({ itemKey, index, customButtons, socials, dragHandlers, isActive }) {
-  const platform = PLATFORM_META[itemKey];
-  let label, icon, dimmed = false;
-
-  if (platform) {
-    label = platform.label;
-    icon = platform.icon;
-    dimmed = itemKey !== 'press' && !(socials[itemKey] && socials[itemKey] !== 'PLACEHOLDER');
-  } else {
-    const item = customButtons.find(b => b.id === itemKey);
-    if (!item) return null;
-    if (item.type === 'embed') {
-      const svc = detectEmbedService(item.url);
-      label = item.label || (svc ? `${svc} embed` : 'Embed');
-      icon = <span style={{ fontSize: '11px', opacity: 0.5 }}>▶</span>;
-    } else if (item.type === 'locked') {
-      label = item.label || 'Locked link';
-      icon = <span style={{ fontSize: '11px', opacity: 0.5, fontFamily: F }}>lock</span>;
-    } else {
-      label = item.label || 'Link';
-      icon = item.icon ? (ICON_RENDER[item.icon] || null) : null;
-    }
-  }
-
-  const h = dragHandlers(index);
-  return (
-    <div ref={h.ref} draggable={h.draggable}
-      onDragStart={h.onDragStart} onDragOver={h.onDragOver} onDragEnd={h.onDragEnd}
-      onTouchStart={h.onTouchStart} onTouchMove={h.onTouchMove} onTouchEnd={h.onTouchEnd}
-      style={{
-        display: 'flex', alignItems: 'center', gap: '12px', padding: '14px',
-        marginBottom: '6px', userSelect: 'none', touchAction: 'none',
-        border: `1px solid ${isActive ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`,
-        background: isActive ? '#111' : '#050505',
-        cursor: 'grab', opacity: dimmed ? 0.3 : 1,
-        transform: isActive ? 'scale(1.015)' : 'scale(1)',
-        transition: 'border-color 0.12s, background 0.12s, transform 0.12s',
-      }}>
-      <span style={{ fontFamily: F, fontSize: '14px', opacity: 0.3, lineHeight: 1 }}>⠿</span>
-      <span style={{ display: 'flex', alignItems: 'center', minWidth: '18px' }}>{icon}</span>
-      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1 }}>{label}</span>
-      {isActive && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.12em', opacity: 0.5, textTransform: 'uppercase' }}>moving</span>}
-      {!isActive && dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
-      {!isActive && !platform && !dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.1em', opacity: 0.25, textTransform: 'uppercase' }}>custom</span>}
-      <span style={{ fontFamily: F, fontSize: '9px', opacity: 0.2 }}>#{index + 1}</span>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   ButtonItemCard — MUST be top-level (not defined inside render).
-   If defined inside the parent component, every keystroke re-creates
-   the component type → React unmounts+remounts it → iOS keyboard closes.
-───────────────────────────────────────────────────────────────────── */
-function ButtonItemCard({ item, index, isActive, dragHandlers, onUpdate, onRemove, onChangeType }) {
+/* ══════════════════════════════════════════════════════════════
+   ButtonItemCard — top-level, local state for all text fields.
+   Flushes to parent only on blur → typing never re-renders parent.
+══════════════════════════════════════════════════════════════ */
+function ButtonItemCard({ item, index, isActive, dragHandlers, onFlush, onRemove, onChangeType }) {
+  const [localLabel,    setLocalLabel]    = useState(item.label    || '');
+  const [localUrl,      setLocalUrl]      = useState(item.url      || '');
+  const [localPassword, setLocalPassword] = useState(item.password || '');
   const [showIconPicker, setShowIconPicker] = useState(false);
 
-  // Only the drag handle row gets the drag handlers.
-  // Input areas explicitly stop touch propagation so drag never fires while typing.
+  // Sync if item replaced from outside (e.g. type change resets fields)
+  const prevId = useRef(item.id);
+  const prevType = useRef(item.type);
+  if (item.id !== prevId.current || item.type !== prevType.current) {
+    prevId.current = item.id;
+    prevType.current = item.type;
+    setLocalLabel(item.label || '');
+    setLocalUrl(item.url || '');
+    setLocalPassword(item.password || '');
+  }
+
+  function flush(overrides = {}) {
+    onFlush(item.id, { label: localLabel, url: localUrl, password: localPassword, ...overrides });
+  }
+
   const h = dragHandlers(index);
 
   return (
-    <div
-      style={{
-        marginBottom: '10px',
-        border: `1px solid ${isActive ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`,
-        background: isActive ? '#111' : '#080808',
-        transform: isActive ? 'scale(1.01)' : 'scale(1)',
-        transition: 'border-color 0.12s, background 0.12s, transform 0.12s',
-      }}>
-
-      {/* drag handle — only this row has drag+touch handlers */}
-      <div
-        ref={h.ref}
-        draggable={h.draggable}
-        onDragStart={h.onDragStart}
-        onDragOver={h.onDragOver}
-        onDragEnd={h.onDragEnd}
-        onTouchStart={h.onTouchStart}
-        onTouchMove={h.onTouchMove}
-        onTouchEnd={h.onTouchEnd}
+    <div style={{
+      marginBottom: '10px',
+      border: `1px solid ${isActive ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`,
+      background: isActive ? '#111' : '#080808',
+      transform: isActive ? 'scale(1.01)' : 'scale(1)',
+      transition: 'border-color 0.12s, background 0.12s, transform 0.12s',
+    }}>
+      {/* drag handle — only this strip has drag+touch handlers */}
+      <div ref={h.ref} draggable={h.draggable}
+        onDragStart={h.onDragStart} onDragOver={h.onDragOver} onDragEnd={h.onDragEnd}
+        onTouchStart={h.onTouchStart} onTouchMove={h.onTouchMove} onTouchEnd={h.onTouchEnd}
         style={{ display: 'flex', alignItems: 'center', padding: '10px 14px 0', opacity: 0.3, cursor: 'grab', userSelect: 'none', touchAction: 'none' }}>
         <span style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.2em' }}>⠿ Hold to drag</span>
         <span style={{ fontFamily: F, fontSize: '9px', marginLeft: 'auto' }}>#{index + 1}</span>
       </div>
 
-      {/* all interactive content — touch events explicitly stopped so they never bubble to drag handler */}
-      <div
-        style={{ padding: '10px 14px 14px' }}
+      {/* fields — touch events stopped so they never bubble to drag handle */}
+      <div style={{ padding: '10px 14px 14px' }}
         onTouchStart={e => e.stopPropagation()}
         onTouchMove={e => e.stopPropagation()}
         onTouchEnd={e => e.stopPropagation()}>
@@ -326,20 +258,24 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onUpdate, onRemov
           <>
             <FieldLabel>Label</FieldLabel>
             <div style={{ marginBottom: '10px' }}>
-              <Input value={item.label} onChange={v => onUpdate(item.id, 'label', v)} placeholder="e.g. BANDCAMP" />
+              <input value={localLabel} onChange={e => setLocalLabel(e.target.value)}
+                onBlur={() => flush()} placeholder="e.g. BANDCAMP"
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <FieldLabel>URL</FieldLabel>
             <div style={{ marginBottom: '10px' }}>
-              <Input value={item.url} onChange={v => onUpdate(item.id, 'url', v)} placeholder="https://..." />
+              <input value={localUrl} onChange={e => setLocalUrl(e.target.value)}
+                onBlur={() => flush()} placeholder="https://..."
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <button onClick={() => setShowIconPicker(v => !v)}
               style={{ background: 'none', border: 'none', color: '#f0ede8', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.3, cursor: 'pointer', padding: 0, marginBottom: showIconPicker ? '10px' : 0 }}>
               {showIconPicker ? '- hide icon' : '+ add icon (optional)'}
             </button>
             {showIconPicker && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
                 {ICON_OPTIONS.map(opt => (
-                  <button key={opt.value} onClick={() => onUpdate(item.id, 'icon', opt.value)}
+                  <button key={opt.value} onClick={() => { onFlush(item.id, { icon: opt.value }); }}
                     style={{ padding: '6px 10px', background: item.icon === opt.value ? 'rgba(240,237,232,0.15)' : 'transparent', border: `1px solid ${item.icon === opt.value ? 'rgba(240,237,232,0.6)' : 'rgba(240,237,232,0.2)'}`, color: '#f0ede8', fontFamily: F, fontSize: '9px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', letterSpacing: '0.1em' }}>
                     {opt.value && ICON_RENDER[opt.value] ? ICON_RENDER[opt.value] : null}
                     {opt.label}
@@ -354,15 +290,21 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onUpdate, onRemov
           <>
             <FieldLabel>Button label (shown publicly)</FieldLabel>
             <div style={{ marginBottom: '10px' }}>
-              <Input value={item.label} onChange={v => onUpdate(item.id, 'label', v)} placeholder="e.g. EXCLUSIVE LINK" />
+              <input value={localLabel} onChange={e => setLocalLabel(e.target.value)}
+                onBlur={() => flush()} placeholder="e.g. EXCLUSIVE LINK"
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <FieldLabel>Password</FieldLabel>
             <div style={{ marginBottom: '10px' }}>
-              <Input value={item.password || ''} onChange={v => onUpdate(item.id, 'password', v)} placeholder="Enter password" />
+              <input value={localPassword} onChange={e => setLocalPassword(e.target.value)}
+                onBlur={() => flush()} placeholder="Enter password"
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <FieldLabel>URL revealed after correct password</FieldLabel>
             <div style={{ marginBottom: '8px' }}>
-              <Input value={item.url} onChange={v => onUpdate(item.id, 'url', v)} placeholder="https://..." />
+              <input value={localUrl} onChange={e => setLocalUrl(e.target.value)}
+                onBlur={() => flush()} placeholder="https://..."
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <p style={{ fontFamily: F, fontSize: '8px', opacity: 0.3, letterSpacing: '0.08em', lineHeight: 1.6 }}>
               Visitors see a lock button. Correct password opens the URL.
@@ -374,10 +316,14 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onUpdate, onRemov
           <>
             <FieldLabel>Label (optional)</FieldLabel>
             <div style={{ marginBottom: '10px' }}>
-              <Input value={item.label} onChange={v => onUpdate(item.id, 'label', v)} placeholder="e.g. Latest Track" />
+              <input value={localLabel} onChange={e => setLocalLabel(e.target.value)}
+                onBlur={() => flush()} placeholder="e.g. Latest Track"
+                style={inputStyle} onFocus={focusBorder} />
             </div>
             <FieldLabel>Spotify, YouTube, or SoundCloud URL</FieldLabel>
-            <Input value={item.url} onChange={v => onUpdate(item.id, 'url', v)} placeholder="https://open.spotify.com/track/..." />
+            <input value={localUrl} onChange={e => setLocalUrl(e.target.value)}
+              onBlur={() => flush()} placeholder="https://open.spotify.com/track/..."
+              style={inputStyle} onFocus={focusBorder} />
             {item.url && buildEmbedData(item.url) && (
               <div style={{ marginTop: '12px', opacity: 0.65 }}>
                 <EmbedPlayer url={item.url} />
@@ -402,16 +348,108 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onUpdate, onRemov
   );
 }
 
-/* ─── MiniPreview — top-level, never inside main component ─── */
+/* ══════════════════════════════════════════════════════════════
+   Touch-aware sortable hook
+══════════════════════════════════════════════════════════════ */
+function useTouchSort(setList) {
+  const dragIdx = useRef(null);
+  const longPressTimer = useRef(null);
+  const isDragging = useRef(false);
+  const rowRefs = useRef([]);
+  const startY = useRef(0);
+  const [activeIdx, setActiveIdx] = useState(null);
+
+  function getRowAtY(y) {
+    let closest = null, closestDist = Infinity;
+    rowRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      const dist = Math.abs(y - mid);
+      if (dist < closestDist) { closestDist = dist; closest = i; }
+    });
+    return closest;
+  }
+
+  function moveItem(from, to) {
+    if (from === to || from === null || to === null) return;
+    setList(prev => { const a = [...prev]; const [m] = a.splice(from, 1); a.splice(to, 0, m); return a; });
+    dragIdx.current = to; setActiveIdx(to);
+  }
+
+  const handlers = useCallback((index) => ({
+    ref: el => { rowRefs.current[index] = el; },
+    draggable: true,
+    onDragStart: () => { dragIdx.current = index; setActiveIdx(index); },
+    onDragOver: e => { e.preventDefault(); if (dragIdx.current !== null && dragIdx.current !== index) moveItem(dragIdx.current, index); },
+    onDragEnd: () => { dragIdx.current = null; setActiveIdx(null); },
+    onTouchStart: e => {
+      startY.current = e.touches[0].clientY;
+      longPressTimer.current = setTimeout(() => {
+        isDragging.current = true; dragIdx.current = index; setActiveIdx(index);
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 400);
+    },
+    onTouchMove: e => {
+      if (!isDragging.current) { if (Math.abs(e.touches[0].clientY - startY.current) > 8) clearTimeout(longPressTimer.current); return; }
+      e.preventDefault();
+      const target = getRowAtY(e.touches[0].clientY);
+      if (target !== null && dragIdx.current !== null && target !== dragIdx.current) moveItem(dragIdx.current, target);
+    },
+    onTouchEnd: () => { clearTimeout(longPressTimer.current); isDragging.current = false; dragIdx.current = null; setActiveIdx(null); },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);
+
+  return { handlers, activeIdx };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   OrderRow
+══════════════════════════════════════════════════════════════ */
+function OrderRow({ itemKey, index, customButtons, socials, dragHandlers, isActive }) {
+  const platform = PLATFORM_META[itemKey];
+  let label, icon, dimmed = false;
+
+  if (platform) {
+    label = platform.label; icon = platform.icon;
+    dimmed = itemKey !== 'press' && !(socials[itemKey] && socials[itemKey] !== 'PLACEHOLDER');
+  } else {
+    const item = customButtons.find(b => b.id === itemKey);
+    if (!item) return null;
+    if (item.type === 'embed') { const svc = detectEmbedService(item.url); label = item.label || (svc ? `${svc} embed` : 'Embed'); icon = <span style={{ fontSize: '11px', opacity: 0.5 }}>▶</span>; }
+    else if (item.type === 'locked') { label = item.label || 'Locked link'; icon = <span style={{ fontSize: '10px', opacity: 0.5, fontFamily: F }}>lock</span>; }
+    else { label = item.label || 'Link'; icon = item.icon ? (ICON_RENDER[item.icon] || null) : null; }
+  }
+
+  const h = dragHandlers(index);
+  return (
+    <div ref={h.ref} draggable={h.draggable}
+      onDragStart={h.onDragStart} onDragOver={h.onDragOver} onDragEnd={h.onDragEnd}
+      onTouchStart={h.onTouchStart} onTouchMove={h.onTouchMove} onTouchEnd={h.onTouchEnd}
+      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', marginBottom: '6px', userSelect: 'none', touchAction: 'none', border: `1px solid ${isActive ? 'rgba(240,237,232,0.5)' : 'rgba(240,237,232,0.1)'}`, background: isActive ? '#111' : '#050505', cursor: 'grab', opacity: dimmed ? 0.3 : 1, transform: isActive ? 'scale(1.015)' : 'scale(1)', transition: 'border-color 0.12s, background 0.12s, transform 0.12s' }}>
+      <span style={{ fontFamily: F, fontSize: '14px', opacity: 0.3, lineHeight: 1 }}>⠿</span>
+      <span style={{ display: 'flex', alignItems: 'center', minWidth: '18px' }}>{icon}</span>
+      <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1 }}>{label}</span>
+      {isActive && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.12em', opacity: 0.5, textTransform: 'uppercase' }}>moving</span>}
+      {!isActive && dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.15em', opacity: 0.4, textTransform: 'uppercase' }}>Not set</span>}
+      {!isActive && !platform && !dimmed && <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.1em', opacity: 0.25, textTransform: 'uppercase' }}>custom</span>}
+      <span style={{ fontFamily: F, fontSize: '9px', opacity: 0.2 }}>#{index + 1}</span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MiniPreview — top-level, receives a frozen snapshot
+══════════════════════════════════════════════════════════════ */
 function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials, artistDisplayName, currentPhoto }) {
   const isLight = theme === 'light';
-  const previewBg = isLight ? '#f5f3ef' : '#000';
-  const previewFg = isLight ? '#0a0a0a' : '#f0ede8';
-  const previewMuted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
-  const previewBorder = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
-  const previewBtnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
+  const bg = isLight ? '#f5f3ef' : '#000';
+  const fg = isLight ? '#0a0a0a' : '#f0ede8';
+  const muted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
+  const border = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
+  const btnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
   const logoFilter = isLight ? 'invert(1)' : 'none';
-  const PF = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+  const PF = F;
 
   const orderedItems = buttonOrder.map(key => {
     if (PLATFORM_META[key]) {
@@ -430,59 +468,50 @@ function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '220px', flexShrink: 0, border: '6px solid #1a1a1a', borderRadius: '28px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7)', position: 'relative', background: previewBg, transition: 'background 0.3s' }}>
+      <div style={{ width: '220px', flexShrink: 0, border: '6px solid #1a1a1a', borderRadius: '28px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.7)', background: bg, transition: 'background 0.3s' }}>
         <div style={{ position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', width: '48px', height: '10px', background: '#1a1a1a', borderRadius: '8px', zIndex: 10 }} />
-        <div style={{ height: '420px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', background: previewBg }}>
-
-          <div style={{ overflow: 'hidden', borderBottom: `1px solid ${previewBorder}`, padding: '5px 0', marginTop: '24px' }}>
+        <div style={{ height: '420px', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', background: bg }}>
+          <div style={{ overflow: 'hidden', borderBottom: `1px solid ${border}`, padding: '5px 0', marginTop: '24px' }}>
             <div style={{ display: 'inline-flex', animation: 'marquee 18s linear infinite', whiteSpace: 'nowrap' }}>
-              {Array(4).fill('YEN SOUND ®   ').map((t, i) => (
-                <span key={i} style={{ fontFamily: PF, fontSize: '5px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: previewMuted, paddingRight: '20px' }}>{t}</span>
-              ))}
+              {Array(4).fill('YEN SOUND ®   ').map((t, i) => <span key={i} style={{ fontFamily: PF, fontSize: '5px', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: muted, paddingRight: '20px' }}>{t}</span>)}
             </div>
           </div>
-
           {currentPhoto
             ? <div style={{ width: '100%', aspectRatio: '1', overflow: 'hidden' }}><img src={currentPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }} /></div>
-            : <div style={{ width: '100%', aspectRatio: '1', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: PF, fontSize: '7px', color: previewMuted, letterSpacing: '0.15em' }}>No Photo</span></div>
+            : <div style={{ width: '100%', aspectRatio: '1', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: PF, fontSize: '7px', color: muted, letterSpacing: '0.15em' }}>No Photo</span></div>
           }
-
-          {/* spinning logo — no border line */}
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
             <img src="/spinning yen logo white.gif" alt="" style={{ width: '14px', height: '14px', opacity: 0.4, filter: logoFilter }} />
           </div>
-
           <div style={{ padding: '6px 10px 0', textAlign: 'center' }}>
-            <p style={{ fontFamily: PF, fontSize: '8px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: previewFg, marginBottom: bio ? '5px' : 0, lineHeight: 1.3 }}>{artistDisplayName}</p>
-            {bio && <p style={{ fontFamily: PF, fontSize: '6px', color: previewMuted, lineHeight: 1.6, letterSpacing: '0.04em' }}>{bio.slice(0, 80)}{bio.length > 80 ? '…' : ''}</p>}
+            <p style={{ fontFamily: PF, fontSize: '8px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: fg, marginBottom: bio ? '5px' : 0, lineHeight: 1.3 }}>{artistDisplayName}</p>
+            {bio && <p style={{ fontFamily: PF, fontSize: '6px', color: muted, lineHeight: 1.6, letterSpacing: '0.04em' }}>{bio.slice(0, 80)}{bio.length > 80 ? '…' : ''}</p>}
           </div>
-
-          <p style={{ fontFamily: PF, fontSize: '5px', letterSpacing: '0.25em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '8px 0 5px' }}>Choose music service</p>
-
+          <p style={{ fontFamily: PF, fontSize: '5px', letterSpacing: '0.25em', textTransform: 'uppercase', color: muted, textAlign: 'center', padding: '8px 0 5px' }}>Choose music service</p>
           <div style={{ padding: '0 8px 16px' }}>
-            {orderedItems.length === 0 && <p style={{ fontFamily: PF, fontSize: '6px', color: previewMuted, textAlign: 'center', padding: '6px 0' }}>No links set</p>}
+            {orderedItems.length === 0 && <p style={{ fontFamily: PF, fontSize: '6px', color: muted, textAlign: 'center', padding: '6px 0' }}>No links set</p>}
             {orderedItems.map((item, i) => {
               if (item.kind === 'embed') {
                 const ed = buildEmbedData(item.url);
                 return (
-                  <div key={i} style={{ marginBottom: '5px', border: `1px solid ${previewBorder}`, overflow: 'hidden' }}>
-                    {item.label && <p style={{ fontFamily: PF, fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: previewMuted, textAlign: 'center', padding: '4px 0 2px' }}>{item.label}</p>}
+                  <div key={i} style={{ marginBottom: '5px', border: `1px solid ${border}`, overflow: 'hidden' }}>
+                    {item.label && <p style={{ fontFamily: PF, fontSize: '5px', letterSpacing: '0.15em', textTransform: 'uppercase', color: muted, textAlign: 'center', padding: '4px 0 2px' }}>{item.label}</p>}
                     {ed?.type === 'youtube' && <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%' }}><iframe src={ed.src} title="yt" frameBorder="0" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }} /></div>}
                     {ed?.type === 'spotify' && <iframe src={ed.src} width="100%" height="60" frameBorder="0" title="sp" style={{ display: 'block', pointerEvents: 'none' }} />}
                     {ed?.type === 'soundcloud' && <iframe src={ed.src} width="100%" height="60" frameBorder="0" title="sc" style={{ display: 'block', pointerEvents: 'none' }} />}
-                    {!ed && <div style={{ padding: '8px', textAlign: 'center' }}><span style={{ fontFamily: PF, fontSize: '6px', color: previewMuted }}>▶ {item.label || 'Embed'}</span></div>}
+                    {!ed && <div style={{ padding: '8px', textAlign: 'center' }}><span style={{ fontFamily: PF, fontSize: '6px', color: muted }}>▶ {item.label || 'Embed'}</span></div>}
                   </div>
                 );
               }
               if (item.kind === 'locked') return (
-                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${btnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                   <span style={{ fontFamily: PF, fontSize: '6px', opacity: 0.5 }}>lock</span>
-                  <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
+                  <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: fg, textTransform: 'uppercase' }}>{item.label}</span>
                 </div>
               );
               return (
-                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${previewBtnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: previewFg, textTransform: 'uppercase' }}>{item.label}</span>
+                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${btnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: fg, textTransform: 'uppercase' }}>{item.label}</span>
                 </div>
               );
             })}
@@ -493,6 +522,9 @@ function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials
   );
 }
 
+/* ══════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════════════════════════ */
 export default function ArtistDashboard() {
   const { artistId } = useParams();
   const [artist, setArtist] = useState(null);
@@ -516,8 +548,7 @@ export default function ArtistDashboard() {
   const [resetStatus, setResetStatus] = useState('idle');
   const [saveError, setSaveError] = useState(null);
 
-  // Frozen snapshot for the preview — only updates on blur/save, never on keystroke.
-  // This prevents any re-render of MiniPreview while the iOS keyboard is open.
+  // Frozen snapshot for preview — only updates on explicit refresh, never on keystrokes
   const [previewSnapshot, setPreviewSnapshot] = useState(null);
 
   const { handlers: customHandlers, activeIdx: customActiveIdx } = useTouchSort(setCustomButtons);
@@ -525,6 +556,13 @@ export default function ArtistDashboard() {
 
   const rosterArtist = artist?.slug ? roster.find(r => r.slug === artist.slug) : null;
   const socials = rosterArtist?.socials || {};
+
+  function buildSnapshot(overrides = {}) {
+    return { bio, customButtons, buttonOrder, theme, photoUrl, ...overrides };
+  }
+  function refreshPreview(overrides = {}) {
+    setPreviewSnapshot(buildSnapshot(overrides));
+  }
 
   useEffect(() => {
     async function fetchArtist() {
@@ -537,21 +575,14 @@ export default function ArtistDashboard() {
         const migrated = migrateEmbedUrl(data.custom_buttons || [], data.embed_url || '');
         setCustomButtons(migrated);
         const base = data.button_order?.length ? data.button_order : DEFAULT_ORDER;
-        const existingIds = migrated.map(b => b.id);
-        const order = [...base, ...existingIds.filter(id => !base.includes(id))];
+        const order = [...base, ...migrated.map(b => b.id).filter(id => !base.includes(id))];
         setButtonOrder(order);
-        // Seed preview snapshot so it shows correct content immediately
         setPreviewSnapshot({ bio: data.bio || '', customButtons: migrated, buttonOrder: order, theme: data.theme || 'dark', photoUrl: data.profile_image || '' });
       }
       setLoading(false);
     }
     fetchArtist();
   }, [artistId]);
-
-  // Call this to push current state into the preview (on blur, after save, etc.)
-  function refreshPreview() {
-    setPreviewSnapshot({ bio, customButtons, buttonOrder, theme, photoUrl });
-  }
 
   useEffect(() => {
     setButtonOrder(prev => {
@@ -560,10 +591,13 @@ export default function ArtistDashboard() {
     });
   }, [customButtons]);
 
-  async function saveBio() {
+  async function saveBio(value, explicit) {
+    setBio(value);
+    if (!explicit) return; // blur just updates local, explicit Save button actually saves
     setBioStatus('saving'); setSaveError(null);
-    const { error } = await supabase.from('artists').update({ bio }).eq('id', artistId);
-    if (error) { setSaveError(error.message); setBioStatus('error'); } else { setBioStatus('saved'); refreshPreview(); }
+    const { error } = await supabase.from('artists').update({ bio: value }).eq('id', artistId);
+    if (error) { setSaveError(error.message); setBioStatus('error'); }
+    else { setBioStatus('saved'); refreshPreview({ bio: value }); }
     setTimeout(() => setBioStatus('idle'), 2500);
   }
 
@@ -571,36 +605,33 @@ export default function ArtistDashboard() {
     setPhotoStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ profile_image: url || null }).eq('id', artistId);
     if (error) { setSaveError(error.message); setPhotoStatus('error'); }
-    else { setPhotoStatus('saved'); setPhotoUrl(url); setPreviewSnapshot(prev => ({ ...(prev || {}), photoUrl: url })); setTimeout(() => setPhotoStatus('idle'), 2500); }
+    else { setPhotoStatus('saved'); setPhotoUrl(url); setPreviewSnapshot(p => ({ ...(p || buildSnapshot()), photoUrl: url })); setTimeout(() => setPhotoStatus('idle'), 2500); }
   }
 
   async function handlePhotoFile(file) {
     if (!file) return;
     if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') { alert('Cloudinary not configured — paste a URL instead.'); return; }
-    const objectUrl = URL.createObjectURL(file);
-    setPhotoUrl(objectUrl);
+    setPhotoUrl(URL.createObjectURL(file));
     setPhotoUploading(true); setPhotoProgress(0);
     try {
       const url = await uploadSquarePhoto(file, `yen-sound/artists/${artistId}`, setPhotoProgress);
       setPhotoUploading(false);
       await savePhoto(url);
-    } catch (err) {
-      setPhotoUploading(false); setPhotoStatus('error');
-      alert('Upload failed: ' + err.message);
-    }
+    } catch (err) { setPhotoUploading(false); setPhotoStatus('error'); alert('Upload failed: ' + err.message); }
   }
 
   async function saveTheme(val) {
     setTheme(val); setThemeStatus('saving');
     const { error } = await supabase.from('artists').update({ theme: val }).eq('id', artistId);
     if (error) { setThemeStatus('error'); alert('Save error: ' + error.message); }
-    else { setThemeStatus('saved'); setPreviewSnapshot(prev => ({ ...(prev || {}), theme: val })); setTimeout(() => setThemeStatus('idle'), 2500); }
+    else { setThemeStatus('saved'); setPreviewSnapshot(p => ({ ...(p || buildSnapshot()), theme: val })); setTimeout(() => setThemeStatus('idle'), 2500); }
   }
 
   async function saveButtons() {
     setBtnStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: customButtons, button_order: buttonOrder }).eq('id', artistId);
-    if (error) { setSaveError(error.message); setBtnStatus('error'); } else { setBtnStatus('saved'); refreshPreview(); }
+    if (error) { setSaveError(error.message); setBtnStatus('error'); }
+    else { setBtnStatus('saved'); refreshPreview(); }
     setTimeout(() => setBtnStatus('idle'), 2500);
   }
 
@@ -609,21 +640,22 @@ export default function ArtistDashboard() {
     setResetStatus('saving'); setSaveError(null);
     const { error } = await supabase.from('artists').update({ custom_buttons: [], embed_url: '', button_order: DEFAULT_ORDER }).eq('id', artistId);
     if (error) { setSaveError(error.message); setResetStatus('error'); }
-    else { setCustomButtons([]); setButtonOrder(DEFAULT_ORDER); setResetStatus('saved'); }
+    else { setCustomButtons([]); setButtonOrder(DEFAULT_ORDER); setResetStatus('saved'); refreshPreview({ customButtons: [], buttonOrder: DEFAULT_ORDER }); }
     setTimeout(() => setResetStatus('idle'), 2500);
   }
 
   const addItem = useCallback((type) => {
     const id = uid();
     setCustomButtons(prev => [...prev,
-      type === 'embed'  ? { id, type: 'embed',  url: '',  label: '' } :
-      type === 'locked' ? { id, type: 'locked', url: '',  label: '', password: '' } :
-                          { id, type: 'link',   url: '',  label: '', icon: '' }
+      type === 'embed'  ? { id, type: 'embed',  url: '', label: '' } :
+      type === 'locked' ? { id, type: 'locked', url: '', label: '', password: '' } :
+                          { id, type: 'link',   url: '', label: '', icon: '' }
     ]);
   }, []);
 
-  const updateItem = useCallback((id, field, val) => {
-    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, [field]: val } : b));
+  // flush is called from ButtonItemCard on blur — merges partial fields into the item
+  const flushItem = useCallback((id, fields) => {
+    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, ...fields } : b));
   }, []);
 
   const removeItem = useCallback((id) => {
@@ -632,7 +664,7 @@ export default function ArtistDashboard() {
   }, []);
 
   const changeItemType = useCallback((id, newType) => {
-    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, type: newType } : b));
+    setCustomButtons(prev => prev.map(b => b.id === id ? { ...b, type: newType, label: '', url: '', password: '' } : b));
   }, []);
 
   if (loading) return <div style={centered}><p style={{ fontFamily: F, fontSize: '10px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.3, color: '#f0ede8' }}>Loading</p></div>;
@@ -644,9 +676,9 @@ export default function ArtistDashboard() {
   );
 
   const folders = [
-    { id: 'submit',       label: 'Submit a Release', icon: '＋', href: 'https://docs.google.com/forms/d/e/1FAIpQLSe8rH0NRf1YBN-rD78uuzIoLxwZjJAl4qBKPn7tQ0hZeNr59w/viewform?usp=header', external: true },
+    { id: 'submit',       label: 'Submit a Release', icon: '＋', href: 'https://docs.google.com/forms/d/e/1FAIpQLSe8rH0NRf1YBN-rD78uuzIoLxwZjJAl4qBKPn7tQ0hZeNr59w/viewform?usp=header' },
     { id: 'distribution', label: 'Distribution Form', icon: '↓', href: '/docs/YEN_DISTRIBUTION_FORM.pdf', download: true },
-    { id: 'vault',        label: 'Vault',             icon: '◈', href: artist.upload_url, external: true },
+    { id: 'vault',        label: 'Vault',             icon: '◈', href: artist.upload_url },
     { id: 'releases',     label: 'My Releases',       icon: '♫', href: `/releases?artist=${encodeURIComponent(artist.filter_name || artistId)}`, internal: true },
   ];
 
@@ -655,32 +687,13 @@ export default function ArtistDashboard() {
 
   const fullOrderList = buttonOrder.filter(key => PLATFORM_META[key] || customButtons.find(b => b.id === key));
 
-  const snap = previewSnapshot || { bio, customButtons, buttonOrder, theme, photoUrl };
+  const snap = previewSnapshot || buildSnapshot();
   const miniPreviewProps = {
-    theme: snap.theme,
-    bio: snap.bio,
-    buttonOrder: snap.buttonOrder,
-    customButtons: snap.customButtons,
-    socials,
+    theme: snap.theme, bio: snap.bio, buttonOrder: snap.buttonOrder,
+    customButtons: snap.customButtons, socials,
     photoUrl: snap.photoUrl,
     artistDisplayName: (rosterArtist?.displayName || artist.display_name || '').toUpperCase(),
-    currentPhoto: (typeof snap.photoUrl === 'string' && snap.photoUrl && !snap.photoUrl.startsWith('blob:') ? snap.photoUrl : null) || rosterArtist?.image || null,
-  };
-
-  /* Section accordion — safe inside render because it holds no state and contains no inputs */
-  const Section = ({ id, label, icon, children }) => {
-    const open = activePanel === id;
-    return (
-      <div style={{ borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
-        <button onClick={() => setActivePanel(open ? null : id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', background: open ? '#0d0d0d' : 'transparent', border: 'none', color: '#f0ede8', cursor: 'pointer', transition: 'background 0.15s' }}>
-          <span style={{ fontFamily: F, fontSize: '15px', opacity: 0.7, lineHeight: 1 }}>{icon}</span>
-          <span style={{ fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>{label}</span>
-          {/* plain CSS chevron — no emoji */}
-          <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRight: '1.5px solid rgba(240,237,232,0.4)', borderBottom: '1.5px solid rgba(240,237,232,0.4)', transform: open ? 'rotate(225deg) translateY(-3px)' : 'rotate(45deg)', transition: 'transform 0.2s', marginRight: '4px' }} />
-        </button>
-        {open && <div style={{ padding: '4px 20px 24px' }}>{children}</div>}
-      </div>
-    );
+    currentPhoto: (snap.photoUrl && !snap.photoUrl.startsWith('blob:') ? snap.photoUrl : null) || rosterArtist?.image || null,
   };
 
   return (
@@ -690,16 +703,18 @@ export default function ArtistDashboard() {
       {showPreview && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#050505', overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column' }}>
 
+          {/* sticky header */}
           <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#050505', borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
             <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.4 }}>Edit My Page</p>
             <button onClick={() => setShowPreview(false)} style={{ background: 'none', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', cursor: 'pointer', fontFamily: F, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', padding: '6px 14px' }}>Done</button>
           </div>
 
+          {/* preview */}
           <div style={{ padding: '20px 20px 0' }}>
             <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '10px', textAlign: 'center' }}>Preview</p>
             <MiniPreview {...miniPreviewProps} />
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px', alignItems: 'center' }}>
-              <button onClick={refreshPreview}
+              <button onClick={() => refreshPreview()}
                 style={{ background: 'none', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35, cursor: 'pointer', padding: '4px 10px' }}
                 onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
                 Refresh
@@ -720,22 +735,18 @@ export default function ArtistDashboard() {
             </div>
           )}
 
+          {/* accordion */}
           <div style={{ marginTop: '20px', borderTop: '1px solid rgba(240,237,232,0.1)' }}>
 
-            <Section id="bio" label="Bio" icon="✎">
-              <Textarea value={bio} onChange={setBio} onBlur={refreshPreview} placeholder="Write a short bio..." rows={5} />
-              <div style={{ marginTop: '12px' }}>
-                <ActionBtn onClick={saveBio} disabled={bioStatus === 'saving'}>
-                  {bioStatus === 'saving' ? 'Saving...' : bioStatus === 'saved' ? 'Saved' : 'Save Bio'}
-                </ActionBtn>
-              </div>
+            <Section id="bio" activePanel={activePanel} setActivePanel={setActivePanel} label="Bio" icon="✎">
+              <BioEditor initialBio={bio} onSave={saveBio} saveStatus={bioStatus} />
             </Section>
 
-            <Section id="photo" label="Photo" icon="◻">
+            <Section id="photo" activePanel={activePanel} setActivePanel={setActivePanel} label="Photo" icon="◻">
               <div onClick={() => photoFileRef.current?.click()}
                 style={{ width: '100px', height: '100px', margin: '8px auto 14px', overflow: 'hidden', background: '#111', border: '1px solid rgba(240,237,232,0.2)', cursor: 'pointer', position: 'relative' }}>
                 {photoUrl
-                  ? <img src={photoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+                  ? <img src={photoUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.2, fontFamily: F, fontSize: '9px' }}>No Photo</div>
                 }
                 {photoUploading && (
@@ -752,13 +763,11 @@ export default function ArtistDashboard() {
               </div>
               <input ref={photoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handlePhotoFile(e.target.files?.[0])} />
               <p style={{ fontFamily: F, fontSize: '8px', opacity: 0.3, letterSpacing: '0.08em', lineHeight: 1.6, textAlign: 'center', marginBottom: '12px' }}>Any shape → auto-cropped square, face-aware.</p>
-              <FieldLabel>Or paste image URL</FieldLabel>
+              <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px' }}>Or paste image URL</p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input value={typeof photoUrl === 'string' && photoUrl.startsWith('blob:') ? '' : photoUrl}
                   onChange={e => setPhotoUrl(e.target.value)} placeholder="https://..."
-                  style={{ flex: 1, background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '11px', padding: '10px 12px', outline: 'none', borderRadius: 0, WebkitAppearance: 'none' }}
-                  onFocus={e => e.target.style.borderColor = 'rgba(240,237,232,0.6)'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(240,237,232,0.2)'} />
+                  style={{ ...inputStyle, flex: 1 }} onFocus={focusBorder} onBlur={blurBorder} />
                 <button onClick={() => savePhoto(photoUrl.trim())} disabled={photoStatus === 'saving' || photoUploading}
                   style={{ flexShrink: 0, padding: '10px 14px', background: 'transparent', border: '1px solid rgba(240,237,232,0.5)', color: '#f0ede8', fontFamily: F, fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', opacity: (photoStatus === 'saving' || photoUploading) ? 0.4 : 1 }}>
                   {photoStatus === 'saving' ? '...' : photoStatus === 'saved' ? 'Saved' : 'Save'}
@@ -769,15 +778,15 @@ export default function ArtistDashboard() {
               )}
             </Section>
 
-            <Section id="theme" label="Theme" icon="◑">
+            <Section id="theme" activePanel={activePanel} setActivePanel={setActivePanel} label="Theme" icon="◑">
               <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.4, letterSpacing: '0.08em', lineHeight: 1.7, marginBottom: '14px' }}>Choose how your public page looks to visitors.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                <button onClick={() => saveTheme('dark')} style={{ padding: '22px 12px', border: theme === 'dark' ? '2px solid rgba(240,237,232,0.8)' : '1px solid rgba(240,237,232,0.15)', background: '#000', color: '#f0ede8', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', transition: 'border-color 0.15s' }}>
+                <button onClick={() => saveTheme('dark')} style={{ padding: '22px 12px', border: theme === 'dark' ? '2px solid rgba(240,237,232,0.8)' : '1px solid rgba(240,237,232,0.15)', background: '#000', color: '#f0ede8', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontFamily: F, fontSize: '18px' }}>◐</span>
                   <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Dark</span>
                   {theme === 'dark' && <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.2em', color: 'rgba(100,255,180,0.85)', textTransform: 'uppercase' }}>Active</span>}
                 </button>
-                <button onClick={() => saveTheme('light')} style={{ padding: '22px 12px', border: theme === 'light' ? '2px solid rgba(10,10,10,0.8)' : '1px solid rgba(10,10,10,0.15)', background: '#f5f3ef', color: '#0a0a0a', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', transition: 'border-color 0.15s' }}>
+                <button onClick={() => saveTheme('light')} style={{ padding: '22px 12px', border: theme === 'light' ? '2px solid rgba(10,10,10,0.8)' : '1px solid rgba(10,10,10,0.15)', background: '#f5f3ef', color: '#0a0a0a', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontFamily: F, fontSize: '18px' }}>◑</span>
                   <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Light</span>
                   {theme === 'light' && <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.2em', color: 'rgba(0,140,80,0.9)', textTransform: 'uppercase' }}>Active</span>}
@@ -786,7 +795,7 @@ export default function ArtistDashboard() {
               {themeStatus === 'saved' && <p style={{ fontFamily: F, fontSize: '9px', color: 'rgba(100,255,180,0.85)', letterSpacing: '0.1em', textAlign: 'center' }}>Saved</p>}
             </Section>
 
-            <Section id="buttons" label="Links & Embeds" icon="⊞">
+            <Section id="buttons" activePanel={activePanel} setActivePanel={setActivePanel} label="Links & Embeds" icon="⊞">
               {customButtons.length === 0 && <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.25, textAlign: 'center', padding: '12px 0' }}>No items yet — add below</p>}
               {customButtons.map((item, i) => (
                 <ButtonItemCard
@@ -795,7 +804,7 @@ export default function ArtistDashboard() {
                   index={i}
                   isActive={customActiveIdx === i}
                   dragHandlers={customHandlers}
-                  onUpdate={updateItem}
+                  onFlush={flushItem}
                   onRemove={removeItem}
                   onChangeType={changeItemType}
                 />
@@ -815,7 +824,7 @@ export default function ArtistDashboard() {
               </ActionBtn>
             </Section>
 
-            <Section id="order" label="Button Order" icon="-">
+            <Section id="order" activePanel={activePanel} setActivePanel={setActivePanel} label="Button Order" icon="=">
               <p style={{ fontFamily: F, fontSize: '8px', opacity: 0.3, letterSpacing: '0.12em', lineHeight: 1.6, marginBottom: '12px' }}>Hold and drag to reorder. On mobile, hold 0.4s then drag.</p>
               {fullOrderList.length === 0 && <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.25, textAlign: 'center', padding: '12px 0' }}>Add custom items first</p>}
               {fullOrderList.map((key, i) => (
@@ -828,7 +837,7 @@ export default function ArtistDashboard() {
               </div>
             </Section>
 
-            <Section id="reset" label="Reset" icon="↺">
+            <Section id="reset" activePanel={activePanel} setActivePanel={setActivePanel} label="Reset" icon="↺">
               <p style={{ fontFamily: F, fontSize: '10px', opacity: 0.5, letterSpacing: '0.08em', lineHeight: 1.8, marginBottom: '16px' }}>Removes all custom buttons, embeds, and resets order. Bio, photo, theme, streaming links and releases remain.</p>
               <ActionBtn onClick={resetPage} danger disabled={resetStatus === 'saving'}>
                 {resetStatus === 'saving' ? 'Resetting...' : resetStatus === 'saved' ? 'Done' : 'Reset to Default'}
