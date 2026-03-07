@@ -20,6 +20,7 @@ import RigshiFamRelease from "./RigshiFamRelease";
 import RSVP from "./RSVP";
 import Capsule001 from "./pages/Capsule001";
 import Header from "./Header";
+import { PageThemeProvider } from "./hooks/PageThemeContext";
 import VoiceLessons from "./pages/VoiceLessons";
 import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
@@ -460,6 +461,7 @@ function App() {
 
   return (
     <HelmetProvider>
+      <PageThemeProvider>
       <CursorPlus />
       <GrainOverlay />
       <Header />
@@ -493,6 +495,7 @@ function App() {
 
       {!isReleasePage && <Footer />}
       <SpeedInsights />
+      </PageThemeProvider>
     </HelmetProvider>
   );
 }
