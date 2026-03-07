@@ -166,7 +166,8 @@ export default function ArtistPage() {
   const { setTheme: setPageTheme } = usePageTheme();
 
   // Reset header to dark when leaving an artist page
-  useEffect(() => () => setPageTheme("dark"), [setPageTheme]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => setPageTheme("dark"), []);
 
   useEffect(() => { setShowAllReleases(false); }, [slug]);
 
