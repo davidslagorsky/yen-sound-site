@@ -545,7 +545,7 @@ function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials
     if (!item) return null;
     if (item.type === 'embed') return { key, kind: 'embed', url: item.url, label: item.label };
     if (item.type === 'locked') return { key, kind: 'locked', label: item.label || 'Locked' };
-    if (item.type === 'link' && item.label && item.url) return { key, kind: 'link', label: item.label };
+    if (item.type === 'link' && item.label && item.url) return { key, kind: 'link', label: item.label, image: item.image || null };
     return null;
   }).filter(Boolean);
 
@@ -593,8 +593,15 @@ function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials
                 </div>
               );
               return (
-                <div key={i} style={{ padding: '7px 6px', marginBottom: '4px', border: `1px solid ${btnBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: fg, textTransform: 'uppercase' }}>{item.label}</span>
+                <div key={i} style={{ marginBottom: '4px', border: `1px solid ${btnBorder}`, overflow: 'hidden' }}>
+                  {item.image && (
+                    <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
+                      <img src={item.image} alt={item.label} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </div>
+                  )}
+                  <div style={{ padding: '7px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontFamily: PF, fontSize: '6px', fontWeight: 700, letterSpacing: '0.2em', color: fg, textTransform: 'uppercase' }}>{item.label}</span>
+                  </div>
                 </div>
               );
             })}
