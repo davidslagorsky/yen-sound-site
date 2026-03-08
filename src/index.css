@@ -257,6 +257,15 @@ html { scroll-behavior: smooth; }
   line-height: 1.85;
 }
 
+/* ── ARTIST DASHBOARD DESKTOP LAYOUT ── */
+.dash-preview-col {
+  width: 300px;
+  flex-shrink: 0;
+}
+@media (max-width: 700px) {
+  .dash-preview-col { display: none !important; }
+}
+
 /* ── REDUCED MOTION ── */
 @media (prefers-reduced-motion: reduce) {
   .yen-grain { animation: none; }
