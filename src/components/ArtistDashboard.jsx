@@ -207,11 +207,15 @@ function TypeToggle({ value, onChange }) {
    ButtonItemCard — top-level, local state for all text fields.
    Flushes to parent only on blur → typing never re-renders parent.
 ══════════════════════════════════════════════════════════════ */
-function ButtonItemCard({ item, index, isActive, dragHandlers, onFlush, onRemove, onChangeType }) {
+function ButtonItemCard({ item, index, isActive, dragHandlers, onFlush, onRemove, onChangeType, artistId }) {
   const [localLabel,    setLocalLabel]    = useState(item.label    || '');
   const [localUrl,      setLocalUrl]      = useState(item.url      || '');
   const [localPassword, setLocalPassword] = useState(item.password || '');
+  const [localImage,    setLocalImage]    = useState(item.image    || '');
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [imgUploading,  setImgUploading]  = useState(false);
+  const [imgProgress,   setImgProgress]   = useState(0);
+  const imgFileRef = useRef(null);
 
   // Sync if item replaced from outside (e.g. type change resets fields)
   const prevId = useRef(item.id);
@@ -222,10 +226,39 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onFlush, onRemove
     setLocalLabel(item.label || '');
     setLocalUrl(item.url || '');
     setLocalPassword(item.password || '');
+    setLocalImage(item.image || '');
   }
 
   function flush(overrides = {}) {
-    onFlush(item.id, { label: localLabel, url: localUrl, password: localPassword, ...overrides });
+    onFlush(item.id, { label: localLabel, url: localUrl, password: localPassword, image: localImage, ...overrides });
+  }
+
+  async function handleImageFile(file) {
+    if (!file) return;
+    if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME') { alert('Cloudinary not configured.'); return; }
+    setImgUploading(true); setImgProgress(0);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('folder', `yen-sound/artists/${artistId}/buttons`);
+      const url = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setImgProgress(Math.round((e.loaded / e.total) * 100)); };
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            const d = JSON.parse(xhr.responseText);
+            resolve(d.secure_url.replace('/upload/', '/upload/c_fill,ar_4:3,f_auto,q_auto/'));
+          } else reject(new Error('Upload failed'));
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(formData);
+      });
+      setLocalImage(url);
+      onFlush(item.id, { image: url });
+    } catch (err) { alert('Upload failed: ' + err.message); }
+    setImgUploading(false);
   }
 
   const h = dragHandlers(index);
@@ -269,6 +302,55 @@ function ButtonItemCard({ item, index, isActive, dragHandlers, onFlush, onRemove
                 onBlur={() => flush()} placeholder="https://..."
                 style={inputStyle} onFocus={focusBorder} />
             </div>
+
+            {/* Image section */}
+            <FieldLabel>Cover Image (optional · 4:3)</FieldLabel>
+            {localImage ? (
+              <div style={{ marginBottom: '10px', position: 'relative' }}>
+                <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden', background: '#111', marginBottom: '6px' }}>
+                  <img src={localImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => imgFileRef.current?.click()}
+                    style={{ flex: 1, padding: '8px', background: 'transparent', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', fontFamily: F, fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                    Replace
+                  </button>
+                  <button onClick={() => { setLocalImage(''); onFlush(item.id, { image: '' }); }}
+                    style={{ padding: '8px 14px', background: 'transparent', border: '1px solid rgba(220,80,80,0.4)', color: 'rgba(220,80,80,0.8)', fontFamily: F, fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginBottom: '10px' }}>
+                {/* Upload button */}
+                <div onClick={() => imgFileRef.current?.click()}
+                  style={{ width: '100%', aspectRatio: '4/3', background: '#0a0a0a', border: '1px dashed rgba(240,237,232,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', marginBottom: '8px', position: 'relative' }}>
+                  {imgUploading ? (
+                    <>
+                      <div style={{ width: '80px', height: '2px', background: '#222' }}>
+                        <div style={{ width: `${imgProgress}%`, height: '100%', background: '#f0ede8', transition: 'width 0.2s' }} />
+                      </div>
+                      <span style={{ fontFamily: F, fontSize: '8px', opacity: 0.4, letterSpacing: '0.1em' }}>{imgProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontFamily: F, fontSize: '18px', opacity: 0.2 }}>+</span>
+                      <span style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.3 }}>Upload Image</span>
+                    </>
+                  )}
+                </div>
+                {/* URL paste */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input value={localImage} onChange={e => setLocalImage(e.target.value)}
+                    onBlur={() => flush()} placeholder="or paste image URL..."
+                    style={{ ...inputStyle, fontSize: '13px' }} onFocus={focusBorder} />
+                </div>
+              </div>
+            )}
+            <input ref={imgFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={e => handleImageFile(e.target.files?.[0])} />
+
             <button onClick={() => setShowIconPicker(v => !v)}
               style={{ background: 'none', border: 'none', color: '#f0ede8', fontFamily: F, fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.3, cursor: 'pointer', padding: 0, marginBottom: showIconPicker ? '10px' : 0 }}>
               {showIconPicker ? '- hide icon' : '+ add icon (optional)'}
@@ -808,6 +890,7 @@ export default function ArtistDashboard() {
                   onFlush={flushItem}
                   onRemove={removeItem}
                   onChangeType={changeItemType}
+                  artistId={artistId}
                 />
               ))}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', margin: '8px 0 14px' }}>
