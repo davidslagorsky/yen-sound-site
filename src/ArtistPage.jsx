@@ -263,7 +263,7 @@ export default function ArtistPage() {
       return { kind: "locked", key, item };
     }
     if (item.type === "link" && item.label && item.url) {
-      return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon || null, url: item.url };
+      return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon || null, url: item.url, image: item.image || null };
     }
     return null;
   }).filter(Boolean);
@@ -350,11 +350,22 @@ export default function ArtistPage() {
           }
           if (item.kind === "link") {
             return (
-              <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={btnStyle}
+              <a key={item.key} href={item.url} target="_blank" rel="noreferrer"
+                style={{ ...btnStyle, flexDirection: item.image ? "column" : "row", padding: item.image ? "0" : "18px 24px", overflow: "hidden" }}
                 onMouseOver={e => e.currentTarget.style.background = hoverBg}
                 onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-                {item.icon && ICON_RENDER[item.icon] ? <span style={{ opacity: 0.75 }}>{ICON_RENDER[item.icon]}</span> : null}
-                {item.label}
+                {item.image && (
+                  <div style={{ width: "100%", aspectRatio: "4/3", overflow: "hidden", flexShrink: 0 }}>
+                    <img src={item.image} alt={item.label}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" }}
+                      onMouseOver={e => e.currentTarget.style.transform = "scale(1.03)"}
+                      onMouseOut={e => e.currentTarget.style.transform = "scale(1)"} />
+                  </div>
+                )}
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", padding: item.image ? "16px 24px" : "0", width: "100%" }}>
+                  {item.icon && ICON_RENDER[item.icon] ? <span style={{ opacity: 0.75 }}>{ICON_RENDER[item.icon]}</span> : null}
+                  {item.label}
+                </span>
               </a>
             );
           }
