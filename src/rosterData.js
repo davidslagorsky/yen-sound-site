@@ -12,6 +12,7 @@ const roster = [
       spotify: "https://open.spotify.com/artist/4e3UN55UMINH761mfPBRap?si=zbTASMBgS0SpeLgHJ-MGyg",
       appleMusic: "https://music.apple.com/il/artist/adam-in-the-shower/1463446987?l=he",
       tiktok: "https://www.tiktok.com/@showerbih",
+      youtube: "https://www.youtube.com/channel/UClxqI3whK3DF6F4W4Q9hO7A",
     }
   },
   {
