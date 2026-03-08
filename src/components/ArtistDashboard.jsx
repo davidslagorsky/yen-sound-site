@@ -780,37 +780,43 @@ export default function ArtistDashboard() {
   };
 
   return (
-    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '600px', margin: '0 auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div style={{ backgroundColor: '#000', minHeight: '100vh', color: '#f0ede8', maxWidth: '480px', margin: '0 auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
       {/* ── Editor drawer ── */}
       {showPreview && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#050505', overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#050505', overflowY: 'auto', WebkitOverflowScrolling: 'touch', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-          {/* sticky header */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', background: '#050505', borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
+          {/* sticky header — full width */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 28px', paddingTop: 'calc(14px + env(safe-area-inset-top))', background: '#050505', borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
             <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.4 }}>Edit My Page</p>
             <button onClick={() => setShowPreview(false)} style={{ background: 'none', border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8', cursor: 'pointer', fontFamily: F, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', padding: '10px 18px', minHeight: '44px' }}>Done</button>
           </div>
 
-          {/* preview */}
-          <div style={{ padding: '20px 20px 0' }}>
-            <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, marginBottom: '10px', textAlign: 'center' }}>Preview</p>
-            <MiniPreview {...miniPreviewProps} />
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px', alignItems: 'center' }}>
-              <button onClick={() => refreshPreview()}
-                style={{ background: 'none', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35, cursor: 'pointer', padding: '4px 10px' }}
-                onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
-                Refresh
-              </button>
-              {artist.slug && (
-                <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
-                  style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none' }}
-                  onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
-                  Open full page →
-                </a>
-              )}
+          {/* desktop: two-col; mobile: single col */}
+          <div style={{ width: '100%', maxWidth: '960px', display: 'flex', flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
+
+            {/* LEFT — sticky preview (hidden on narrow screens via inline media-ish trick using a class) */}
+            <div className="dash-preview-col" style={{ position: 'sticky', top: '57px', padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', alignSelf: 'flex-start' }}>
+              <p style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.25, textAlign: 'center' }}>Preview</p>
+              <MiniPreview {...miniPreviewProps} />
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', alignItems: 'center' }}>
+                <button onClick={() => refreshPreview()}
+                  style={{ background: 'none', border: '1px solid rgba(240,237,232,0.15)', color: '#f0ede8', fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.35, cursor: 'pointer', padding: '4px 10px' }}
+                  onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.35}>
+                  Refresh
+                </button>
+                {artist.slug && (
+                  <a href={`/artist/${artist.slug}`} target="_blank" rel="noreferrer"
+                    style={{ fontFamily: F, fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f0ede8', opacity: 0.3, textDecoration: 'none' }}
+                    onMouseOver={e => e.currentTarget.style.opacity = 0.8} onMouseOut={e => e.currentTarget.style.opacity = 0.3}>
+                    Open full page →
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
+
+            {/* RIGHT — editor */}
+            <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid rgba(240,237,232,0.07)' }}>
 
           {saveError && (
             <div style={{ margin: '16px 20px 0', padding: '12px 16px', border: '1px solid rgba(220,80,80,0.4)', background: 'rgba(220,80,80,0.06)' }}>
@@ -930,6 +936,8 @@ export default function ArtistDashboard() {
 
           </div>
           <div style={{ height: '60px', flexShrink: 0 }} />
+          </div>{/* end right col */}
+          </div>{/* end two-col */}
         </div>
       )}
 
