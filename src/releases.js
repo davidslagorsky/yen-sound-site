@@ -806,28 +806,6 @@ const releases = [
     youtube: "PLACEHOLDER"
   }
 },
-{
-  title: "טוקסיק",
-  artist: "Ethel",
-  type: "Single",
-  smartLink: "https://ffm.to/etheltoxic",
-  cover: "https://i.postimg.cc/g2jhyC7Q/ARTWORK_3.png",
-  date: "2026-03-08",
-  releaseAt: "2026-03-08",
-  spotifyUrl: "PLACEHOLDER",
-  appleUrl: "PLACEHOLDER",
-  youtubeUrl: "PLACEHOLDER",
-  embedYoutubeId: "PLACEHOLDER",
-  embedSpotify: "PLACEHOLDER",
-  slug: "etheltoxic",
-  background: { url: "PLACEHOLDER", darken: 0.0 },
-  socials: {
-    instagram: "https://www.instagram.com/ethel_superstarbaby",
-    tiktok: "https://www.tiktok.com/@ethel_superstarbaby",
-    website: "PLACEHOLDER",
-    youtube: "PLACEHOLDER"
-  }
-},
 
 
   {
