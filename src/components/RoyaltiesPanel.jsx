@@ -203,14 +203,14 @@ export default function RoyaltiesPanel() {
       const raw = XLSX.utils.sheet_to_json(wb.Sheets[sn], { defval: "" });
       const parsed = raw.map(row => {
         const after = parseFloat(row["סכום למקבל התשלום"]) || 0;
-        const before = parseFloat(row['\u05e1\u05db\u05d5\u05dd \u05dc\u05e4\u05e0\u05d9 \u05e7\u05d9\u05d6\u05d5\u05d6 \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9"\u05dc'] || row["\u05e1\u05db\u05d5\u05dd \u05dc\u05e4\u05e0\u05d9 \u05e7\u05d9\u05d6\u05d5\u05d6 \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9\u05dc"]) || after;
+        const before = parseFloat(row['סכום לפני קיזוז עמלת הפי"ל'] || row["סכום לפני קיזוז עמלת הפיל"]) || after;
         return {
-          song: String(row["\u05e9\u05dd \u05d4\u05d9\u05e6\u05d9\u05e8\u05d4"] || ""),
-          performer: String(row["\u05e9\u05dd \u05d4\u05de\u05d1\u05e6\u05e2"] || ""),
-          platform: String(row["\u05e1\u05d5\u05d2 \u05d5\u05d2\u05d5\u05e3"] || ""),
-          period: String(row["\u05ea\u05e7\u05d5\u05e4\u05d4"] || ""),
-          distribution: String(row["\u05d4\u05d7\u05dc\u05d5\u05e7\u05d4"] || ""),
-          streams: parseFloat(row["\u05db\u05de\u05d5\u05ea \u05d4\u05e9\u05de\u05e2\u05d5\u05ea"]) || 0,
+          song: String(row["שם היצירה"] || ""),
+          performer: String(row["שם המבצע"] || ""),
+          platform: String(row["סוג וגוף"] || ""),
+          period: String(row["תקופה"] || ""),
+          distribution: String(row["החלוקה"] || ""),
+          streams: parseFloat(row["כמות השמעות"]) || 0,
           amount: after,
           grossBeforePhil: before,
           philFee: before - after,
@@ -276,9 +276,9 @@ export default function RoyaltiesPanel() {
   /* ── PDF export ── */
   function exportPDF() {
     const performer = selectedPerformers.size === 1 ? [...selectedPerformers][0]
-      : selectedPerformers.size > 1 ? [...selectedPerformers].join(", ") : "\u05db\u05dc \u05d4\u05de\u05d1\u05e6\u05e2\u05d9\u05dd";
+      : selectedPerformers.size > 1 ? [...selectedPerformers].join(", ") : "כל המבצעים";
     const dateStr = new Date().toLocaleDateString("he-IL");
-    const distributions = [...new Set(filtered.map(r => r.distribution))].join("  \u00b7  ");
+    const distributions = [...new Set(filtered.map(r => r.distribution))].join("  ·  ");
 
     const songMap = {};
     filtered.forEach(r => {
@@ -301,13 +301,13 @@ export default function RoyaltiesPanel() {
       const netVal = val - val * commPct / 100;
       const netMax = max * (1 - commPct / 100);
       const w = netMax > 0 ? Math.max(1, (netVal / netMax) * 100).toFixed(1) : 1;
-      const short = label.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ", "").replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 \u2013 ", "");
+      const short = label.replace("אינטרנט - ", "").replace("אינטרנט – ", "");
       return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;direction:rtl">
         <div style="width:120px;font-size:10px;color:#555;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${short}</div>
         <div style="flex:1;height:3px;background:#e8e8e8;position:relative">
           <div style="position:absolute;right:0;top:0;bottom:0;width:${w}%;background:#111"></div>
         </div>
-        <div style="font-size:10px;font-family:'Courier New',monospace;color:#333;white-space:nowrap;width:64px;text-align:left">\u20aa${netVal.toFixed(2)}</div>
+        <div style="font-size:10px;font-family:'Courier New',monospace;color:#333;white-space:nowrap;width:64px;text-align:left">₪${netVal.toFixed(2)}</div>
       </div>`;
     };
 
@@ -356,7 +356,7 @@ export default function RoyaltiesPanel() {
   <div class="doc-header">
     <div>
       <div class="brand">YEN SOUND</div>
-      <div class="doc-type">\u05d3\u05d5\u05d7 \u05ea\u05de\u05dc\u05d5\u05d2\u05d9 \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4</div>
+      <div class="doc-type">דוח תמלוגי ניו מדיה</div>
       <div class="performer-name">${performer}</div>
     </div>
     <div>
@@ -366,46 +366,46 @@ export default function RoyaltiesPanel() {
   </div>
 
   <div class="net-box">
-    <span class="net-label">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</span>
-    <span class="net-value">\u20aa${net.toFixed(2)}</span>
+    <span class="net-label">נטו לאמן</span>
+    <span class="net-value">₪${net.toFixed(2)}</span>
   </div>
 
   <div class="stats-row">
-    <div class="stat"><div class="stat-label">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</div><div class="stat-val">${streams.toLocaleString()}</div></div>
-    <div class="stat"><div class="stat-label">\u05d9\u05e6\u05d9\u05e8\u05d5\u05ea</div><div class="stat-val">${songCount}</div></div>
-    <div class="stat"><div class="stat-label">\u05ea\u05e7\u05d5\u05e4\u05d5\u05ea</div><div class="stat-val">${periodCount}</div></div>
+    <div class="stat"><div class="stat-label">השמעות</div><div class="stat-val">${streams.toLocaleString()}</div></div>
+    <div class="stat"><div class="stat-label">יצירות</div><div class="stat-val">${songCount}</div></div>
+    <div class="stat"><div class="stat-label">תקופות</div><div class="stat-val">${periodCount}</div></div>
   </div>
 
   <div class="section">
-    <div class="section-head">TOP \u05e9\u05d9\u05e8\u05d9\u05dd</div>
+    <div class="section-head">TOP שירים</div>
     ${songsSorted.slice(0, 8).map(([n, d]) => barHtml(n, d.after, songsSorted[0]?.[1]?.after || 1)).join("")}
   </div>
 
   <div class="section">
-    <div class="section-head">\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea</div>
+    <div class="section-head">פלטפורמות</div>
     ${platsSorted.map(([n, v]) => barHtml(n, v, maxPlatVal)).join("")}
   </div>
 
   <div class="section">
-    <div class="section-head">\u05dc\u05e4\u05d9 \u05ea\u05e7\u05d5\u05e4\u05ea \u05d7\u05dc\u05d5\u05e7\u05d4</div>
+    <div class="section-head">לפי תקופת חלוקה</div>
     <div class="period-grid">
       ${distSorted.map(([dist, val]) => {
         const dnet = val - val * commPct / 100;
         return `<div class="period-card">
-          <div class="period-name">${dist.replace("\u05d7\u05dc\u05d5\u05e7\u05ea \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4 ", "")}</div>
-          <div class="period-val">\u20aa${dnet.toFixed(2)}</div>
+          <div class="period-name">${dist.replace("חלוקת ניו מדיה ", "")}</div>
+          <div class="period-val">₪${dnet.toFixed(2)}</div>
         </div>`;
       }).join("")}
     </div>
   </div>
 
   <div class="section">
-    <div class="section-head">\u05e4\u05d9\u05e8\u05d5\u05d8 \u05dc\u05e4\u05d9 \u05e9\u05d9\u05e8</div>
+    <div class="section-head">פירוט לפי שיר</div>
     <table>
       <thead><tr>
-        <th>\u05e9\u05dd \u05e9\u05d9\u05e8</th>
-        <th style="text-align:center">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</th>
-        <th class="left">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</th>
+        <th>שם שיר</th>
+        <th style="text-align:center">השמעות</th>
+        <th class="left">נטו לאמן</th>
       </tr></thead>
       <tbody>
         ${songsSorted.map(([song, d]) => {
@@ -413,24 +413,24 @@ export default function RoyaltiesPanel() {
           return `<tr>
             <td>${song}</td>
             <td class="mono" style="text-align:center">${d.streams.toLocaleString()}</td>
-            <td class="net left">\u20aa${songNet.toFixed(4)}</td>
+            <td class="net left">₪${songNet.toFixed(4)}</td>
           </tr>`;
         }).join("")}
         <tr class="total-row">
-          <td>\u05e1\u05d4"\u05db</td>
+          <td>סה"כ</td>
           <td class="mono" style="text-align:center">${streams.toLocaleString()}</td>
-          <td class="net left">\u20aa${net.toFixed(4)}</td>
+          <td class="net left">₪${net.toFixed(4)}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="section">
-    <div class="section-head">\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d5\u05e8\u05d5\u05ea \u05de\u05dc\u05d0</div>
+    <div class="section-head">פירוט שורות מלא</div>
     <table>
       <thead><tr>
-        <th>\u05e9\u05dd \u05e9\u05d9\u05e8</th><th>\u05de\u05d1\u05e6\u05e2</th><th>\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d4</th><th>\u05ea\u05e7\u05d5\u05e4\u05d4</th>
-        <th style="text-align:center">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</th><th class="left">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</th>
+        <th>שם שיר</th><th>מבצע</th><th>פלטפורמה</th><th>תקופה</th>
+        <th style="text-align:center">השמעות</th><th class="left">נטו לאמן</th>
       </tr></thead>
       <tbody>
         ${filtered.map(r => {
@@ -438,10 +438,10 @@ export default function RoyaltiesPanel() {
           return `<tr>
             <td style="font-weight:600">${r.song}</td>
             <td style="color:#666;font-size:9px">${r.performer}</td>
-            <td style="color:#777">${r.platform.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","")}</td>
+            <td style="color:#777">${r.platform.replace("אינטרנט - ","")}</td>
             <td style="color:#999;font-size:9px">${r.period}</td>
             <td class="mono" style="text-align:center">${r.streams.toLocaleString()}</td>
-            <td class="net left">\u20aa${rowNet.toFixed(4)}</td>
+            <td class="net left">₪${rowNet.toFixed(4)}</td>
           </tr>`;
         }).join("")}
       </tbody>
@@ -450,7 +450,7 @@ export default function RoyaltiesPanel() {
 
   <div class="doc-footer">
     <span class="footer-brand">YEN SOUND</span>
-    <span class="footer-note">\u05d4\u05d5\u05e4\u05e7 ${dateStr} \u00b7 \u05de\u05e1\u05de\u05da \u05d6\u05d4 \u05de\u05d9\u05d5\u05e2\u05d3 \u05dc\u05d0\u05de\u05df \u05d1\u05dc\u05d1\u05d3</span>
+    <span class="footer-note">הופק ${dateStr} · מסמך זה מיועד לאמן בלבד</span>
   </div>
 </body></html>`;
 
@@ -464,7 +464,7 @@ export default function RoyaltiesPanel() {
   /* ─── upload screen ─── */
   if (allData.length === 0) return (
     <div>
-      <Label>\u05d4\u05e2\u05dc\u05d4 \u05e7\u05d5\u05d1\u05e5 Excel \u05de\u05d4\u05e4\u05d9"\u05dc</Label>
+      <Label>העלה קובץ Excel מהפי"ל</Label>
       <div
         onClick={() => fileRef.current?.click()}
         onDragOver={e => e.preventDefault()}
@@ -478,10 +478,10 @@ export default function RoyaltiesPanel() {
       >
         <p style={{ fontFamily: F, fontSize: "28px", opacity: 0.15, marginBottom: "14px", lineHeight: 1 }}>&uarr;</p>
         <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", color: C.muted, marginBottom: "6px" }}>
-          \u05d2\u05e8\u05d5\u05e8 \u05e7\u05d5\u05d1\u05e5 xlsx \u05dc\u05db\u05d0\u05df
+          גרור קובץ xlsx לכאן
         </p>
         <p style={{ fontFamily: F, fontSize: "9px", color: "rgba(240,237,232,0.15)", letterSpacing: "0.15em" }}>
-          \u05d0\u05d5 \u05dc\u05d7\u05e5 \u05dc\u05d1\u05d7\u05d9\u05e8\u05d4
+          או לחץ לבחירה
         </p>
       </div>
       <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }}
@@ -519,43 +519,43 @@ export default function RoyaltiesPanel() {
           <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: C.green, opacity: 0.8 }} />
           <span style={{ fontFamily: F, fontSize: "9px", color: C.muted, letterSpacing: "0.05em" }}>{fileName}</span>
           <span style={{ fontFamily: F, fontSize: "9px", color: "rgba(240,237,232,0.18)" }}>
-            &middot; {allData.length.toLocaleString()} \u05e9\u05d5\u05e8\u05d5\u05ea
+            &middot; {allData.length.toLocaleString()} שורות
           </span>
         </div>
-        <GhostBtn onClick={() => { setAllData([]); setFileName(null); }}>&uarr; \u05e7\u05d5\u05d1\u05e5 \u05d7\u05d3\u05e9</GhostBtn>
+        <GhostBtn onClick={() => { setAllData([]); setFileName(null); }}>&uarr; קובץ חדש</GhostBtn>
       </div>
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1px", background: C.border, marginBottom: "20px" }}>
-        <Kpi label='\u05e1\u05d4"\u05db \u05ea\u05de\u05dc\u05d5\u05d2\u05d9\u05dd' value={`\u20aa${totalAfter.toFixed(2)}`} />
-        <Kpi label="\u05d4\u05e9\u05de\u05e2\u05d5\u05ea" value={streams.toLocaleString()} />
-        <Kpi label="\u05e9\u05d9\u05e8\u05d9\u05dd" value={songCount} />
-        <Kpi label="\u05ea\u05e7\u05d5\u05e4\u05d5\u05ea" value={periodCount} />
+        <Kpi label='סה"כ תמלוגים' value={`₪${totalAfter.toFixed(2)}`} />
+        <Kpi label="השמעות" value={streams.toLocaleString()} />
+        <Kpi label="שירים" value={songCount} />
+        <Kpi label="תקופות" value={periodCount} />
       </div>
 
       {/* filters */}
       <div style={{ border: `1px solid ${C.border}`, padding: "16px", marginBottom: "1px" }}>
-        <Label>\u05e4\u05d9\u05dc\u05d8\u05e8\u05d9\u05dd</Label>
+        <Label>פילטרים</Label>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
           <PerformerSelect all={allPerformers} selected={selectedPerformers}
             onChange={s => { setSelectedPerformers(s); setPage(1); }} />
           <select value={filterSong} onChange={e => { setFilterSong(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">\u05db\u05dc \u05d4\u05e9\u05d9\u05e8\u05d9\u05dd</option>
+            <option value="">כל השירים</option>
             {uniq("song").map(v => <option key={v} value={v}>{v}</option>)}
           </select>
           <select value={filterPlatform} onChange={e => { setFilterPlatform(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">\u05db\u05dc \u05d4\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea</option>
-            {uniq("platform").map(v => <option key={v} value={v}>{v.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","")}</option>)}
+            <option value="">כל הפלטפורמות</option>
+            {uniq("platform").map(v => <option key={v} value={v}>{v.replace("אינטרנט - ","")}</option>)}
           </select>
           <select value={filterDist} onChange={e => { setFilterDist(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">\u05db\u05dc \u05d4\u05d7\u05dc\u05d5\u05e7\u05d5\u05ea</option>
-            {uniq("distribution").map(v => <option key={v} value={v}>{v.replace("\u05d7\u05dc\u05d5\u05e7\u05ea \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4 ","")}</option>)}
+            <option value="">כל החלוקות</option>
+            {uniq("distribution").map(v => <option key={v} value={v}>{v.replace("חלוקת ניו מדיה ","")}</option>)}
           </select>
         </div>
         {(selectedPerformers.size > 0 || filterSong || filterPlatform || filterDist) && (
           <div style={{ marginTop: "8px" }}>
             <GhostBtn onClick={() => { setSelectedPerformers(new Set()); setFilterSong(""); setFilterPlatform(""); setFilterDist(""); setPage(1); }}>
-              &uarr; \u05d0\u05e4\u05e1 \u05e4\u05d9\u05dc\u05d8\u05e8\u05d9\u05dd
+              &uarr; אפס פילטרים
             </GhostBtn>
           </div>
         )}
@@ -563,7 +563,7 @@ export default function RoyaltiesPanel() {
 
       {/* commission */}
       <div style={{ border: `1px solid ${C.border}`, borderTop: "none", padding: "16px", marginBottom: "20px" }}>
-        <Label>\u05de\u05d7\u05e9\u05d1\u05d5\u05df \u05e2\u05de\u05dc\u05d4</Label>
+        <Label>מחשבון עמלה</Label>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
           <input type="number" value={commPct} min={0} max={100} step={0.5}
             onChange={e => setCommPct(parseFloat(e.target.value) || 0)}
@@ -573,13 +573,13 @@ export default function RoyaltiesPanel() {
             onFocus={e => e.target.style.borderColor = C.borderHi}
             onBlur={e => e.target.style.borderColor = C.border}
           />
-          <span style={{ fontFamily: F, fontSize: "9px", color: C.muted, letterSpacing: "0.15em" }}>% \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05e6\u05d4 \u05e9\u05dc\u05d9</span>
+          <span style={{ fontFamily: F, fontSize: "9px", color: C.muted, letterSpacing: "0.15em" }}>% עמלת הפצה שלי</span>
         </div>
         {[
-          ['\u05d1\u05e8\u05d5\u05d8\u05d5 \u05dc\u05e4\u05e0\u05d9 \u05d4\u05e4\u05d9"\u05dc', `\u20aa${totalBefore.toFixed(2)}`],
-          ['\u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9"\u05dc', `\u2212\u20aa${philFeeSum.toFixed(2)}`],
-          ['\u05d0\u05d7\u05e8\u05d9 \u05d4\u05e4\u05d9"\u05dc', `\u20aa${totalAfter.toFixed(2)}`],
-          ["\u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05e6\u05d4 \u05e9\u05dc\u05d9", `\u2212\u20aa${myFee.toFixed(2)}`],
+          ['ברוטו לפני הפי"ל', `₪${totalBefore.toFixed(2)}`],
+          ['עמלת הפי"ל', `−₪${philFeeSum.toFixed(2)}`],
+          ['אחרי הפי"ל', `₪${totalAfter.toFixed(2)}`],
+          ["עמלת הפצה שלי", `−₪${myFee.toFixed(2)}`],
         ].map(([lbl, val]) => (
           <div key={lbl} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: "6px 0", borderBottom: `1px solid rgba(240,237,232,0.05)` }}>
@@ -588,21 +588,21 @@ export default function RoyaltiesPanel() {
           </div>
         ))}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: "12px" }}>
-          <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: C.text }}>\u05e0\u05d8\u05d5 \u05e1\u05d5\u05e4\u05d9 \u05dc\u05d0\u05de\u05df</span>
-          <span style={{ fontFamily: "monospace", fontSize: "18px", color: C.green }}>\u20aa{net.toFixed(2)}</span>
+          <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: C.text }}>נטו סופי לאמן</span>
+          <span style={{ fontFamily: "monospace", fontSize: "18px", color: C.green }}>₪{net.toFixed(2)}</span>
         </div>
       </div>
 
       {/* charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: C.border, marginBottom: "20px" }}>
         <div style={{ background: C.bg, padding: "16px" }}>
-          <Label>TOP \u05e9\u05d9\u05e8\u05d9\u05dd &mdash; \u05e0\u05d8\u05d5</Label>
+          <Label>TOP שירים &mdash; נטו</Label>
           {topSongs.map(([name, val]) => (
             <Bar key={name} label={name} value={val} max={topSongs[0]?.[1] || 1} pct={commPct} />
           ))}
         </div>
         <div style={{ background: C.bg, padding: "16px" }}>
-          <Label>\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea &mdash; \u05e0\u05d8\u05d5</Label>
+          <Label>פלטפורמות &mdash; נטו</Label>
           {topPlats.map(([name, val]) => (
             <Bar key={name} label={name} value={val} max={topPlats[0]?.[1] || 1} pct={commPct} />
           ))}
@@ -611,24 +611,24 @@ export default function RoyaltiesPanel() {
 
       {/* export */}
       <div style={{ marginBottom: "20px" }}>
-        <PrimaryBtn onClick={exportPDF}>\u05d9\u05d9\u05e6\u05d5\u05d0 \u05d3\u05d5\u05d7 \u05dc\u05d0\u05de\u05df &mdash; PDF</PrimaryBtn>
+        <PrimaryBtn onClick={exportPDF}>ייצוא דוח לאמן &mdash; PDF</PrimaryBtn>
       </div>
 
       <Divider />
 
       {/* table header */}
       <div style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Label>\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d5\u05e8\u05d5\u05ea</Label>
-        <span style={{ fontFamily: F, fontSize: "9px", color: C.muted }}>{filtered.length.toLocaleString()} \u05e9\u05d5\u05e8\u05d5\u05ea</span>
+        <Label>פירוט שורות</Label>
+        <span style={{ fontFamily: F, fontSize: "9px", color: C.muted }}>{filtered.length.toLocaleString()} שורות</span>
       </div>
 
       <div style={{ border: `1px solid ${C.border}`, overflowX: "auto", marginBottom: "16px" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "480px" }}>
           <thead>
             <tr>
-              {[["\u05e9\u05d9\u05e8","song"],["\u05de\u05d1\u05e6\u05e2","performer"],["\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d4","platform"],["\u05ea\u05e7\u05d5\u05e4\u05d4","period"],["\u05d4\u05e9\u05de\u05e2\u05d5\u05ea","streams"],["\u05e1\u05db\u05d5\u05dd \u20aa","amount"]].map(([lbl, col]) => (
+              {[["שיר","song"],["מבצע","performer"],["פלטפורמה","platform"],["תקופה","period"],["השמעות","streams"],["סכום ₪","amount"]].map(([lbl, col]) => (
                 <th key={col} onClick={() => handleSort(col)} style={thStyle}>
-                  {lbl}{sortCol === col ? (sortDir === 1 ? " \u2191" : " \u2193") : ""}
+                  {lbl}{sortCol === col ? (sortDir === 1 ? " ↑" : " ↓") : ""}
                 </th>
               ))}
             </tr>
@@ -637,11 +637,11 @@ export default function RoyaltiesPanel() {
             {pageRows.map((r, i) => (
               <tr key={i}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{r.song}</td>
-                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.performer.length > 22 ? r.performer.substring(0,22) + "\u2026" : r.performer}</td>
-                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.platform.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","").replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 \u2013 ","")}</td>
+                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.performer.length > 22 ? r.performer.substring(0,22) + "…" : r.performer}</td>
+                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.platform.replace("אינטרנט - ","").replace("אינטרנט – ","")}</td>
                 <td style={{ ...tdStyle, color: "rgba(240,237,232,0.25)", fontSize: "9px" }}>{r.period}</td>
                 <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px", color: C.muted }}>{r.streams.toLocaleString()}</td>
-                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px" }}>\u20aa{r.amount.toFixed(4)}</td>
+                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px" }}>₪{r.amount.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>
@@ -654,9 +654,9 @@ export default function RoyaltiesPanel() {
           {page > 1 && <GhostBtn onClick={() => setPage(p => p - 1)}>&rarr;</GhostBtn>}
           {Array.from({ length: totalPages }, (_, i) => i + 1)
             .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-            .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i-1] > 1) acc.push("\u2026"); acc.push(p); return acc; }, [])
-            .map((p, i) => p === "\u2026"
-              ? <span key={i} style={{ fontFamily: F, fontSize: "9px", color: C.muted, padding: "8px 2px" }}>\u2026</span>
+            .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i-1] > 1) acc.push("…"); acc.push(p); return acc; }, [])
+            .map((p, i) => p === "…"
+              ? <span key={i} style={{ fontFamily: F, fontSize: "9px", color: C.muted, padding: "8px 2px" }}>…</span>
               : <GhostBtn key={p} active={p === page} onClick={() => setPage(p)}>{p}</GhostBtn>
             )}
           {page < totalPages && <GhostBtn onClick={() => setPage(p => p + 1)}>&larr;</GhostBtn>}
