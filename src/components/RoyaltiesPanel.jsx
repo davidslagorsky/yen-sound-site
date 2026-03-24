@@ -3,157 +3,170 @@ import * as XLSX from "xlsx";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
-/* ─── shared primitives (matching AdminDashboard style) ─── */
-function FieldLabel({ children }) {
+/* ─── design tokens (matches YEN SOUND admin) ─── */
+const C = {
+  bg:       "#000",
+  surface:  "#0a0a0a",
+  surface2: "#111",
+  border:   "rgba(240,237,232,0.1)",
+  borderHi: "rgba(240,237,232,0.35)",
+  text:     "#f0ede8",
+  muted:    "rgba(240,237,232,0.35)",
+  accent:   "#f0ede8",
+  green:    "rgba(100,255,180,0.9)",
+  red:      "rgba(255,100,100,0.85)",
+};
+
+/* ─── primitives ─── */
+function Label({ children }) {
   return (
-    <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "6px" }}>
+    <p style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.35em",
+      textTransform: "uppercase", color: C.muted, marginBottom: "10px" }}>
       {children}
     </p>
   );
 }
 
-function GhostBtn({ onClick, children, danger = false, active = false }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase",
-        padding: "7px 12px", background: active ? "rgba(240,237,232,0.08)" : "transparent",
-        cursor: "pointer", border: danger
-          ? "1px solid rgba(220,80,80,0.5)"
-          : active ? "1px solid rgba(240,237,232,0.5)" : "1px solid rgba(240,237,232,0.25)",
-        color: danger ? "rgba(220,80,80,0.9)" : "#f0ede8",
-        transition: "border-color 0.15s",
-      }}
-      onMouseOver={e => { e.currentTarget.style.borderColor = danger ? "rgba(220,80,80,0.8)" : "rgba(240,237,232,0.6)"; }}
-      onMouseOut={e => { e.currentTarget.style.borderColor = danger ? "rgba(220,80,80,0.5)" : active ? "rgba(240,237,232,0.5)" : "rgba(240,237,232,0.25)"; }}
-    >
-      {children}
-    </button>
-  );
+function Divider() {
+  return <div style={{ height: "1px", background: C.border, margin: "20px 0" }} />;
 }
 
-function ActionBtn({ onClick, children, disabled = false }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: "block", width: "100%", padding: "14px 24px",
-        border: "2px solid rgba(240,237,232,0.8)", background: "transparent",
-        color: "#f0ede8", fontFamily: F, fontSize: "11px", fontWeight: 700,
-        letterSpacing: "0.3em", textTransform: "uppercase",
-        cursor: disabled ? "default" : "pointer", transition: "background 0.15s",
-        opacity: disabled ? 0.4 : 1, boxSizing: "border-box",
-      }}
-      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = "#111"; }}
-      onMouseOut={e => { e.currentTarget.style.background = "transparent"; }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── multi-select performer dropdown ─── */
-function PerformerSelect({ allPerformers, selected, onChange }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const wrapRef = useRef(null);
-
-  const filtered = allPerformers.filter(p =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const toggle = name => {
-    const next = new Set(selected);
-    next.has(name) ? next.delete(name) : next.add(name);
-    onChange(next);
+function GhostBtn({ onClick, children, danger, active, full }) {
+  const base = {
+    fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase",
+    padding: "8px 14px", background: active ? "rgba(240,237,232,0.07)" : "transparent",
+    cursor: "pointer",
+    border: danger ? "1px solid rgba(255,100,100,0.4)"
+      : active ? `1px solid ${C.borderHi}` : `1px solid ${C.border}`,
+    color: danger ? C.red : C.text,
+    transition: "all 0.15s",
+    display: full ? "block" : "inline-block",
+    width: full ? "100%" : "auto",
+    boxSizing: "border-box",
+    textAlign: "center",
   };
+  return (
+    <button style={base} onClick={onClick}
+      onMouseOver={e => { e.currentTarget.style.borderColor = danger ? "rgba(255,100,100,0.7)" : C.borderHi; e.currentTarget.style.background = "rgba(240,237,232,0.05)"; }}
+      onMouseOut={e => { e.currentTarget.style.borderColor = danger ? "rgba(255,100,100,0.4)" : active ? C.borderHi : C.border; e.currentTarget.style.background = active ? "rgba(240,237,232,0.07)" : "transparent"; }}>
+      {children}
+    </button>
+  );
+}
 
-  const label = selected.size === 0
-    ? "כל המבצעים"
-    : selected.size === 1
-      ? [...selected][0]
-      : `${selected.size} מבצעים נבחרו`;
+function PrimaryBtn({ onClick, children, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: "block", width: "100%", padding: "15px 24px",
+      border: `1px solid ${disabled ? C.border : C.borderHi}`,
+      background: "transparent", color: disabled ? C.muted : C.text,
+      fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.3em",
+      textTransform: "uppercase", cursor: disabled ? "default" : "pointer",
+      transition: "all 0.15s", boxSizing: "border-box",
+    }}
+      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = "#111"; }}
+      onMouseOut={e => { e.currentTarget.style.background = "transparent"; }}>
+      {children}
+    </button>
+  );
+}
+
+/* ─── KPI card ─── */
+function Kpi({ label, value, highlight }) {
+  return (
+    <div style={{
+      padding: "18px 16px", border: `1px solid ${highlight ? "rgba(100,255,180,0.2)" : C.border}`,
+      background: highlight ? "rgba(100,255,180,0.03)" : "transparent",
+      display: "flex", flexDirection: "column", gap: "6px",
+    }}>
+      <p style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.3em", textTransform: "uppercase", color: C.muted }}>{label}</p>
+      <p style={{ fontFamily: "monospace", fontSize: "20px", color: highlight ? C.green : C.text, letterSpacing: "-0.02em", lineHeight: 1 }}>{value}</p>
+    </div>
+  );
+}
+
+/* ─── bar row ─── */
+function Bar({ label, value, max, pct: commPct }) {
+  const net = value - value * commPct / 100;
+  const netMax = max * (1 - commPct / 100);
+  const w = netMax > 0 ? Math.max(2, (net / netMax) * 100) : 2;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "9px", direction: "rtl" }}>
+      <div style={{ width: "100px", fontFamily: F, fontSize: "9px", color: C.muted,
+        textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 0 }}
+        title={label}>{label.replace("אינטרנט - ","").replace("אינטרנט – ","")}</div>
+      <div style={{ flex: 1, height: "3px", background: "rgba(240,237,232,0.07)", position: "relative" }}>
+        <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${w}%`,
+          background: C.borderHi, transition: "width 0.5s cubic-bezier(0.4,0,0.2,1)" }} />
+      </div>
+      <div style={{ fontFamily: "monospace", fontSize: "9px", color: C.muted, width: "54px", textAlign: "left", flexShrink: 0 }}>
+        ₪{net.toFixed(2)}
+      </div>
+    </div>
+  );
+}
+
+/* ─── multi-select performer ─── */
+function PerformerSelect({ all, selected, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const filtered = all.filter(p => !q || p.name.toLowerCase().includes(q.toLowerCase()));
+  const toggle = name => { const s = new Set(selected); s.has(name) ? s.delete(name) : s.add(name); onChange(s); };
+
+  const label = selected.size === 0 ? "כל המבצעים"
+    : selected.size === 1 ? [...selected][0]
+    : `${selected.size} מבצעים`;
 
   return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: "100%", padding: "10px 12px", background: "transparent",
-          border: `1px solid rgba(240,237,232,${open ? "0.5" : "0.2"})`,
-          color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em",
-          cursor: "pointer", display: "flex", justifyContent: "space-between",
-          alignItems: "center", direction: "rtl", transition: "border-color 0.15s",
-        }}
-      >
-        <span style={{ opacity: selected.size === 0 ? 0.4 : 1 }}>{label}</span>
-        <span style={{ opacity: 0.4, fontSize: "8px", marginRight: "6px" }}>{open ? "▲" : "▼"}</span>
+    <div style={{ position: "relative" }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        width: "100%", padding: "9px 12px", background: "transparent",
+        border: `1px solid ${open ? C.borderHi : C.border}`,
+        color: selected.size > 0 ? C.text : C.muted,
+        fontFamily: F, fontSize: "10px", letterSpacing: "0.05em",
+        cursor: "pointer", display: "flex", justifyContent: "space-between",
+        alignItems: "center", direction: "rtl", transition: "border-color 0.15s", boxSizing: "border-box",
+      }}>
+        <span>{label}</span>
+        <span style={{ fontSize: "7px", opacity: 0.4, marginRight: "8px" }}>{open ? "▲" : "▼"}</span>
       </button>
-
       {open && (
-        <div style={{
-          position: "absolute", top: "100%", right: 0, left: 0, zIndex: 100,
-          background: "#080808", border: "1px solid rgba(240,237,232,0.2)",
-          borderTop: "none", maxHeight: "220px", overflowY: "auto",
-        }}>
-          {/* search */}
-          <div style={{ padding: "8px 10px", borderBottom: "1px solid rgba(240,237,232,0.08)", position: "sticky", top: 0, background: "#080808" }}>
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="חיפוש..."
-              style={{
-                width: "100%", background: "transparent", border: "1px solid rgba(240,237,232,0.15)",
-                color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "6px 10px",
-                outline: "none", direction: "rtl", boxSizing: "border-box",
-              }}
-            />
+        <div style={{ position: "absolute", top: "100%", right: 0, left: 0, zIndex: 200,
+          background: "#090909", border: `1px solid ${C.borderHi}`, borderTop: "none", maxHeight: "200px", overflowY: "auto" }}>
+          <div style={{ padding: "8px", borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, background: "#090909" }}>
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="חיפוש..."
+              style={{ width: "100%", background: "transparent", border: `1px solid ${C.border}`,
+                color: C.text, fontFamily: F, fontSize: "10px", padding: "6px 10px",
+                outline: "none", direction: "rtl", boxSizing: "border-box" }} />
           </div>
-
-          {/* options */}
           {filtered.map(p => (
-            <div
-              key={p.name}
-              onClick={() => toggle(p.name)}
-              style={{
-                padding: "8px 12px", cursor: "pointer", direction: "rtl",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                borderBottom: "1px solid rgba(240,237,232,0.04)",
-                background: selected.has(p.name) ? "rgba(240,237,232,0.05)" : "transparent",
-                transition: "background 0.1s",
-              }}
-              onMouseOver={e => { e.currentTarget.style.background = "rgba(240,237,232,0.08)"; }}
-              onMouseOut={e => { e.currentTarget.style.background = selected.has(p.name) ? "rgba(240,237,232,0.05)" : "transparent"; }}
-            >
+            <div key={p.name} onClick={() => toggle(p.name)} style={{
+              padding: "8px 12px", cursor: "pointer", direction: "rtl",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              borderBottom: `1px solid rgba(240,237,232,0.04)`,
+              background: selected.has(p.name) ? "rgba(240,237,232,0.05)" : "transparent",
+            }}
+              onMouseOver={e => e.currentTarget.style.background = "rgba(240,237,232,0.07)"}
+              onMouseOut={e => e.currentTarget.style.background = selected.has(p.name) ? "rgba(240,237,232,0.05)" : "transparent"}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{
-                  width: "12px", height: "12px", border: "1px solid rgba(240,237,232,0.4)",
-                  background: selected.has(p.name) ? "#f0ede8" : "transparent",
-                  flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  {selected.has(p.name) && <span style={{ fontSize: "8px", color: "#000", fontWeight: 700 }}>✓</span>}
+                <div style={{ width: "11px", height: "11px", border: `1px solid ${selected.has(p.name) ? C.text : C.muted}`,
+                  background: selected.has(p.name) ? C.text : "transparent", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {selected.has(p.name) && <span style={{ fontSize: "7px", color: "#000", fontWeight: 900 }}>✓</span>}
                 </div>
-                <span style={{ fontFamily: F, fontSize: "11px", color: "#f0ede8" }}>{p.name}</span>
+                <span style={{ fontFamily: F, fontSize: "10px", color: C.text }}>{p.name}</span>
               </div>
-              <span style={{ fontFamily: "monospace", fontSize: "9px", opacity: 0.35 }}>
-                ₪{p.total.toFixed(0)}
-              </span>
+              <span style={{ fontFamily: "monospace", fontSize: "9px", color: C.muted }}>₪{p.total.toFixed(0)}</span>
             </div>
           ))}
-
-          {/* actions */}
-          <div style={{ display: "flex", gap: "0", borderTop: "1px solid rgba(240,237,232,0.08)", position: "sticky", bottom: 0, background: "#080808" }}>
-            {[["בחר הכל", () => onChange(new Set(allPerformers.map(p => p.name)))],
-              ["נקה", () => onChange(new Set())]].map(([label, fn]) => (
-              <button key={label} onClick={fn} style={{
-                flex: 1, padding: "8px", background: "transparent",
-                border: "none", borderRight: label === "בחר הכל" ? "1px solid rgba(240,237,232,0.08)" : "none",
-                color: "#f0ede8", fontFamily: F, fontSize: "9px", letterSpacing: "0.15em",
-                textTransform: "uppercase", cursor: "pointer", opacity: 0.5,
-              }}>{label}</button>
+          <div style={{ display: "flex", borderTop: `1px solid ${C.border}`, position: "sticky", bottom: 0, background: "#090909" }}>
+            {[["בחר הכל", () => onChange(new Set(all.map(p => p.name)))], ["נקה", () => onChange(new Set())]].map(([lbl, fn]) => (
+              <button key={lbl} onClick={fn} style={{ flex: 1, padding: "7px", background: "transparent",
+                border: "none", borderRight: lbl === "בחר הכל" ? `1px solid ${C.border}` : "none",
+                color: C.muted, fontFamily: F, fontSize: "9px", letterSpacing: "0.15em",
+                textTransform: "uppercase", cursor: "pointer" }}
+                onMouseOver={e => e.currentTarget.style.color = C.text}
+                onMouseOut={e => e.currentTarget.style.color = C.muted}>{lbl}</button>
             ))}
           </div>
         </div>
@@ -162,75 +175,45 @@ function PerformerSelect({ allPerformers, selected, onChange }) {
   );
 }
 
-/* ─── bar chart row ─── */
-function BarRow({ label, value, max, accent = false }) {
-  const pct = max > 0 ? Math.max(1, (value / max) * 100) : 0;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", direction: "rtl" }}>
-      <div style={{ width: "110px", fontFamily: F, fontSize: "10px", opacity: 0.55, textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 0 }}
-        title={label}>{label}</div>
-      <div style={{ flex: 1, height: "16px", background: "rgba(240,237,232,0.06)", position: "relative" }}>
-        <div style={{
-          position: "absolute", right: 0, top: 0, bottom: 0,
-          width: `${pct}%`,
-          background: accent ? "rgba(240,237,232,0.7)" : "rgba(240,237,232,0.25)",
-          transition: "width 0.4s cubic-bezier(0.4,0,0.2,1)",
-        }} />
-      </div>
-      <div style={{ fontFamily: "monospace", fontSize: "9px", opacity: 0.5, whiteSpace: "nowrap", width: "60px", textAlign: "left" }}>
-        ₪{value.toFixed(2)}
-      </div>
-    </div>
-  );
-}
-
-/* ─── KPI card ─── */
-function KpiCard({ label, value }) {
-  return (
-    <div style={{ border: "1px solid rgba(240,237,232,0.12)", padding: "16px 14px", textAlign: "center" }}>
-      <p style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.3, marginBottom: "8px" }}>{label}</p>
-      <p style={{ fontFamily: "monospace", fontSize: "18px", color: "#f0ede8", letterSpacing: "-0.02em" }}>{value}</p>
-    </div>
-  );
-}
-
-/* ─── main panel ─── */
+/* ══════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════ */
 export default function RoyaltiesPanel() {
-  const fileInputRef = useRef(null);
+  const fileRef = useRef(null);
   const [allData, setAllData] = useState([]);
   const [fileName, setFileName] = useState(null);
   const [selectedPerformers, setSelectedPerformers] = useState(new Set());
   const [filterSong, setFilterSong] = useState("");
   const [filterPlatform, setFilterPlatform] = useState("");
   const [filterDist, setFilterDist] = useState("");
-  const [commissionPct, setCommissionPct] = useState(15);
+  const [commPct, setCommPct] = useState(15);
   const [sortCol, setSortCol] = useState("amount");
   const [sortDir, setSortDir] = useState(-1);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 40;
+  const PAGE = 40;
 
-  /* ── parse uploaded file ── */
-  function handleFile(file) {
-    if (!file) return;
-    setFileName(file.name);
+  /* ── parse ── */
+  function handleFile(f) {
+    if (!f) return;
+    setFileName(f.name);
     const reader = new FileReader();
     reader.onload = e => {
       const wb = XLSX.read(e.target.result, { type: "array" });
-      const sheetName = wb.SheetNames.find(n => n.includes("ניו מדיה") || n.includes("new media")) || wb.SheetNames[0];
-      const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+      const sn = wb.SheetNames.find(n => n.includes("ניו מדיה") || n.includes("new media")) || wb.SheetNames[0];
+      const raw = XLSX.utils.sheet_to_json(wb.Sheets[sn], { defval: "" });
       const parsed = raw.map(row => {
-        const afterPhil = parseFloat(row["סכום למקבל התשלום"]) || 0;
-        const beforePhil = parseFloat(row['סכום לפני קיזוז עמלת הפי"ל'] || row["סכום לפני קיזוז עמלת הפיל"]) || afterPhil;
+        const after = parseFloat(row["סכום למקבל התשלום"]) || 0;
+        const before = parseFloat(row['\u05e1\u05db\u05d5\u05dd \u05dc\u05e4\u05e0\u05d9 \u05e7\u05d9\u05d6\u05d5\u05d6 \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9"\u05dc'] || row["\u05e1\u05db\u05d5\u05dd \u05dc\u05e4\u05e0\u05d9 \u05e7\u05d9\u05d6\u05d5\u05d6 \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9\u05dc"]) || after;
         return {
-          song: String(row["שם היצירה"] || ""),
-          performer: String(row["שם המבצע"] || ""),
-          platform: String(row["סוג וגוף"] || ""),
-          period: String(row["תקופה"] || ""),
-          distribution: String(row["החלוקה"] || ""),
-          streams: parseFloat(row["כמות השמעות"]) || 0,
-          amount: afterPhil,
-          grossBeforePhil: beforePhil,
-          philFee: beforePhil - afterPhil,
+          song: String(row["\u05e9\u05dd \u05d4\u05d9\u05e6\u05d9\u05e8\u05d4"] || ""),
+          performer: String(row["\u05e9\u05dd \u05d4\u05de\u05d1\u05e6\u05e2"] || ""),
+          platform: String(row["\u05e1\u05d5\u05d2 \u05d5\u05d2\u05d5\u05e3"] || ""),
+          period: String(row["\u05ea\u05e7\u05d5\u05e4\u05d4"] || ""),
+          distribution: String(row["\u05d4\u05d7\u05dc\u05d5\u05e7\u05d4"] || ""),
+          streams: parseFloat(row["\u05db\u05de\u05d5\u05ea \u05d4\u05e9\u05de\u05e2\u05d5\u05ea"]) || 0,
+          amount: after,
+          grossBeforePhil: before,
+          philFee: before - after,
         };
       }).filter(r => r.song && r.amount >= 0);
       setAllData(parsed);
@@ -238,10 +221,10 @@ export default function RoyaltiesPanel() {
       setFilterSong(""); setFilterPlatform(""); setFilterDist("");
       setPage(1);
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsArrayBuffer(f);
   }
 
-  /* ── derived data ── */
+  /* ── derived ── */
   const allPerformers = (() => {
     const m = {};
     allData.forEach(r => { if (r.performer) m[r.performer] = (m[r.performer] || 0) + r.amount; });
@@ -261,33 +244,29 @@ export default function RoyaltiesPanel() {
     const av = a[sortCol], bv = b[sortCol];
     return typeof av === "number" ? (av - bv) * sortDir : String(av).localeCompare(String(bv), "he") * sortDir;
   });
-
-  const paginatedRows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const pageRows = sorted.slice((page - 1) * PAGE, page * PAGE);
+  const totalPages = Math.ceil(sorted.length / PAGE);
 
   /* ── totals ── */
-  const totalBeforePhil = filtered.reduce((s, r) => s + r.grossBeforePhil, 0);
-  const totalAfterPhil = filtered.reduce((s, r) => s + r.amount, 0);
-  const totalPhilFee = totalBeforePhil - totalAfterPhil;
-  const myFee = totalAfterPhil * commissionPct / 100;
-  const net = totalAfterPhil - myFee;
-  const totalStreams = filtered.reduce((s, r) => s + r.streams, 0);
-  const songCount = new Set(filtered.map(r => r.song)).size;
+  const totalBefore = filtered.reduce((s, r) => s + r.grossBeforePhil, 0);
+  const totalAfter  = filtered.reduce((s, r) => s + r.amount, 0);
+  const philFeeSum  = totalBefore - totalAfter;
+  const myFee       = totalAfter * commPct / 100;
+  const net         = totalAfter - myFee;
+  const streams     = filtered.reduce((s, r) => s + r.streams, 0);
+  const songCount   = new Set(filtered.map(r => r.song)).size;
   const periodCount = new Set(filtered.map(r => r.distribution)).size;
 
   /* ── chart data ── */
   const bySong = {};
   filtered.forEach(r => { bySong[r.song] = (bySong[r.song] || 0) + r.amount; });
-  const topSongs = Object.entries(bySong).sort((a, b) => b[1] - a[1]).slice(0, 7);
+  const topSongs = Object.entries(bySong).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
   const byPlat = {};
-  filtered.forEach(r => {
-    const short = r.platform.replace("אינטרנט - ", "").replace("אינטרנט – ", "");
-    byPlat[short] = (byPlat[short] || 0) + r.amount;
-  });
+  filtered.forEach(r => { byPlat[r.platform] = (byPlat[r.platform] || 0) + r.amount; });
   const topPlats = Object.entries(byPlat).sort((a, b) => b[1] - a[1]);
 
-  /* ── sort toggle ── */
+  /* ── sort ── */
   const handleSort = col => {
     if (sortCol === col) setSortDir(d => d * -1);
     else { setSortCol(col); setSortDir(-1); }
@@ -296,335 +275,373 @@ export default function RoyaltiesPanel() {
 
   /* ── PDF export ── */
   function exportPDF() {
-    const performer = selectedPerformers.size === 1
-      ? [...selectedPerformers][0]
-      : selectedPerformers.size > 1 ? `${selectedPerformers.size} מבצעים` : "כל המבצעים";
+    const performer = selectedPerformers.size === 1 ? [...selectedPerformers][0]
+      : selectedPerformers.size > 1 ? [...selectedPerformers].join(", ") : "\u05db\u05dc \u05d4\u05de\u05d1\u05e6\u05e2\u05d9\u05dd";
     const dateStr = new Date().toLocaleDateString("he-IL");
-    const distributions = [...new Set(filtered.map(r => r.distribution))].join(", ");
+    const distributions = [...new Set(filtered.map(r => r.distribution))].join("  \u00b7  ");
 
     const songMap = {};
     filtered.forEach(r => {
-      if (!songMap[r.song]) songMap[r.song] = { streams: 0, afterPhil: 0 };
+      if (!songMap[r.song]) songMap[r.song] = { streams: 0, after: 0 };
       songMap[r.song].streams += r.streams;
-      songMap[r.song].afterPhil += r.amount;
+      songMap[r.song].after   += r.amount;
     });
-    const songsSorted = Object.entries(songMap).sort((a, b) => b[1].afterPhil - a[1].afterPhil);
+    const songsSorted = Object.entries(songMap).sort((a, b) => b[1].after - a[1].after);
 
     const byPlatFull = {};
     filtered.forEach(r => { byPlatFull[r.platform] = (byPlatFull[r.platform] || 0) + r.amount; });
     const platsSorted = Object.entries(byPlatFull).sort((a, b) => b[1] - a[1]);
-    const maxPlat = platsSorted[0]?.[1] || 1;
+    const maxPlatVal = platsSorted[0]?.[1] || 1;
 
     const distMap = {};
     filtered.forEach(r => { distMap[r.distribution] = (distMap[r.distribution] || 0) + r.amount; });
     const distSorted = Object.entries(distMap).sort((a, b) => a[0].localeCompare(b[0], "he"));
 
-    const barRow = (label, val, max) => {
-      const w = Math.max(1, (val / max) * 100).toFixed(1);
-      const short = label.replace("אינטרנט - ", "").replace("אינטרנט – ", "");
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <div style="width:110px;font-size:10px;color:#555;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0" title="${label}">${short}</div>
-        <div style="flex:1;height:14px;background:#f0f0f0;border-radius:2px;overflow:hidden">
-          <div style="height:100%;width:${w}%;background:#222;border-radius:2px"></div>
+    const barHtml = (label, val, max) => {
+      const netVal = val - val * commPct / 100;
+      const netMax = max * (1 - commPct / 100);
+      const w = netMax > 0 ? Math.max(1, (netVal / netMax) * 100).toFixed(1) : 1;
+      const short = label.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ", "").replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 \u2013 ", "");
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;direction:rtl">
+        <div style="width:120px;font-size:10px;color:#555;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">${short}</div>
+        <div style="flex:1;height:3px;background:#e8e8e8;position:relative">
+          <div style="position:absolute;right:0;top:0;bottom:0;width:${w}%;background:#111"></div>
         </div>
-        <div style="font-size:10px;font-family:monospace;color:#333;white-space:nowrap">₪${val.toFixed(2)}</div>
+        <div style="font-size:10px;font-family:'Courier New',monospace;color:#333;white-space:nowrap;width:64px;text-align:left">\u20aa${netVal.toFixed(2)}</div>
       </div>`;
     };
 
     const html = `<!DOCTYPE html><html lang="he" dir="rtl">
-<head><meta charset="UTF-8">
+<head>
+<meta charset="UTF-8">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;direction:rtl;padding:32px;color:#111;background:#fff}
-  h1{font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-bottom:3px}
-  .sub{font-size:11px;color:#888;margin-bottom:24px;letter-spacing:0.02em}
-  .kpi-grid{display:grid;grid-template-columns:1fr;gap:0;border:1px solid #ddd;margin-bottom:22px;max-width:280px}
-  .kpi{padding:14px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
-  .kpi:last-child{border-bottom:none}
-  .kpi-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#888;font-weight:600}
-  .kpi-val{font-family:monospace;font-size:15px;font-weight:700;color:#111}
-  .kpi-val.green{color:#1a7a1a;font-size:18px}
-  .section{border:1px solid #e5e5e5;border-radius:2px;overflow:hidden;margin-bottom:18px}
-  .section-head{background:#f8f8f8;padding:8px 14px;font-size:9px;font-weight:700;letter-spacing:1.5px;color:#888;text-transform:uppercase;border-bottom:1px solid #e5e5e5}
-  .section-body{padding:16px}
-  table{width:100%;border-collapse:collapse;font-size:10px}
-  th{padding:7px 10px;text-align:right;color:#555;border-bottom:1px solid #eee;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.5px;background:#fafafa}
-  td{padding:6px 10px;border-bottom:1px solid #f5f5f5;color:#222}
-  tr.total td{font-weight:700;background:#f8f8f8;border-top:2px solid #ddd}
-  .net{color:#1a7a1a;font-weight:700}
+  body{font-family:'Heebo',Arial,sans-serif;direction:rtl;background:#fff;color:#111;padding:40px}
+  .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:24px;border-bottom:2px solid #111;margin-bottom:32px}
+  .brand{font-size:11px;font-weight:700;letter-spacing:0.4em;text-transform:uppercase;color:#111;margin-bottom:4px}
+  .doc-type{font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:#888;margin-bottom:16px}
+  .performer-name{font-size:28px;font-weight:900;letter-spacing:-0.5px;line-height:1;color:#111}
+  .doc-date{font-size:10px;color:#888;letter-spacing:0.1em;margin-bottom:4px;text-align:left}
+  .doc-period{font-size:10px;color:#555;max-width:180px;line-height:1.6;text-align:left}
+  .net-box{border:1.5px solid #111;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between}
+  .net-label{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:#888}
+  .net-value{font-size:32px;font-weight:900;letter-spacing:-1px;color:#111;font-family:'Courier New',monospace}
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #ddd;margin-bottom:28px}
+  .stat{padding:14px 16px;border-left:1px solid #ddd;text-align:center}
+  .stat:last-child{border-left:none}
+  .stat-label{font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:#888;margin-bottom:6px}
+  .stat-val{font-size:16px;font-weight:700;color:#111;font-family:'Courier New',monospace}
+  .section{margin-bottom:28px}
+  .section-head{font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:#888;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #e8e8e8}
   .period-grid{display:flex;gap:10px;flex-wrap:wrap}
-  .period-card{border:1px solid #eee;padding:10px 14px;flex:1;min-width:110px}
-  .period-name{font-size:9px;color:#888;margin-bottom:4px}
-  .period-val{font-family:monospace;font-size:13px;font-weight:700;color:#1a7a1a}
-  .footer{font-size:9px;color:#bbb;text-align:center;padding-top:10px;border-top:1px solid #eee;margin-top:10px}
-  @media print{body{padding:16px}@page{margin:10mm}}
-</style></head><body>
-  <h1>${performer}</h1>
-  <div class="sub">${distributions} · הופק ${dateStr}</div>
+  .period-card{border:1px solid #e8e8e8;padding:12px 16px;flex:1;min-width:100px}
+  .period-name{font-size:9px;color:#888;margin-bottom:6px}
+  .period-val{font-size:14px;font-weight:700;color:#111;font-family:'Courier New',monospace}
+  table{width:100%;border-collapse:collapse;font-size:10px}
+  th{padding:8px 10px;text-align:right;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:#888;border-bottom:1.5px solid #111;font-weight:600}
+  th.left{text-align:left}
+  td{padding:8px 10px;border-bottom:1px solid #f0f0f0;color:#222;vertical-align:middle}
+  td.mono{font-family:'Courier New',monospace;font-size:10px}
+  td.net{font-family:'Courier New',monospace;font-weight:700;color:#111}
+  tr.total-row td{font-weight:700;border-top:1.5px solid #111;border-bottom:none;background:#f8f8f8;padding-top:10px}
+  tr:nth-child(even) td{background:#fafafa}
+  .doc-footer{margin-top:32px;padding-top:16px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center}
+  .footer-brand{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:#bbb;font-weight:700}
+  .footer-note{font-size:8px;color:#ccc;letter-spacing:0.1em}
+  @media print{body{padding:20px}@page{margin:10mm;size:A4}}
+</style>
+</head>
+<body>
+  <div class="doc-header">
+    <div>
+      <div class="brand">YEN SOUND</div>
+      <div class="doc-type">\u05d3\u05d5\u05d7 \u05ea\u05de\u05dc\u05d5\u05d2\u05d9 \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4</div>
+      <div class="performer-name">${performer}</div>
+    </div>
+    <div>
+      <div class="doc-date">${dateStr}</div>
+      <div class="doc-period">${distributions}</div>
+    </div>
+  </div>
 
-  <div class="kpi-grid">
-    <div class="kpi"><span class="kpi-label">נטו לאמן</span><span class="kpi-val green">₪${net.toFixed(2)}</span></div>
-    <div class="kpi"><span class="kpi-label">סה"כ השמעות</span><span class="kpi-val">${totalStreams.toLocaleString()}</span></div>
-    <div class="kpi"><span class="kpi-label">יצירות</span><span class="kpi-val">${songCount}</span></div>
-    <div class="kpi"><span class="kpi-label">תקופות חלוקה</span><span class="kpi-val">${periodCount}</span></div>
+  <div class="net-box">
+    <span class="net-label">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</span>
+    <span class="net-value">\u20aa${net.toFixed(2)}</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</div><div class="stat-val">${streams.toLocaleString()}</div></div>
+    <div class="stat"><div class="stat-label">\u05d9\u05e6\u05d9\u05e8\u05d5\u05ea</div><div class="stat-val">${songCount}</div></div>
+    <div class="stat"><div class="stat-label">\u05ea\u05e7\u05d5\u05e4\u05d5\u05ea</div><div class="stat-val">${periodCount}</div></div>
   </div>
 
   <div class="section">
-    <div class="section-head">TOP שירים</div>
-    <div class="section-body">
-      ${topSongs.map(([n, v]) => barRow(n, v - v * commissionPct / 100, (topSongs[0]?.[1] || 1) * (1 - commissionPct / 100))).join("")}
+    <div class="section-head">TOP \u05e9\u05d9\u05e8\u05d9\u05dd</div>
+    ${songsSorted.slice(0, 8).map(([n, d]) => barHtml(n, d.after, songsSorted[0]?.[1]?.after || 1)).join("")}
+  </div>
+
+  <div class="section">
+    <div class="section-head">\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea</div>
+    ${platsSorted.map(([n, v]) => barHtml(n, v, maxPlatVal)).join("")}
+  </div>
+
+  <div class="section">
+    <div class="section-head">\u05dc\u05e4\u05d9 \u05ea\u05e7\u05d5\u05e4\u05ea \u05d7\u05dc\u05d5\u05e7\u05d4</div>
+    <div class="period-grid">
+      ${distSorted.map(([dist, val]) => {
+        const dnet = val - val * commPct / 100;
+        return `<div class="period-card">
+          <div class="period-name">${dist.replace("\u05d7\u05dc\u05d5\u05e7\u05ea \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4 ", "")}</div>
+          <div class="period-val">\u20aa${dnet.toFixed(2)}</div>
+        </div>`;
+      }).join("")}
     </div>
   </div>
 
   <div class="section">
-    <div class="section-head">פלטפורמות</div>
-    <div class="section-body">
-      ${platsSorted.map(([n, v]) => barRow(n, v - v * commissionPct / 100, maxPlat * (1 - commissionPct / 100))).join("")}
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">לפי תקופת חלוקה</div>
-    <div class="section-body">
-      <div class="period-grid">
-        ${distSorted.map(([dist, val]) => {
-          const dnet = val - val * commissionPct / 100;
-          return `<div class="period-card">
-            <div class="period-name">${dist.replace("חלוקת ניו מדיה ", "")}</div>
-            <div class="period-val">₪${dnet.toFixed(2)}</div>
-          </div>`;
-        }).join("")}
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">פירוט לפי שיר</div>
+    <div class="section-head">\u05e4\u05d9\u05e8\u05d5\u05d8 \u05dc\u05e4\u05d9 \u05e9\u05d9\u05e8</div>
     <table>
       <thead><tr>
-        <th>שם שיר</th><th style="text-align:center">השמעות</th><th style="text-align:left">נטו לאמן</th>
+        <th>\u05e9\u05dd \u05e9\u05d9\u05e8</th>
+        <th style="text-align:center">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</th>
+        <th class="left">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</th>
       </tr></thead>
       <tbody>
-        ${songsSorted.map(([song, d], i) => {
-          const songNet = d.afterPhil - d.afterPhil * commissionPct / 100;
-          return `<tr style="background:${i % 2 ? "#fafafa" : "#fff"}">
+        ${songsSorted.map(([song, d]) => {
+          const songNet = d.after - d.after * commPct / 100;
+          return `<tr>
             <td>${song}</td>
-            <td style="text-align:center;font-family:monospace">${d.streams.toLocaleString()}</td>
-            <td style="text-align:left;font-family:monospace" class="net">₪${songNet.toFixed(4)}</td>
+            <td class="mono" style="text-align:center">${d.streams.toLocaleString()}</td>
+            <td class="net left">\u20aa${songNet.toFixed(4)}</td>
           </tr>`;
         }).join("")}
-        <tr class="total">
-          <td>סה"כ</td>
-          <td style="text-align:center;font-family:monospace">${totalStreams.toLocaleString()}</td>
-          <td style="text-align:left;font-family:monospace" class="net">₪${net.toFixed(4)}</td>
+        <tr class="total-row">
+          <td>\u05e1\u05d4"\u05db</td>
+          <td class="mono" style="text-align:center">${streams.toLocaleString()}</td>
+          <td class="net left">\u20aa${net.toFixed(4)}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="section">
-    <div class="section-head">פירוט שורות מלא</div>
+    <div class="section-head">\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d5\u05e8\u05d5\u05ea \u05de\u05dc\u05d0</div>
     <table>
       <thead><tr>
-        <th>שם שיר</th><th>מבצע</th><th>פלטפורמה</th><th>תקופה</th>
-        <th style="text-align:center">השמעות</th><th style="text-align:left">נטו לאמן</th>
+        <th>\u05e9\u05dd \u05e9\u05d9\u05e8</th><th>\u05de\u05d1\u05e6\u05e2</th><th>\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d4</th><th>\u05ea\u05e7\u05d5\u05e4\u05d4</th>
+        <th style="text-align:center">\u05d4\u05e9\u05de\u05e2\u05d5\u05ea</th><th class="left">\u05e0\u05d8\u05d5 \u05dc\u05d0\u05de\u05df</th>
       </tr></thead>
       <tbody>
-        ${filtered.map((r, i) => {
-          const rowNet = r.amount - r.amount * commissionPct / 100;
-          return `<tr style="background:${i % 2 ? "#fafafa" : "#fff"}">
-            <td>${r.song}</td>
+        ${filtered.map(r => {
+          const rowNet = r.amount - r.amount * commPct / 100;
+          return `<tr>
+            <td style="font-weight:600">${r.song}</td>
             <td style="color:#666;font-size:9px">${r.performer}</td>
-            <td style="color:#666">${r.platform.replace("אינטרנט - ", "")}</td>
-            <td style="color:#888;font-size:9px">${r.period}</td>
-            <td style="text-align:center;font-family:monospace">${r.streams.toLocaleString()}</td>
-            <td style="text-align:left;font-family:monospace" class="net">₪${rowNet.toFixed(4)}</td>
+            <td style="color:#777">${r.platform.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","")}</td>
+            <td style="color:#999;font-size:9px">${r.period}</td>
+            <td class="mono" style="text-align:center">${r.streams.toLocaleString()}</td>
+            <td class="net left">\u20aa${rowNet.toFixed(4)}</td>
           </tr>`;
         }).join("")}
       </tbody>
     </table>
   </div>
 
-  <div class="footer">הופק ${dateStr}</div>
+  <div class="doc-footer">
+    <span class="footer-brand">YEN SOUND</span>
+    <span class="footer-note">\u05d4\u05d5\u05e4\u05e7 ${dateStr} \u00b7 \u05de\u05e1\u05de\u05da \u05d6\u05d4 \u05de\u05d9\u05d5\u05e2\u05d3 \u05dc\u05d0\u05de\u05df \u05d1\u05dc\u05d1\u05d3</span>
+  </div>
 </body></html>`;
 
     const w = window.open("", "_blank");
     w.document.write(html);
     w.document.close();
     w.focus();
-    setTimeout(() => w.print(), 600);
+    setTimeout(() => w.print(), 700);
   }
 
+  /* ─── upload screen ─── */
+  if (allData.length === 0) return (
+    <div>
+      <Label>\u05d4\u05e2\u05dc\u05d4 \u05e7\u05d5\u05d1\u05e5 Excel \u05de\u05d4\u05e4\u05d9"\u05dc</Label>
+      <div
+        onClick={() => fileRef.current?.click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
+        style={{
+          border: `1px dashed ${C.border}`, padding: "48px 24px",
+          textAlign: "center", cursor: "pointer", transition: "border-color 0.2s",
+        }}
+        onMouseOver={e => e.currentTarget.style.borderColor = C.borderHi}
+        onMouseOut={e => e.currentTarget.style.borderColor = C.border}
+      >
+        <p style={{ fontFamily: F, fontSize: "28px", opacity: 0.15, marginBottom: "14px", lineHeight: 1 }}>&uarr;</p>
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", color: C.muted, marginBottom: "6px" }}>
+          \u05d2\u05e8\u05d5\u05e8 \u05e7\u05d5\u05d1\u05e5 xlsx \u05dc\u05db\u05d0\u05df
+        </p>
+        <p style={{ fontFamily: F, fontSize: "9px", color: "rgba(240,237,232,0.15)", letterSpacing: "0.15em" }}>
+          \u05d0\u05d5 \u05dc\u05d7\u05e5 \u05dc\u05d1\u05d7\u05d9\u05e8\u05d4
+        </p>
+      </div>
+      <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }}
+        onChange={e => handleFile(e.target.files[0])} />
+    </div>
+  );
+
   const selectStyle = {
-    width: "100%", background: "transparent", border: "1px solid rgba(240,237,232,0.2)",
-    color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px",
+    width: "100%", background: "transparent", border: `1px solid ${C.border}`,
+    color: C.muted, fontFamily: F, fontSize: "10px", padding: "9px 12px",
     outline: "none", cursor: "pointer", direction: "rtl",
-    appearance: "none", WebkitAppearance: "none",
+    appearance: "none", WebkitAppearance: "none", boxSizing: "border-box",
   };
 
   const thStyle = {
     fontFamily: F, fontSize: "8px", letterSpacing: "0.25em", textTransform: "uppercase",
-    opacity: 0.35, padding: "10px 12px", textAlign: "right", fontWeight: 700,
-    borderBottom: "1px solid rgba(240,237,232,0.08)", cursor: "pointer", whiteSpace: "nowrap",
+    color: C.muted, padding: "10px 12px", textAlign: "right", fontWeight: 600,
+    borderBottom: `1px solid ${C.border}`, cursor: "pointer", whiteSpace: "nowrap",
+    userSelect: "none",
   };
 
   const tdStyle = {
     fontFamily: F, fontSize: "10px", padding: "10px 12px",
-    borderBottom: "1px solid rgba(240,237,232,0.05)", color: "#f0ede8",
+    borderBottom: `1px solid rgba(240,237,232,0.04)`, color: C.text,
     textAlign: "right", verticalAlign: "middle",
   };
-
-  /* ─── upload state ─── */
-  if (allData.length === 0) {
-    return (
-      <div>
-        <FieldLabel>העלה קובץ Excel מהפי"ל</FieldLabel>
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
-          style={{
-            border: "1px dashed rgba(240,237,232,0.2)", padding: "40px 24px",
-            textAlign: "center", cursor: "pointer", transition: "border-color 0.15s",
-          }}
-          onMouseOver={e => { e.currentTarget.style.borderColor = "rgba(240,237,232,0.5)"; }}
-          onMouseOut={e => { e.currentTarget.style.borderColor = "rgba(240,237,232,0.2)"; }}
-        >
-          <p style={{ fontFamily: F, fontSize: "22px", opacity: 0.25, marginBottom: "12px" }}>↑</p>
-          <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "6px" }}>
-            גרור קובץ או לחץ לבחירה
-          </p>
-          <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.2, letterSpacing: "0.1em" }}>xlsx · xls</p>
-        </div>
-        <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: "none" }}
-          onChange={e => handleFile(e.target.files[0])} />
-      </div>
-    );
-  }
 
   /* ─── dashboard ─── */
   return (
     <div style={{ direction: "rtl" }}>
 
-      {/* file badge + reset */}
+      {/* file + reset */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#f0ede8", opacity: 0.5 }} />
-          <span style={{ fontFamily: F, fontSize: "9px", opacity: 0.4, letterSpacing: "0.1em" }}>{fileName}</span>
-          <span style={{ fontFamily: F, fontSize: "9px", opacity: 0.2, letterSpacing: "0.08em" }}>· {allData.length.toLocaleString()} שורות</span>
+          <div style={{ width: "4px", height: "4px", borderRadius: "50%", background: C.green, opacity: 0.8 }} />
+          <span style={{ fontFamily: F, fontSize: "9px", color: C.muted, letterSpacing: "0.05em" }}>{fileName}</span>
+          <span style={{ fontFamily: F, fontSize: "9px", color: "rgba(240,237,232,0.18)" }}>
+            &middot; {allData.length.toLocaleString()} \u05e9\u05d5\u05e8\u05d5\u05ea
+          </span>
         </div>
-        <GhostBtn onClick={() => { setAllData([]); setFileName(null); }}>↺ קובץ חדש</GhostBtn>
+        <GhostBtn onClick={() => { setAllData([]); setFileName(null); }}>&uarr; \u05e7\u05d5\u05d1\u05e5 \u05d7\u05d3\u05e9</GhostBtn>
       </div>
 
       {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1px", background: "rgba(240,237,232,0.08)", marginBottom: "20px" }}>
-        <KpiCard label="סה״כ תמלוגים" value={`₪${totalAfterPhil.toFixed(2)}`} />
-        <KpiCard label="השמעות" value={totalStreams.toLocaleString()} />
-        <KpiCard label="שירים" value={songCount} />
-        <KpiCard label="תקופות" value={periodCount} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1px", background: C.border, marginBottom: "20px" }}>
+        <Kpi label='\u05e1\u05d4"\u05db \u05ea\u05de\u05dc\u05d5\u05d2\u05d9\u05dd' value={`\u20aa${totalAfter.toFixed(2)}`} />
+        <Kpi label="\u05d4\u05e9\u05de\u05e2\u05d5\u05ea" value={streams.toLocaleString()} />
+        <Kpi label="\u05e9\u05d9\u05e8\u05d9\u05dd" value={songCount} />
+        <Kpi label="\u05ea\u05e7\u05d5\u05e4\u05d5\u05ea" value={periodCount} />
       </div>
 
       {/* filters */}
-      <div style={{ border: "1px solid rgba(240,237,232,0.12)", padding: "16px", marginBottom: "16px" }}>
-        <FieldLabel>פילטרים</FieldLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "8px" }}>
-          <PerformerSelect allPerformers={allPerformers} selected={selectedPerformers} onChange={s => { setSelectedPerformers(s); setPage(1); }} />
+      <div style={{ border: `1px solid ${C.border}`, padding: "16px", marginBottom: "1px" }}>
+        <Label>\u05e4\u05d9\u05dc\u05d8\u05e8\u05d9\u05dd</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+          <PerformerSelect all={allPerformers} selected={selectedPerformers}
+            onChange={s => { setSelectedPerformers(s); setPage(1); }} />
           <select value={filterSong} onChange={e => { setFilterSong(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">כל השירים</option>
+            <option value="">\u05db\u05dc \u05d4\u05e9\u05d9\u05e8\u05d9\u05dd</option>
             {uniq("song").map(v => <option key={v} value={v}>{v}</option>)}
           </select>
           <select value={filterPlatform} onChange={e => { setFilterPlatform(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">כל הפלטפורמות</option>
-            {uniq("platform").map(v => <option key={v} value={v}>{v.replace("אינטרנט - ", "")}</option>)}
+            <option value="">\u05db\u05dc \u05d4\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea</option>
+            {uniq("platform").map(v => <option key={v} value={v}>{v.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","")}</option>)}
           </select>
           <select value={filterDist} onChange={e => { setFilterDist(e.target.value); setPage(1); }} style={selectStyle}>
-            <option value="">כל החלוקות</option>
-            {uniq("distribution").map(v => <option key={v} value={v}>{v.replace("חלוקת ניו מדיה ", "")}</option>)}
+            <option value="">\u05db\u05dc \u05d4\u05d7\u05dc\u05d5\u05e7\u05d5\u05ea</option>
+            {uniq("distribution").map(v => <option key={v} value={v}>{v.replace("\u05d7\u05dc\u05d5\u05e7\u05ea \u05e0\u05d9\u05d5 \u05de\u05d3\u05d9\u05d4 ","")}</option>)}
           </select>
         </div>
         {(selectedPerformers.size > 0 || filterSong || filterPlatform || filterDist) && (
-          <GhostBtn onClick={() => { setSelectedPerformers(new Set()); setFilterSong(""); setFilterPlatform(""); setFilterDist(""); setPage(1); }}>
-            ↺ אפס פילטרים
-          </GhostBtn>
+          <div style={{ marginTop: "8px" }}>
+            <GhostBtn onClick={() => { setSelectedPerformers(new Set()); setFilterSong(""); setFilterPlatform(""); setFilterDist(""); setPage(1); }}>
+              &uarr; \u05d0\u05e4\u05e1 \u05e4\u05d9\u05dc\u05d8\u05e8\u05d9\u05dd
+            </GhostBtn>
+          </div>
         )}
       </div>
 
-      {/* commission calculator */}
-      <div style={{ border: "1px solid rgba(240,237,232,0.12)", padding: "16px", marginBottom: "16px" }}>
-        <FieldLabel>מחשבון עמלה</FieldLabel>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-          <input
-            type="number" value={commissionPct} min={0} max={100} step={0.5}
-            onChange={e => setCommissionPct(parseFloat(e.target.value) || 0)}
-            style={{ width: "60px", background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: "monospace", fontSize: "13px", padding: "6px 10px", outline: "none", textAlign: "center" }}
+      {/* commission */}
+      <div style={{ border: `1px solid ${C.border}`, borderTop: "none", padding: "16px", marginBottom: "20px" }}>
+        <Label>\u05de\u05d7\u05e9\u05d1\u05d5\u05df \u05e2\u05de\u05dc\u05d4</Label>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+          <input type="number" value={commPct} min={0} max={100} step={0.5}
+            onChange={e => setCommPct(parseFloat(e.target.value) || 0)}
+            style={{ width: "56px", background: "transparent", border: `1px solid ${C.border}`,
+              color: C.text, fontFamily: "monospace", fontSize: "13px", padding: "6px 8px",
+              outline: "none", textAlign: "center" }}
+            onFocus={e => e.target.style.borderColor = C.borderHi}
+            onBlur={e => e.target.style.borderColor = C.border}
           />
-          <span style={{ fontFamily: F, fontSize: "10px", opacity: 0.4, letterSpacing: "0.1em" }}>% עמלת הפצה שלי</span>
+          <span style={{ fontFamily: F, fontSize: "9px", color: C.muted, letterSpacing: "0.15em" }}>% \u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05e6\u05d4 \u05e9\u05dc\u05d9</span>
         </div>
         {[
-          ["ברוטו לפני הפי\"ל", `₪${totalBeforePhil.toFixed(2)}`, 0.35],
-          ["עמלת הפי\"ל", `−₪${totalPhilFee.toFixed(2)}`, 0.35],
-          ["אחרי הפי\"ל", `₪${totalAfterPhil.toFixed(2)}`, 0.55],
-          ["עמלת הפצה שלי", `−₪${myFee.toFixed(2)}`, 0.35],
-        ].map(([label, val, op]) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid rgba(240,237,232,0.06)" }}>
-            <span style={{ fontFamily: F, fontSize: "10px", opacity: op, letterSpacing: "0.05em" }}>{label}</span>
-            <span style={{ fontFamily: "monospace", fontSize: "11px", opacity: op }}>{val}</span>
+          ['\u05d1\u05e8\u05d5\u05d8\u05d5 \u05dc\u05e4\u05e0\u05d9 \u05d4\u05e4\u05d9"\u05dc', `\u20aa${totalBefore.toFixed(2)}`],
+          ['\u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05d9"\u05dc', `\u2212\u20aa${philFeeSum.toFixed(2)}`],
+          ['\u05d0\u05d7\u05e8\u05d9 \u05d4\u05e4\u05d9"\u05dc', `\u20aa${totalAfter.toFixed(2)}`],
+          ["\u05e2\u05de\u05dc\u05ea \u05d4\u05e4\u05e6\u05d4 \u05e9\u05dc\u05d9", `\u2212\u20aa${myFee.toFixed(2)}`],
+        ].map(([lbl, val]) => (
+          <div key={lbl} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "6px 0", borderBottom: `1px solid rgba(240,237,232,0.05)` }}>
+            <span style={{ fontFamily: F, fontSize: "9px", color: C.muted }}>{lbl}</span>
+            <span style={{ fontFamily: "monospace", fontSize: "10px", color: C.muted }}>{val}</span>
           </div>
         ))}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 0" }}>
-          <span style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em" }}>נטו סופי לאמן</span>
-          <span style={{ fontFamily: "monospace", fontSize: "15px", fontWeight: 700 }}>₪{net.toFixed(2)}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: "12px" }}>
+          <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em", color: C.text }}>\u05e0\u05d8\u05d5 \u05e1\u05d5\u05e4\u05d9 \u05dc\u05d0\u05de\u05df</span>
+          <span style={{ fontFamily: "monospace", fontSize: "18px", color: C.green }}>\u20aa{net.toFixed(2)}</span>
         </div>
       </div>
 
       {/* charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-        <div style={{ border: "1px solid rgba(240,237,232,0.12)", padding: "14px" }}>
-          <FieldLabel>TOP שירים</FieldLabel>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: C.border, marginBottom: "20px" }}>
+        <div style={{ background: C.bg, padding: "16px" }}>
+          <Label>TOP \u05e9\u05d9\u05e8\u05d9\u05dd &mdash; \u05e0\u05d8\u05d5</Label>
           {topSongs.map(([name, val]) => (
-            <BarRow key={name} label={name} value={val - val * commissionPct / 100}
-              max={(topSongs[0]?.[1] || 1) * (1 - commissionPct / 100)} />
+            <Bar key={name} label={name} value={val} max={topSongs[0]?.[1] || 1} pct={commPct} />
           ))}
         </div>
-        <div style={{ border: "1px solid rgba(240,237,232,0.12)", padding: "14px" }}>
-          <FieldLabel>פלטפורמות</FieldLabel>
+        <div style={{ background: C.bg, padding: "16px" }}>
+          <Label>\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d5\u05ea &mdash; \u05e0\u05d8\u05d5</Label>
           {topPlats.map(([name, val]) => (
-            <BarRow key={name} label={name} value={val - val * commissionPct / 100}
-              max={(topPlats[0]?.[1] || 1) * (1 - commissionPct / 100)} accent />
+            <Bar key={name} label={name} value={val} max={topPlats[0]?.[1] || 1} pct={commPct} />
           ))}
         </div>
       </div>
 
       {/* export */}
-      <div style={{ marginBottom: "16px" }}>
-        <ActionBtn onClick={exportPDF}>📄 ייצוא דשבורד + פירוט לאמן</ActionBtn>
+      <div style={{ marginBottom: "20px" }}>
+        <PrimaryBtn onClick={exportPDF}>\u05d9\u05d9\u05e6\u05d5\u05d0 \u05d3\u05d5\u05d7 \u05dc\u05d0\u05de\u05df &mdash; PDF</PrimaryBtn>
       </div>
 
-      {/* table */}
-      <div style={{ border: "1px solid rgba(240,237,232,0.12)", marginBottom: "16px", overflowX: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: "1px solid rgba(240,237,232,0.08)" }}>
-          <FieldLabel>פירוט שורות</FieldLabel>
-          <span style={{ fontFamily: F, fontSize: "9px", opacity: 0.25 }}>{filtered.length.toLocaleString()} שורות</span>
-        </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
+      <Divider />
+
+      {/* table header */}
+      <div style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Label>\u05e4\u05d9\u05e8\u05d5\u05d8 \u05e9\u05d5\u05e8\u05d5\u05ea</Label>
+        <span style={{ fontFamily: F, fontSize: "9px", color: C.muted }}>{filtered.length.toLocaleString()} \u05e9\u05d5\u05e8\u05d5\u05ea</span>
+      </div>
+
+      <div style={{ border: `1px solid ${C.border}`, overflowX: "auto", marginBottom: "16px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "480px" }}>
           <thead>
             <tr>
-              {[["שיר", "song"], ["מבצע", "performer"], ["פלטפורמה", "platform"], ["תקופה", "period"], ["השמעות", "streams"], ["סכום ₪", "amount"]].map(([label, col]) => (
+              {[["\u05e9\u05d9\u05e8","song"],["\u05de\u05d1\u05e6\u05e2","performer"],["\u05e4\u05dc\u05d8\u05e4\u05d5\u05e8\u05de\u05d4","platform"],["\u05ea\u05e7\u05d5\u05e4\u05d4","period"],["\u05d4\u05e9\u05de\u05e2\u05d5\u05ea","streams"],["\u05e1\u05db\u05d5\u05dd \u20aa","amount"]].map(([lbl, col]) => (
                 <th key={col} onClick={() => handleSort(col)} style={thStyle}>
-                  {label}{sortCol === col ? (sortDir === 1 ? " ↑" : " ↓") : ""}
+                  {lbl}{sortCol === col ? (sortDir === 1 ? " \u2191" : " \u2193") : ""}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {paginatedRows.map((r, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : "rgba(240,237,232,0.015)" }}>
-                <td style={tdStyle}><strong style={{ fontWeight: 600 }}>{r.song}</strong></td>
-                <td style={{ ...tdStyle, opacity: 0.45, fontSize: "9px" }}>{r.performer.substring(0, 25)}{r.performer.length > 25 ? "…" : ""}</td>
-                <td style={{ ...tdStyle, opacity: 0.5, fontSize: "9px" }}>{r.platform.replace("אינטרנט - ", "").replace("אינטרנט – ", "")}</td>
-                <td style={{ ...tdStyle, opacity: 0.4, fontSize: "9px" }}>{r.period}</td>
-                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px", opacity: 0.6 }}>{r.streams.toLocaleString()}</td>
-                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px" }}>₪{r.amount.toFixed(4)}</td>
+            {pageRows.map((r, i) => (
+              <tr key={i}>
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{r.song}</td>
+                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.performer.length > 22 ? r.performer.substring(0,22) + "\u2026" : r.performer}</td>
+                <td style={{ ...tdStyle, color: C.muted, fontSize: "9px" }}>{r.platform.replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 - ","").replace("\u05d0\u05d9\u05e0\u05d8\u05e8\u05e0\u05d8 \u2013 ","")}</td>
+                <td style={{ ...tdStyle, color: "rgba(240,237,232,0.25)", fontSize: "9px" }}>{r.period}</td>
+                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px", color: C.muted }}>{r.streams.toLocaleString()}</td>
+                <td style={{ ...tdStyle, fontFamily: "monospace", fontSize: "10px" }}>\u20aa{r.amount.toFixed(4)}</td>
               </tr>
             ))}
           </tbody>
@@ -633,20 +650,16 @@ export default function RoyaltiesPanel() {
 
       {/* pagination */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", gap: "6px", justifyContent: "center", marginBottom: "16px", flexWrap: "wrap" }}>
-          {page > 1 && <GhostBtn onClick={() => setPage(p => p - 1)}>→</GhostBtn>}
+        <div style={{ display: "flex", gap: "4px", justifyContent: "center", flexWrap: "wrap" }}>
+          {page > 1 && <GhostBtn onClick={() => setPage(p => p - 1)}>&rarr;</GhostBtn>}
           {Array.from({ length: totalPages }, (_, i) => i + 1)
             .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-            .reduce((acc, p, idx, arr) => {
-              if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
-              acc.push(p); return acc;
-            }, [])
-            .map((p, i) => p === "..." ? (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", opacity: 0.25, padding: "7px 4px" }}>…</span>
-            ) : (
-              <GhostBtn key={p} active={p === page} onClick={() => setPage(p)}>{p}</GhostBtn>
-            ))}
-          {page < totalPages && <GhostBtn onClick={() => setPage(p => p + 1)}>←</GhostBtn>}
+            .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i-1] > 1) acc.push("\u2026"); acc.push(p); return acc; }, [])
+            .map((p, i) => p === "\u2026"
+              ? <span key={i} style={{ fontFamily: F, fontSize: "9px", color: C.muted, padding: "8px 2px" }}>\u2026</span>
+              : <GhostBtn key={p} active={p === page} onClick={() => setPage(p)}>{p}</GhostBtn>
+            )}
+          {page < totalPages && <GhostBtn onClick={() => setPage(p => p + 1)}>&larr;</GhostBtn>}
         </div>
       )}
     </div>
