@@ -590,7 +590,7 @@ export default function RoyaltiesPanel() {
           <FieldLabel>פלטפורמות</FieldLabel>
           {topPlats.map(([name, val]) => (
             <BarRow key={name} label={name} value={val - val * commissionPct / 100}
-              max={maxPlat * (1 - commissionPct / 100)} accent />
+              max={(topPlats[0]?.[1] || 1) * (1 - commissionPct / 100)} accent />
           ))}
         </div>
       </div>
