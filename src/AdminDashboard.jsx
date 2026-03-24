@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import RoyaltiesPanel from "./components/RoyaltiesPanel";
 import { supabase } from "./supabase";
 import roster from "./rosterData";
 
@@ -941,12 +942,13 @@ export default function AdminDashboard() {
   );
 
   const tiles = [
-    { id: "releases", icon: "♫", label: "Releases" },
-    { id: "artists",  icon: "◈", label: "Artists"  },
-    { id: "press",    icon: "✎", label: "Press"    },
-    { id: "slugs",    icon: "⌘", label: "Slugs"    },
-    { id: "photos",   icon: "◻", label: "Photos"   },
-    { id: "bg",       icon: "▣", label: "Background"},
+    { id: "releases",   icon: "♫", label: "Releases"   },
+    { id: "artists",    icon: "◈", label: "Artists"    },
+    { id: "press",      icon: "✎", label: "Press"      },
+    { id: "slugs",      icon: "⌘", label: "Slugs"      },
+    { id: "photos",     icon: "◻", label: "Photos"     },
+    { id: "bg",         icon: "▣", label: "Background" },
+    { id: "royalties",  icon: "₪", label: "Royalties"  },
   ];
 
   const toggle = id => setActivePanel(p => p === id ? null : id);
@@ -1148,6 +1150,13 @@ export default function AdminDashboard() {
         {activePanel === "bg" && (
           <Panel>
             <SiteBackgroundPanel />
+          </Panel>
+        )}
+
+        {/* ── Royalties ── */}
+        {activePanel === "royalties" && (
+          <Panel>
+            <RoyaltiesPanel />
           </Panel>
         )}
       </div>
