@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import SEOMeta from "./components/SEOMeta";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
@@ -13,6 +14,11 @@ const About = () => (
     margin: "0 auto",
     fontFamily: F,
   }}>
+    <SEOMeta
+      title="About"
+      description="Yen Sound is a boutique PR & distribution label based in Tel Aviv. We craft tailored strategies for bold, boundary-pushing artistry."
+      url="/about"
+    />
     <p style={{ fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "48px" }}>
       About
     </p>
