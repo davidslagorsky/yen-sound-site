@@ -1614,6 +1614,7 @@ export default function AdminDashboard() {
           </Panel>
         )}
       </div>
+      </div>
     </div>
   );
 }
