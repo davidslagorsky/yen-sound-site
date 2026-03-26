@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useReleases } from "./hooks/useReleases";
@@ -70,6 +70,26 @@ function isReal(v) {
   return typeof v === "string" && v.trim().length > 0 && v.trim().toUpperCase() !== "PLACEHOLDER";
 }
 
+/* ── embed builder (same as ArtistPage) ── */
+function buildEmbedData(url = "") {
+  if (!url?.trim()) return null;
+  const u = url.trim();
+  const spotify = u.match(/open\.spotify\.com\/(track|album|playlist|episode|artist)\/([A-Za-z0-9]+)/);
+  const youtube = u.match(/(?:[?&]v=|youtu\.be\/|\/shorts\/|\/embed\/)([A-Za-z0-9_-]{11})/);
+  const sc = u.includes("soundcloud.com/");
+  if (spotify) return { type: "spotify", src: `https://open.spotify.com/embed/${spotify[1]}/${spotify[2]}?utm_source=generator&theme=0` };
+  if (youtube) return { type: "youtube", src: `https://www.youtube-nocookie.com/embed/${youtube[1]}?rel=0&modestbranding=1&playsinline=1` };
+  if (sc) return { type: "soundcloud", src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(u)}&color=%23f0ede8&auto_play=false&hide_related=true&show_comments=false&show_user=true` };
+  return null;
+}
+
+function migrateEmbedUrl(buttons, embedUrl) {
+  if (!embedUrl?.trim()) return buttons;
+  const alreadyMigrated = buttons.some(b => b.type === "embed" && b.url === embedUrl.trim());
+  if (alreadyMigrated) return buttons;
+  return [...buttons, { id: "__legacy_embed__", type: "embed", url: embedUrl.trim(), label: "" }];
+}
+
 /* ── platform SVG icons ── */
 const IconSpotify = () => (
   <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
@@ -87,6 +107,108 @@ const IconYouTube = () => (
   </svg>
 );
 
+const PLATFORM_ICONS = {
+  spotify: <IconSpotify />,
+  appleMusic: <IconApple />,
+  youtube: <IconYouTube />,
+  tiktok: <SiTiktok size={17} />,
+  instagram: <FaInstagram size={17} />,
+  soundcloud: <FaSoundcloud size={17} />,
+  bandcamp: <FaBandcamp size={17} />,
+  website: <FaGlobe size={17} />,
+};
+const PLATFORM_LABEL = {
+  spotify: "SPOTIFY", appleMusic: "APPLE MUSIC", youtube: "YOUTUBE",
+  tiktok: "TIKTOK", instagram: "INSTAGRAM", soundcloud: "SOUNDCLOUD",
+  bandcamp: "BANDCAMP", website: "WEBSITE",
+};
+const DEFAULT_ORDER = ["spotify", "appleMusic", "youtube", "tiktok", "instagram"];
+
+/* ── shared button style ── */
+const borderedBtn = {
+  display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+  width: "calc(100% - 48px)", margin: "0 24px 10px", padding: "18px 24px",
+  border: "2px solid rgba(240,237,232,0.8)", background: "transparent",
+  fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.3em",
+  textTransform: "uppercase", color: "#f0ede8", textDecoration: "none",
+  cursor: "pointer", transition: "background 0.15s", boxSizing: "border-box",
+};
+const hov = e => e.currentTarget.style.background = "#111";
+const unHov = e => e.currentTarget.style.background = "transparent";
+
+/* ── embed card ── */
+function EmbedCard({ item }) {
+  const data = buildEmbedData(item.url);
+  if (!data) return null;
+  return (
+    <div style={{ margin: "0 24px 10px", overflow: "hidden" }}>
+      {item.label && (
+        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>{item.label}</p>
+      )}
+      {data.type === "youtube" ? (
+        <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
+          <iframe src={data.src} title="Video embed" frameBorder="0" allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
+        </div>
+      ) : data.type === "spotify" ? (
+        <iframe src={data.src} width="100%" height="152" frameBorder="0" title="Music embed"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy" style={{ display: "block" }} />
+      ) : (
+        <iframe width="100%" height="166" frameBorder="0" src={data.src} title="SoundCloud embed" style={{ display: "block" }} />
+      )}
+    </div>
+  );
+}
+
+/* ── password-locked link ── */
+function LockedLink({ item }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [error, setError] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  function attempt() {
+    if (input === (item.password || "")) {
+      setUnlocked(true); setError(false);
+      window.open(item.url, "_blank", "noreferrer");
+    } else {
+      setError(true); setInput("");
+      setTimeout(() => setError(false), 1800);
+    }
+  }
+
+  if (unlocked) {
+    return (
+      <a href={item.url} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+        {item.label || "ACCESS"}
+      </a>
+    );
+  }
+  return (
+    <div style={{ margin: "0 24px 10px" }}>
+      <button onClick={() => setOpen(o => !o)} style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+        {item.label || "LOCKED"}
+        <span style={{ opacity: 0.4, fontSize: "13px" }}>🔒</span>
+      </button>
+      {open && (
+        <div style={{ padding: "10px 0 4px", display: "flex", gap: "8px" }}>
+          <input
+            autoFocus value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && attempt()}
+            placeholder="Password"
+            style={{ flex: 1, background: "transparent", border: `1px solid ${error ? "rgba(220,80,80,0.6)" : "rgba(240,237,232,0.2)"}`, color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px", outline: "none" }}
+          />
+          <button onClick={attempt} style={{ ...borderedBtn, width: "auto", margin: 0, padding: "10px 16px" }} onMouseOver={hov} onMouseOut={unHov}>
+            →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── share button ── */
 function ShareButton({ release }) {
   const [copied, setCopied] = useState(false);
@@ -99,101 +221,12 @@ function ShareButton({ release }) {
     } catch { /* ignore */ }
   }
   return (
-    <button onClick={handle} style={borderedBtn}
-      onMouseOver={e => e.currentTarget.style.background = "#111"}
-      onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+    <button onClick={handle} style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
       {copied ? <FiCheck size={17} /> : <FiShare2 size={17} />}
       <span>{copied ? "COPIED" : "SHARE"}</span>
     </button>
   );
 }
-
-/* ── artist social buttons — full-width bordered, same as ArtistPage ── */
-const SOCIAL_LABEL = {
-  spotify: "SPOTIFY", appleMusic: "APPLE MUSIC", youtube: "YOUTUBE",
-  tiktok: "TIKTOK", instagram: "INSTAGRAM", soundcloud: "SOUNDCLOUD",
-  bandcamp: "BANDCAMP", website: "WEBSITE",
-};
-const SOCIAL_ICON_MAP = {
-  spotify: FaSpotify, appleMusic: FaApple, youtube: FaYoutube,
-  tiktok: SiTiktok, instagram: FaInstagram, soundcloud: FaSoundcloud,
-  bandcamp: FaBandcamp, website: FaGlobe,
-};
-
-function SocialButtons({ socials = {} }) {
-  const entries = Object.entries(socials).filter(([k, v]) => SOCIAL_ICON_MAP[k] && isReal(v));
-  if (!entries.length) return null;
-  return (
-    <>
-      {entries.map(([key, val]) => {
-        const Icon = SOCIAL_ICON_MAP[key];
-        return (
-          <a key={key} href={val} target="_blank" rel="noreferrer" style={borderedBtn}
-            onMouseOver={e => e.currentTarget.style.background = "#111"}
-            onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-            <Icon size={17} /><span>{SOCIAL_LABEL[key] || key.toUpperCase()}</span>
-          </a>
-        );
-      })}
-    </>
-  );
-}
-
-function ArtistSocialSection({ release }) {
-  const hasByArtist = Array.isArray(release.socialsByArtist) && release.socialsByArtist.length > 0;
-  const hasGeneral = release.socials && Object.keys(release.socials).length > 0;
-  if (!hasByArtist && !hasGeneral) return null;
-
-  if (hasByArtist) {
-    return (
-      <>
-        {release.socialsByArtist.map((row, i) =>
-          row && typeof row === "object" ? (
-            <div key={i} style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
-              {row.name && (
-                <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: "0 24px 10px", textAlign: "center" }}>{row.name}</p>
-              )}
-              <SocialButtons socials={row.socials || {}} />
-            </div>
-          ) : null
-        )}
-        {hasGeneral && (
-          <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
-            <SocialButtons socials={release.socials} />
-          </div>
-        )}
-      </>
-    );
-  }
-  return (
-    <div style={{ borderTop: "1px solid #1a1a1a", paddingTop: "10px" }}>
-      <SocialButtons socials={release.socials} />
-    </div>
-  );
-}
-
-/* ── shared button style — matches ArtistPage ── */
-const borderedBtn = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "12px",
-  width: "calc(100% - 48px)",
-  margin: "0 24px 10px",
-  padding: "18px 24px",
-  border: "2px solid rgba(240,237,232,0.8)",
-  background: "transparent",
-  fontFamily: F,
-  fontSize: "11px",
-  fontWeight: 700,
-  letterSpacing: "0.3em",
-  textTransform: "uppercase",
-  color: "#f0ede8",
-  textDecoration: "none",
-  cursor: "pointer",
-  transition: "background 0.15s",
-  boxSizing: "border-box",
-};
 
 /* ══════════════════════════════════════════
    MAIN COMPONENT
@@ -222,6 +255,48 @@ export default function ReleasePage() {
   const isLocked = !!(unlockAt && new Date() < unlockAt);
   useSecondTicker(isLocked);
 
+  /* ── build ordered button list from custom_buttons + button_order ── */
+  const orderedItems = useMemo(() => {
+    if (!release) return [];
+
+    const rawButtons = release.customButtons || [];
+    const customButtons = migrateEmbedUrl(rawButtons, release.embedUrl || "");
+    const savedOrder = release.buttonOrder?.length ? release.buttonOrder : DEFAULT_ORDER;
+    const allCustomIds = customButtons.map(b => b.id);
+    const buttonOrder = [...savedOrder, ...allCustomIds.filter(id => !savedOrder.includes(id))];
+
+    // platform sources from release fields
+    const platformUrls = {
+      spotify: release.spotifyUrl,
+      appleMusic: release.appleUrl,
+      youtube: release.youtubeUrl,
+      tiktok: release.socials?.tiktok,
+      instagram: release.socials?.instagram,
+      soundcloud: release.socials?.soundcloud,
+      bandcamp: release.socials?.bandcamp,
+      website: release.socials?.website,
+    };
+
+    return buttonOrder.map(key => {
+      // platform button
+      if (PLATFORM_LABEL[key]) {
+        const url = platformUrls[key];
+        if (!isReal(url)) return null;
+        return { kind: "platform", key, label: PLATFORM_LABEL[key], icon: PLATFORM_ICONS[key], url };
+      }
+      // custom button
+      const item = customButtons.find(b => b.id === key);
+      if (!item) return null;
+      if (item.type === "embed" && item.url?.trim()) return { kind: "embed", key, item };
+      if (item.type === "locked" && item.url?.trim()) return { kind: "locked", key, item };
+      if (item.type === "link" && item.label && item.url) {
+        return { kind: "link", key, label: item.label.toUpperCase(), icon: item.icon || null, url: item.url };
+      }
+      return null;
+    }).filter(Boolean);
+  }, [release]);
+
+  /* ── loading / not found ── */
   if (loading) return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.3 }}>Loading</p>
@@ -231,10 +306,7 @@ export default function ReleasePage() {
   if (!release) return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "24px" }}>
       <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.4 }}>Release not found</p>
-      <button onClick={() => navigate("/releases")}
-        style={{ ...borderedBtn, width: "auto", margin: 0 }}>
-        ← All Releases
-      </button>
+      <button onClick={() => navigate("/releases")} style={{ ...borderedBtn, width: "auto", margin: 0 }}>← All Releases</button>
     </div>
   );
 
@@ -252,17 +324,7 @@ export default function ReleasePage() {
   const prefersReduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   const showBg = !!(bgUrl && !(isGif && prefersReduced));
 
-  const embedSpotify = isReal(release.embedSpotify) ? release.embedSpotify : null;
-  const embedYoutubeId = isReal(release.embedYoutubeId) ? release.embedYoutubeId : null;
-  const youtubeId = embedYoutubeId || (isReal(release.youtubeUrl) ? extractYouTubeId(release.youtubeUrl) : null);
-  const ytSrc = youtubeId ? buildYouTubeEmbedSrc(youtubeId, typeof window !== "undefined" ? window.location.origin : undefined) : null;
-
-  const hasSpotify = isReal(release.spotifyUrl);
-  const hasApple = isReal(release.appleUrl);
-  const hasYouTube = isReal(release.youtubeUrl);
-  const hasSmartLink = isReal(release.smartLink);
-  const hasAnyPlatform = hasSpotify || hasApple || hasYouTube;
-
+  /* ── pre-release locked screen ── */
   if (isLocked) {
     const parts = getCountdownParts(unlockAt);
     return (
@@ -283,17 +345,16 @@ export default function ReleasePage() {
           </h1>
           <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, textAlign: "center", marginBottom: "28px" }}>Unlocks at midnight</p>
           <p style={{ fontFamily: "monospace", fontSize: "32px", color: "#f0ede8", textAlign: "center", marginBottom: "32px", letterSpacing: "0.05em" }}>{formatCountdown(parts)}</p>
-          {hasSmartLink && (
-            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              Pre-Save
-            </a>
+          {isReal(release.smartLink) && (
+            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>Pre-Save</a>
           )}
         </div>
       </div>
     );
   }
+
+  /* ── main release page ── */
+  const hasAnyButton = orderedItems.length > 0 || isReal(release.smartLink);
 
   return (
     <div style={{ backgroundColor: "#000", color: "#f0ede8", minHeight: "100vh", fontFamily: F, position: "relative" }}>
@@ -319,109 +380,67 @@ export default function ReleasePage() {
 
       <div style={{ position: "relative", zIndex: 2, maxWidth: "600px", margin: "0 auto" }}>
 
-        {/* ── Spinning logo ── */}
-        <div style={{ paddingTop: "36px" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "24px" }}>
-            <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
-          </div>
+        {/* logo */}
+        <div style={{ paddingTop: "36px", display: "flex", justifyContent: "center", marginBottom: "24px" }}>
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
         </div>
 
-        {/* ── Cover — full-bleed square ── */}
+        {/* cover */}
         <div style={{ width: "100%" }}>
           <img src={release.cover} alt={release.title}
             style={{ width: "100%", display: "block", aspectRatio: "1", objectFit: "cover" }} />
         </div>
 
-        {/* ── Title block ── */}
+        {/* title */}
         <div style={{ padding: "28px 24px 0", textAlign: "center" }}>
           <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", lineHeight: 1.3 }}>
             {release.artist} — {release.title}
           </h1>
         </div>
 
-        {/* ── Marquee ── */}
-        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0", margin: "28px 0 0" }}>
-          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
-            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
-            ))}
+        {/* choose service label */}
+        {hasAnyButton && (
+          <div style={{ padding: "24px 24px 8px", textAlign: "center" }}>
+            <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
+              Choose music service
+            </p>
           </div>
-        </div>
+        )}
 
-        {/* ── Choose music service ── */}
-        <div style={{ padding: "24px 24px 8px", textAlign: "center" }}>
-          <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.28em", textTransform: "uppercase", opacity: 0.35 }}>
-            Choose music service
-          </p>
-        </div>
-
-        {/* ── Platform buttons ── */}
+        {/* dynamic button list */}
         <div style={{ padding: "8px 0 16px" }}>
-          {hasSpotify && (
-            <a href={release.spotifyUrl} target="_blank" rel="noreferrer" style={borderedBtn}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              <IconSpotify /><span>SPOTIFY</span>
+          {orderedItems.map(item => {
+            if (item.kind === "embed") return <EmbedCard key={item.key} item={item.item} />;
+            if (item.kind === "locked") return <LockedLink key={item.key} item={item.item} />;
+            if (item.kind === "platform" || item.kind === "link") {
+              return (
+                <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+                  {item.icon}{item.label}
+                </a>
+              );
+            }
+            return null;
+          })}
+
+          {/* fallback smart link if no buttons at all */}
+          {orderedItems.length === 0 && isReal(release.smartLink) && (
+            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+              LISTEN
             </a>
           )}
-          {hasApple && (
-            <a href={release.appleUrl} target="_blank" rel="noreferrer" style={borderedBtn}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              <IconApple /><span>APPLE MUSIC</span>
-            </a>
-          )}
-          {hasYouTube && (
-            <a href={release.youtubeUrl} target="_blank" rel="noreferrer" style={borderedBtn}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              <IconYouTube /><span>YOUTUBE</span>
-            </a>
-          )}
-          {!hasAnyPlatform && hasSmartLink && (
-            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn}
-              onMouseOver={e => e.currentTarget.style.background = "#111"}
-              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
-              <span>LISTEN</span>
-            </a>
-          )}
+
           <ShareButton release={release} />
         </div>
 
-        {/* ── YouTube embed ── */}
-        {ytSrc && (
-          <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
-            <div style={{ position: "relative", width: "100%", paddingTop: "56.25%" }}>
-              <iframe src={ytSrc} title={release.title} frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen referrerPolicy="strict-origin-when-cross-origin"
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }} />
-            </div>
-          </div>
-        )}
-
-        {/* ── Spotify embed (only if no YouTube) ── */}
-        {embedSpotify && !ytSrc && (
-          <div style={{ borderTop: "1px solid #1a1a1a", marginTop: "8px" }}>
-            <iframe src={embedSpotify} width="100%" height="152" frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy" title={`${release.title} on Spotify`}
-              style={{ display: "block" }} />
-          </div>
-        )}
-
-        {/* ── Artist socials ── */}
-        <ArtistSocialSection release={release} />
-
-        {/* ── Footer stamp ── */}
-        <div style={{ borderTop: "1px solid #1a1a1a", padding: "28px 24px", textAlign: "center" }}>
+        {/* footer stamp */}
+        <div style={{ padding: "28px 24px", textAlign: "center" }}>
           <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.2, marginBottom: "12px" }}>
             Distributed by Yen Sound
           </p>
           <img src="/yen-logo.gif" alt="Yen Sound" style={{ width: "24px", opacity: 0.25 }} />
         </div>
 
-        {/* ── Back ── */}
+        {/* back */}
         <div style={{ padding: "0 24px 60px", textAlign: "center" }}>
           <button onClick={() => navigate("/releases")}
             style={{ background: "none", border: "none", color: "#f0ede8", cursor: "pointer", fontFamily: F, fontSize: "10px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.25, padding: 0 }}
