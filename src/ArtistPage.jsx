@@ -5,6 +5,7 @@ import releases from "./releases";
 import { supabase } from "./supabase";
 import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icons/fa";
 import { usePageTheme } from "./hooks/PageThemeContext";
+import SEOMeta from "./components/SEOMeta";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const DEFAULT_ORDER = ["spotify","appleMusic","youtube","tiktok","instagram","press"];
@@ -54,6 +55,12 @@ function EmbedCard({ item, fg, border }) {
   if (!data) return null;
   return (
     <div style={{ margin: "0 24px 10px", border: `1px solid ${border}`, overflow: "hidden" }}>
+      <SEOMeta
+        title={artistName}
+        description={seoDesc}
+        image={profileImage || undefined}
+        url={`/artist/${slug}`}
+      />
       {item.label && (
         <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>{item.label}</p>
       )}
@@ -226,6 +233,11 @@ export default function ArtistPage() {
     : (pageData?.profile_image || null); // null = render nothing until known
 
   const bio = pageData?.bio || "";
+
+  /* ── SEO ── */
+  const seoDesc = bio
+    ? bio.replace(/<[^>]+>/g, "").slice(0, 155)
+    : `${artistName} — YEN SOUND artist page. Music, releases and links.`;
 
   /* ── theme ── */
   const isLight = pageData?.theme === "light";
