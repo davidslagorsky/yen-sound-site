@@ -149,8 +149,6 @@ const Home = ({ releases }) => {
       {/* Featured dotwork release */}
       <FeaturedDotwork releases={latest5} />
 
-      {/* Bottom text marquee */}
-      <Marquee />
     </div>
   );
 };
