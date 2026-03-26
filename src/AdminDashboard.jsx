@@ -411,7 +411,6 @@ CREATE POLICY "Anon delete" ON slugs
           </DataRow>
         ))}
       </div>
-      </div>
     </div>
   );
 }
