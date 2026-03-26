@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const INTERVAL = 6000;
 const SIZE = 340;       // canvas px
-const SPACING = 8;      // grid spacing between dot centers
-const MAX_R = 3.5;      // max dot radius
+const SPACING = 5;      // grid spacing between dot centers
+const MAX_R = 2.5;      // max dot radius
 const MORPH_MS = 1200;  // total morph duration
 const MORPH_STEPS = 48; // animation frames
 
@@ -159,7 +159,6 @@ export default function FeaturedDotwork({ releases }) {
 
   return (
     <div style={{
-      borderTop: "1px solid #1a1a1a",
       background: "#000",
       padding: "48px 24px 40px",
       display: "flex",
@@ -253,49 +252,10 @@ export default function FeaturedDotwork({ releases }) {
         Listen →
       </Link>
 
-      {/* dot nav */}
-      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-        {items.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => !transitioning && goTo(i)}
-            style={{
-              width: i === idx ? "22px" : "5px",
-              height: "5px",
-              borderRadius: "3px",
-              border: "none",
-              background: i === idx ? "rgba(240,237,232,0.7)" : "rgba(240,237,232,0.18)",
-              cursor: "pointer",
-              padding: 0,
-              transition: "all 0.35s ease",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* progress bar */}
-      <div style={{
-        width: "100%", height: "1px", background: "#111",
-        position: "relative", overflow: "hidden", marginTop: "32px",
-      }}>
-        <div
-          key={idx}
-          style={{
-            position: "absolute", left: 0, top: 0, bottom: 0,
-            background: "rgba(240,237,232,0.3)",
-            animation: `yen-feat-progress ${INTERVAL}ms linear both`,
-          }}
-        />
-      </div>
-
       <style>{`
         @keyframes yen-feat-fade {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes yen-feat-progress {
-          from { width: 0%; }
-          to   { width: 100%; }
         }
       `}</style>
     </div>
