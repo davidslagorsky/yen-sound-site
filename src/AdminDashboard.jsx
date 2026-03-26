@@ -702,6 +702,129 @@ function SiteBackgroundPanel() {
   );
 }
 
+
+/* ══════════════════════════════════════════════
+   RELEASE PAGE CONFIG PANEL
+   Manages custom_buttons, button_order, embed_url per release
+══════════════════════════════════════════════ */
+const RELEASE_PLATFORMS = ["spotify","appleMusic","youtube","tiktok","instagram","soundcloud","bandcamp","website"];
+const RELEASE_PLATFORM_LABELS = {
+  spotify:"Spotify", appleMusic:"Apple Music", youtube:"YouTube",
+  tiktok:"TikTok", instagram:"Instagram", soundcloud:"SoundCloud",
+  bandcamp:"Bandcamp", website:"Website",
+};
+
+function ReleasePageConfig({ releaseId, initialButtons, initialOrder, initialEmbedUrl, onSaved }) {
+  const [buttons, setButtons] = useState(initialButtons || []);
+  const [buttonOrder, setButtonOrder] = useState(
+    initialOrder?.length ? initialOrder : [...RELEASE_PLATFORMS]
+  );
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  // new custom button form
+  const [newType, setNewType] = useState("link");
+  const [newLabel, setNewLabel] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  const allCustomIds = buttons.map(b => b.id);
+  const fullOrder = [...buttonOrder, ...allCustomIds.filter(id => !buttonOrder.includes(id))];
+
+  function moveUp(key) {
+    const i = fullOrder.indexOf(key);
+    if (i <= 0) return;
+    const next = [...fullOrder];
+    [next[i - 1], next[i]] = [next[i], next[i - 1]];
+    setButtonOrder(next);
+  }
+  function moveDown(key) {
+    const i = fullOrder.indexOf(key);
+    if (i >= fullOrder.length - 1) return;
+    const next = [...fullOrder];
+    [next[i], next[i + 1]] = [next[i + 1], next[i]];
+    setButtonOrder(next);
+  }
+  function removeCustom(id) {
+    setButtons(b => b.filter(x => x.id !== id));
+    setButtonOrder(o => o.filter(x => x !== id));
+  }
+  function addCustom() {
+    if (!newUrl.trim()) { setStatus("error:URL is required"); return; }
+    if (newType !== "embed" && !newLabel.trim()) { setStatus("error:Label is required"); return; }
+    const id = `custom_${Date.now()}`;
+    const btn = { id, type: newType, url: newUrl.trim(), label: newLabel.trim() };
+    if (newType === "locked") btn.password = newPassword.trim();
+    setButtons(b => [...b, btn]);
+    setButtonOrder(o => [...o, id]);
+    setNewLabel(""); setNewUrl(""); setNewPassword(""); setStatus(null);
+  }
+
+  async function save() {
+    setSaving(true); setStatus(null);
+    const { error } = await supabase.from("releases").update({
+      custom_buttons: buttons,
+      button_order: fullOrder,
+      embed_url: null,
+    }).eq("id", releaseId);
+    if (error) setStatus("error:" + error.message);
+    else { setStatus("success"); onSaved?.(); setTimeout(() => setStatus(null), 2500); }
+    setSaving(false);
+  }
+
+  const selectStyle = {
+    background: "#000", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8",
+    fontFamily: F, fontSize: "11px", padding: "10px 12px", cursor: "pointer",
+    outline: "none", width: "100%",
+  };
+
+  return (
+    <div>
+      <FieldLabel>Button Order</FieldLabel>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "20px" }}>
+        {fullOrder.map((key, i) => {
+          const isPlatform = RELEASE_PLATFORMS.includes(key);
+          const customBtn = buttons.find(b => b.id === key);
+          const label = isPlatform ? RELEASE_PLATFORM_LABELS[key] : (customBtn?.label || customBtn?.type || key);
+          return (
+            <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", border: "1px solid rgba(240,237,232,0.1)", background: "#050505" }}>
+              <span style={{ fontFamily: F, fontSize: "10px", flex: 1, color: "#f0ede8", opacity: isPlatform ? 0.5 : 1 }}>
+                {isPlatform ? `[${label}]` : label}
+                {!isPlatform && customBtn && <span style={{ opacity: 0.3, fontSize: "9px", marginLeft: "8px" }}>{customBtn.type}</span>}
+              </span>
+              <GhostBtn onClick={() => moveUp(key)}>↑</GhostBtn>
+              <GhostBtn onClick={() => moveDown(key)}>↓</GhostBtn>
+              {!isPlatform && <GhostBtn danger onClick={() => removeCustom(key)}>✕</GhostBtn>}
+            </div>
+          );
+        })}
+      </div>
+
+      <FieldLabel>Add Custom Button</FieldLabel>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
+        <select value={newType} onChange={e => setNewType(e.target.value)} style={selectStyle}>
+          <option value="link">Link</option>
+          <option value="embed">Embed (Spotify / YouTube / SoundCloud)</option>
+          <option value="locked">Password-Locked Link</option>
+        </select>
+        {newType !== "embed" && (
+          <Input value={newLabel} onChange={setNewLabel} placeholder="Button label" />
+        )}
+        <Input value={newUrl} onChange={setNewUrl} placeholder="URL" />
+        {newType === "locked" && (
+          <Input value={newPassword} onChange={setNewPassword} placeholder="Password" />
+        )}
+        <ActionBtn onClick={addCustom}>+ Add Button</ActionBtn>
+      </div>
+
+      <ActionBtn onClick={save} disabled={saving}>
+        {saving ? "Saving..." : "Save Page Config"}
+      </ActionBtn>
+      <StatusMsg status={status} noun="Page config saved" />
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════
    MAIN DASHBOARD
 ══════════════════════════════════════════════ */
@@ -728,6 +851,7 @@ export default function AdminDashboard() {
   const [releaseStatus, setReleaseStatus] = useState(null);
   const [releaseSubmitting, setReleaseSubmitting] = useState(false);
   const [editingRelease, setEditingRelease] = useState(null); // release object being edited
+  const [configRelease, setConfigRelease] = useState(null); // release being page-configured
 
   /* artist form */
   const [artistForm, setArtistForm] = useState({ id: "", password: "", display_name: "", filter_name: "", upload_url: "", slug: "" });
@@ -805,6 +929,7 @@ export default function AdminDashboard() {
     const { data } = await supabase.from("releases").select("*").eq("id", r.id).single();
     const d = data || r;
     setEditingRelease(d);
+    setConfigRelease(null);
     setReleaseForm({
       title: d.title || "", artist: d.artist || "", type: d.type || "Single",
       date: d.date || "", release_at: d.release_at || "",
@@ -1034,6 +1159,23 @@ export default function AdminDashboard() {
               </div>
             </Panel>
 
+            {configRelease && (
+              <Panel>
+                <FieldLabel>Page Config — {releases.find(r => r.id === configRelease.id)?.title || "Release"}</FieldLabel>
+                <ReleasePageConfig
+                  key={configRelease.id}
+                  releaseId={configRelease.id}
+                  initialButtons={configRelease.custom_buttons || []}
+                  initialOrder={configRelease.button_order || []}
+                  initialEmbedUrl={configRelease.embed_url || ""}
+                  onSaved={() => setConfigRelease(null)}
+                />
+                <div style={{ marginTop: "12px" }}>
+                  <GhostBtn onClick={() => setConfigRelease(null)}>Cancel</GhostBtn>
+                </div>
+              </Panel>
+            )}
+
             <Panel>
               <FieldLabel>All Releases · {releases.length}</FieldLabel>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1041,6 +1183,13 @@ export default function AdminDashboard() {
                   <DataRow key={r.id} label={r.title} sub={`${r.artist} · ${r.date}`}>
                     <GhostBtn href={`/release/${r.slug || r.id}`}>View</GhostBtn>
                     <GhostBtn onClick={() => { handleEditRelease(r); setActivePanel("releases"); }}>Edit</GhostBtn>
+                    <GhostBtn onClick={async () => {
+                      const { data } = await supabase.from("releases").select("id,custom_buttons,button_order,embed_url").eq("id", r.id).single();
+                      setConfigRelease(data || r);
+                      setEditingRelease(null);
+                      setActivePanel("releases");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}>Page</GhostBtn>
                     <GhostBtn danger onClick={() => handleDeleteRelease(r.id, r.title)}>Delete</GhostBtn>
                   </DataRow>
                 ))}
