@@ -7,6 +7,22 @@ import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from "react-icon
 import { usePageTheme } from "./hooks/PageThemeContext";
 import SEOMeta from "./components/SEOMeta";
 
+/* ── theme presets (mirrors ArtistDashboard) ── */
+const THEME_PRESETS_MAP = {
+  dark:     { bg: '#000000', fg: '#f0ede8' },
+  light:    { bg: '#f5f3ef', fg: '#0a0a0a' },
+  slate:    { bg: '#0f1117', fg: '#e8eaf0' },
+  crimson:  { bg: '#0d0305', fg: '#f5c6c0' },
+  forest:   { bg: '#050d07', fg: '#c8e6c0' },
+  dusk:     { bg: '#0e0812', fg: '#e8d4f5' },
+  sand:     { bg: '#f2ede4', fg: '#2a1f0a' },
+  midnight: { bg: '#080c1a', fg: '#c8d4f0' },
+};
+function resolveTheme(themeId) {
+  return THEME_PRESETS_MAP[themeId] || THEME_PRESETS_MAP.dark;
+}
+
+
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 const DEFAULT_ORDER = ["spotify","appleMusic","youtube","tiktok","instagram","press"];
 
@@ -234,9 +250,8 @@ export default function ArtistPage() {
     : `${artistName} — YEN SOUND artist page. Music, releases and links.`;
 
   /* ── theme ── */
-  const isLight = pageData?.theme === "light";
-  const bg       = isLight ? "#f5f3ef" : "#000";
-  const fg       = isLight ? "#0a0a0a" : "#f0ede8";
+  const { bg, fg } = resolveTheme(pageData?.theme);
+  const isLight  = !['#000000','#0f1117','#0d0305','#050d07','#0e0812','#080c1a'].includes(bg);
   const fgMuted  = isLight ? "rgba(10,10,10,0.45)" : "rgba(240,237,232,0.35)";
   const border   = isLight ? "rgba(10,10,10,0.12)"  : "rgba(240,237,232,0.15)";
   const btnBorder= isLight ? "rgba(10,10,10,0.7)"   : "rgba(240,237,232,0.8)";
