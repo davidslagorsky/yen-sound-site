@@ -33,8 +33,6 @@ function drawDotwork(canvas, imgSrc, onDone) {
         const lum = (0.299 * d[0] + 0.587 * d[1] + 0.114 * d[2]) / 255;
         const r = lum * MAX_R;
         if (r < 0.25) continue;
-        // color: slightly warm white tinted by original hue at low opacity
-        const hue = `rgba(${d[0]},${d[1]},${d[2]},0.15)`;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(240,237,232,${0.3 + lum * 0.7})`;
@@ -94,7 +92,6 @@ function DotCanvas({ src, active }) {
 /* ─── main component ─── */
 export default function FeaturedDotwork({ releases }) {
   const [idx, setIdx] = useState(0);
-  const [prevIdx, setPrevIdx] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
   const timerRef = useRef(null);
 
@@ -102,10 +99,9 @@ export default function FeaturedDotwork({ releases }) {
 
   const goTo = useCallback((next) => {
     if (transitioning || next === idx) return;
-    setPrevIdx(idx);
     setTransitioning(true);
     setIdx(next);
-    setTimeout(() => { setPrevIdx(null); setTransitioning(false); }, 1000);
+    setTimeout(() => { setTransitioning(false); }, 1000);
   }, [idx, transitioning]);
 
   // auto-advance
@@ -113,11 +109,9 @@ export default function FeaturedDotwork({ releases }) {
     if (items.length <= 1) return;
     timerRef.current = setInterval(() => {
       setIdx(i => {
-        const next = (i + 1) % items.length;
-        setPrevIdx(i);
         setTransitioning(true);
-        setTimeout(() => { setPrevIdx(null); setTransitioning(false); }, 1000);
-        return next;
+        setTimeout(() => { setTransitioning(false); }, 1000);
+        return (i + 1) % items.length;
       });
     }, INTERVAL);
     return () => clearInterval(timerRef.current);
