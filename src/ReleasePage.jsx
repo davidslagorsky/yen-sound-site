@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useReleases } from "./hooks/useReleases";
+import { supabase } from "./supabase";
 import { FaInstagram, FaSoundcloud, FaBandcamp, FaGlobe } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 import { FiShare2, FiCheck } from "react-icons/fi";
@@ -46,6 +47,19 @@ function normalizeSlug(s = "") {
 }
 function isReal(v) {
   return typeof v === "string" && v.trim().length > 0 && v.trim().toUpperCase() !== "PLACEHOLDER";
+}
+
+
+/* ── analytics ── */
+async function trackEvent(releaseSlug, eventType, label) {
+  try {
+    await supabase.from("page_events").insert([{
+      page_type: "release",
+      page_slug: releaseSlug,
+      event_type: eventType,
+      label: label || null,
+    }]);
+  } catch { /* non-blocking */ }
 }
 
 /* ── embed builder (same as ArtistPage) ── */
@@ -196,6 +210,7 @@ function ShareButton({ release }) {
     try {
       if (navigator.share) { await navigator.share({ title, url }); }
       else { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+      trackEvent(window.location.pathname.split("/").pop(), "click", "SHARE");
     } catch { /* ignore */ }
   }
   return (
@@ -232,6 +247,11 @@ export default function ReleasePage() {
   const unlockAt = release?.releaseAt ? toLocalMidnight(release.releaseAt) : null;
   const isLocked = !!(unlockAt && new Date() < unlockAt);
   useSecondTicker(isLocked);
+
+  /* ── track page view ── */
+  useEffect(() => {
+    if (release?.slug) trackEvent(release.slug, "view", null);
+  }, [release?.slug]); // eslint-disable-line
 
   /* ── build ordered button list from custom_buttons + button_order ── */
   const orderedItems = useMemo(() => {
@@ -392,7 +412,8 @@ export default function ReleasePage() {
             if (item.kind === "locked") return <LockedLink key={item.key} item={item.item} />;
             if (item.kind === "platform" || item.kind === "link") {
               return (
-                <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+                <a key={item.key} href={item.url} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}
+                  onClick={() => trackEvent(release.slug, "click", item.label)}>
                   {item.icon}{item.label}
                 </a>
               );
@@ -402,7 +423,8 @@ export default function ReleasePage() {
 
           {/* fallback smart link if no buttons at all */}
           {orderedItems.length === 0 && isReal(release.smartLink) && (
-            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}>
+            <a href={release.smartLink} target="_blank" rel="noreferrer" style={borderedBtn} onMouseOver={hov} onMouseOut={unHov}
+              onClick={() => trackEvent(release.slug, "click", "LISTEN")}>
               LISTEN
             </a>
           )}
