@@ -173,14 +173,6 @@ function Panel({ children }) {
   );
 }
 
-function SectionLabel({ children }) {
-  return (
-    <p style={{ fontFamily: F, fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em",
-      textTransform: "uppercase", color: D.muted, textAlign: "center", marginBottom: "14px" }}>
-      {children}
-    </p>
-  );
-}
 
 /* ══════════════════════════════════════════════
    RICH TEXT EDITOR (for press posts)
