@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useReleases } from "./hooks/useReleases";
-import { FaInstagram, FaSpotify, FaApple, FaYoutube, FaSoundcloud, FaBandcamp, FaGlobe } from "react-icons/fa";
+import { FaInstagram, FaSoundcloud, FaBandcamp, FaGlobe } from "react-icons/fa";
 import { SiTiktok } from "react-icons/si";
 import { FiShare2, FiCheck } from "react-icons/fi";
 
@@ -37,28 +37,6 @@ function useSecondTicker(enabled = true) {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, [enabled]);
-}
-function extractYouTubeId(url = "") {
-  if (!url) return null;
-  for (const rx of [
-    /v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /\/shorts\/([a-zA-Z0-9_-]{11})/,
-    /embed\/([a-zA-Z0-9_-]{11})/,
-  ]) {
-    const m = url.match(rx);
-    if (m) return m[1];
-  }
-  return null;
-}
-function buildYouTubeEmbedSrc(id, origin) {
-  if (!id) return null;
-  const p = new URLSearchParams({
-    rel: "0", modestbranding: "1", playsinline: "1",
-    iv_load_policy: "3", color: "white",
-    ...(origin ? { origin } : {}),
-  });
-  return `https://www.youtube-nocookie.com/embed/${id}?${p.toString()}`;
 }
 function normalizeSlug(s = "") {
   return s.toString().trim().toLowerCase()
