@@ -55,12 +55,6 @@ function EmbedCard({ item, fg, border }) {
   if (!data) return null;
   return (
     <div style={{ margin: "0 24px 10px", border: `1px solid ${border}`, overflow: "hidden" }}>
-      <SEOMeta
-        title={artistName}
-        description={seoDesc}
-        image={profileImage || undefined}
-        url={`/artist/${slug}`}
-      />
       {item.label && (
         <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.4, padding: "10px 14px 6px", textAlign: "center" }}>{item.label}</p>
       )}
@@ -291,6 +285,12 @@ export default function ArtistPage() {
 
   return (
     <div style={{ backgroundColor: bg, minHeight: "100vh", color: fg, maxWidth: "600px", margin: "0 auto", transition: "background-color 0.3s, color 0.3s" }}>
+      <SEOMeta
+        title={artistName}
+        description={seoDesc}
+        image={profileImage || undefined}
+        url={`/artist/${slug}`}
+      />
 
       {/* marquee */}
       <div style={{ overflow: "hidden", borderBottom: `1px solid ${border}`, padding: "7px 0" }}>
