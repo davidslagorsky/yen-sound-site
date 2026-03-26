@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SEOMeta from "./components/SEOMeta";
 import { Link } from "react-router-dom";
 import roster from "./rosterData";
 import { supabase } from "./supabase";
@@ -25,6 +26,11 @@ export default function Roster() {
 
   return (
     <div style={{ backgroundColor: "#000", minHeight: "100vh", paddingTop: "60px" }}>
+      <SEOMeta
+        title="Roster"
+        description="Meet the artists of YEN SOUND — a boutique PR & distribution label in Tel Aviv."
+        url="/roster"
+      />
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "48px 40px 80px" }}>
 
         <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.3em", textTransform: "uppercase", color: "#f0ede8", opacity: 0.35, marginBottom: "48px" }}>
