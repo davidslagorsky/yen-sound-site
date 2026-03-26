@@ -26,6 +26,7 @@ import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
 import { useReleases } from "./hooks/useReleases";
 import FeaturedDotwork from "./components/FeaturedDotwork";
+import SEOMeta from "./components/SEOMeta";
 import { supabase } from "./supabase";
 import roster from "./rosterData";
 
@@ -112,6 +113,11 @@ const Home = ({ releases }) => {
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#000", display: "flex", flexDirection: "column" }}>
+      <SEOMeta
+        title={null}
+        description="Boutique PR & distribution for bold, boundary-pushing music. Based in Tel Aviv."
+        url="/"
+      />
 
       {/* Hero: full-bleed on mobile, centered on desktop */}
       <div className="yen-hero">
