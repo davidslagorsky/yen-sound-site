@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
@@ -56,7 +56,7 @@ export default function FeaturedDotwork({ releases }) {
   const [idx, setIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
 
-  const items = releases?.slice(0, 6) || [];
+  const items = useMemo(() => releases?.slice(0, 6) || [], [releases]);
 
   /* ─── preload + cache dot data for an item ─── */
   const getDots = useCallback(async (src) => {
