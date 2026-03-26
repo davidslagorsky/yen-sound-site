@@ -25,6 +25,7 @@ import VoiceLessons from "./pages/VoiceLessons";
 import Press from "./pages/Press";
 import PostPage from "./pages/PostPage";
 import { useReleases } from "./hooks/useReleases";
+import FeaturedDotwork from "./components/FeaturedDotwork";
 import { supabase } from "./supabase";
 import roster from "./rosterData";
 
@@ -139,33 +140,8 @@ const Home = ({ releases }) => {
         </p>
       </div>
 
-      {/* Latest releases scrolling marquee */}
-      {latest5.length > 0 && (
-        <div style={{ borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "18px 0", overflow: "hidden" }}>
-          <div className="yen-releases-track">
-            {[...latest5, ...latest5, ...latest5].map((r, i) => (
-              <Link
-                key={i}
-                to={`/release/${r.slug}`}
-                style={{ textDecoration: "none", color: "#f0ede8", display: "flex", alignItems: "center", gap: "12px", flexShrink: 0, padding: "0 28px" }}
-              >
-                <div className="yen-cover" style={{ width: "36px", height: "36px", overflow: "hidden", flexShrink: 0 }}>
-                  <img src={r.cover} alt={r.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                </div>
-                <div style={{ whiteSpace: "nowrap" }}>
-                  <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase", opacity: 0.4, marginBottom: "2px" }}>
-                    {r.artist}
-                  </p>
-                  <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.2 }}>
-                    {r.title}
-                  </p>
-                </div>
-                <span style={{ fontFamily: F, fontSize: "10px", opacity: 0.2, paddingLeft: "4px" }}>·</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Featured dotwork release */}
+      <FeaturedDotwork releases={latest5} />
 
       {/* Bottom text marquee */}
       <Marquee />
