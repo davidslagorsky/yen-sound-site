@@ -7,6 +7,25 @@ import { FaInstagram, FaSpotify, FaApple, FaTiktok, FaYoutube } from 'react-icon
 const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME';
 const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET || 'YOUR_UNSIGNED_PRESET';
 
+
+/* ── Theme presets ── */
+const THEME_PRESETS = [
+  { id: 'dark',        label: 'Void',       bg: '#000000', fg: '#f0ede8', preview: ['#000','#f0ede8'] },
+  { id: 'light',       label: 'Paper',      bg: '#f5f3ef', fg: '#0a0a0a', preview: ['#f5f3ef','#0a0a0a'] },
+  { id: 'slate',       label: 'Slate',      bg: '#0f1117', fg: '#e8eaf0', preview: ['#0f1117','#e8eaf0'] },
+  { id: 'crimson',     label: 'Crimson',    bg: '#0d0305', fg: '#f5c6c0', preview: ['#0d0305','#f5c6c0'] },
+  { id: 'forest',      label: 'Forest',     bg: '#050d07', fg: '#c8e6c0', preview: ['#050d07','#c8e6c0'] },
+  { id: 'dusk',        label: 'Dusk',       bg: '#0e0812', fg: '#e8d4f5', preview: ['#0e0812','#e8d4f5'] },
+  { id: 'sand',        label: 'Sand',       bg: '#f2ede4', fg: '#2a1f0a', preview: ['#f2ede4','#2a1f0a'] },
+  { id: 'midnight',    label: 'Midnight',   bg: '#080c1a', fg: '#c8d4f0', preview: ['#080c1a','#c8d4f0'] },
+];
+
+function themeColors(themeId) {
+  const preset = THEME_PRESETS.find(t => t.id === themeId);
+  if (preset) return { bg: preset.bg, fg: preset.fg };
+  return { bg: '#000000', fg: '#f0ede8' };
+}
+
 async function uploadSquarePhoto(file, folder, onProgress) {
   const formData = new FormData();
   formData.append('file', file);
@@ -525,10 +544,10 @@ function OrderRow({ itemKey, index, customButtons, socials, dragHandlers, isActi
    MiniPreview — top-level, receives a frozen snapshot
 ══════════════════════════════════════════════════════════════ */
 function MiniPreview({ theme, bio, photoUrl, buttonOrder, customButtons, socials, artistDisplayName, currentPhoto }) {
-  const isLight = theme === 'light';
-  const bg = isLight ? '#f5f3ef' : '#000';
-  const fg = isLight ? '#0a0a0a' : '#f0ede8';
-  const muted = isLight ? 'rgba(10,10,10,0.4)' : 'rgba(240,237,232,0.35)';
+  const { bg, fg: fgColor } = themeColors(theme);
+  const isLight = bg !== '#000000' && bg !== '#0f1117' && bg !== '#0d0305' && bg !== '#050d07' && bg !== '#0e0812' && bg !== '#080c1a';
+  const fg = fgColor;
+  const muted = `rgba(${isLight ? '10,10,10' : '240,237,232'},0.4)`;
   const border = isLight ? 'rgba(10,10,10,0.12)' : 'rgba(240,237,232,0.1)';
   const btnBorder = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(240,237,232,0.7)';
   const logoFilter = isLight ? 'invert(1)' : 'none';
@@ -875,18 +894,24 @@ export default function ArtistDashboard() {
             </Section>
 
             <Section id="theme" activePanel={activePanel} setActivePanel={setActivePanel} label="Theme" icon="◑">
-              <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.4, letterSpacing: '0.08em', lineHeight: 1.7, marginBottom: '14px' }}>Choose how your public page looks to visitors.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                <button onClick={() => saveTheme('dark')} style={{ padding: '22px 12px', border: theme === 'dark' ? '2px solid rgba(240,237,232,0.8)' : '1px solid rgba(240,237,232,0.15)', background: '#000', color: '#f0ede8', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontFamily: F, fontSize: '18px' }}>◐</span>
-                  <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Dark</span>
-                  {theme === 'dark' && <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.2em', color: 'rgba(100,255,180,0.85)', textTransform: 'uppercase' }}>Active</span>}
-                </button>
-                <button onClick={() => saveTheme('light')} style={{ padding: '22px 12px', border: theme === 'light' ? '2px solid rgba(10,10,10,0.8)' : '1px solid rgba(10,10,10,0.15)', background: '#f5f3ef', color: '#0a0a0a', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontFamily: F, fontSize: '18px' }}>◑</span>
-                  <span style={{ fontFamily: F, fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' }}>Light</span>
-                  {theme === 'light' && <span style={{ fontFamily: F, fontSize: '7px', letterSpacing: '0.2em', color: 'rgba(0,140,80,0.9)', textTransform: 'uppercase' }}>Active</span>}
-                </button>
+              <p style={{ fontFamily: F, fontSize: '9px', opacity: 0.4, letterSpacing: '0.08em', lineHeight: 1.7, marginBottom: '14px' }}>Choose a theme for your public page.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                {THEME_PRESETS.map(preset => (
+                  <button key={preset.id} onClick={() => saveTheme(preset.id)} style={{
+                    padding: '0', border: theme === preset.id ? `2px solid rgba(240,237,232,0.8)` : '1px solid rgba(240,237,232,0.1)',
+                    background: 'transparent', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden', transition: 'border-color 0.15s',
+                  }}>
+                    <div style={{ display: 'flex', height: '36px', width: '100%' }}>
+                      <div style={{ flex: 1, background: preset.preview[0] }} />
+                      <div style={{ flex: 1, background: preset.preview[1] }} />
+                    </div>
+                    <div style={{ padding: '5px 4px', background: '#050505', textAlign: 'center' }}>
+                      <span style={{ fontFamily: F, fontSize: '8px', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#f0ede8', opacity: theme === preset.id ? 1 : 0.45 }}>{preset.label}</span>
+                      {theme === preset.id && <div style={{ fontFamily: F, fontSize: '6px', letterSpacing: '0.15em', color: 'rgba(100,255,180,0.85)', textTransform: 'uppercase', marginTop: '2px' }}>Active</div>}
+                    </div>
+                  </button>
+                ))}
               </div>
               {themeStatus === 'saved' && <p style={{ fontFamily: F, fontSize: '9px', color: 'rgba(100,255,180,0.85)', letterSpacing: '0.1em', textAlign: 'center' }}>Saved</p>}
             </Section>
