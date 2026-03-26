@@ -29,6 +29,9 @@ export function useReleases() {
           embedSpotify: r.embed_spotify,
           background: r.background_url ? { url: r.background_url } : null,
           socials: r.socials,
+          customButtons: r.custom_buttons || [],
+          buttonOrder: r.button_order || [],
+          embedUrl: r.embed_url || null,
         })));
       }
       setLoading(false);
