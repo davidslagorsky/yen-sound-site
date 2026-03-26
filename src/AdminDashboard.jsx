@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import RoyaltiesPanel from "./components/RoyaltiesPanel";
 import { supabase } from "./supabase";
 import roster from "./rosterData";
@@ -825,6 +825,245 @@ function ReleasePageConfig({ releaseId, initialButtons, initialOrder, initialEmb
   );
 }
 
+
+/* ══════════════════════════════════════════════
+   ANALYTICS PANEL
+══════════════════════════════════════════════ */
+function AnalyticsPanel({ releases }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSlug, setSelectedSlug] = useState(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("page_events")
+        .select("page_slug,event_type,label,created_at")
+        .eq("page_type", "release")
+        .order("created_at", { ascending: false });
+      setRows(data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  /* aggregate per release */
+  const byRelease = useMemo(() => {
+    const map = {};
+    rows.forEach(r => {
+      if (!map[r.page_slug]) map[r.page_slug] = { views: 0, clicks: {}, total_clicks: 0 };
+      if (r.event_type === "view") map[r.page_slug].views++;
+      if (r.event_type === "click") {
+        const k = r.label || "Unknown";
+        map[r.page_slug].clicks[k] = (map[r.page_slug].clicks[k] || 0) + 1;
+        map[r.page_slug].total_clicks++;
+      }
+    });
+    return map;
+  }, [rows]);
+
+  /* sorted by views desc */
+  const sorted = useMemo(() =>
+    Object.entries(byRelease)
+      .sort((a, b) => b[1].views - a[1].views)
+      .map(([slug, data]) => {
+        const release = releases.find(r => r.slug === slug);
+        return { slug, title: release?.title || slug, artist: release?.artist || "", ...data };
+      }),
+    [byRelease, releases]
+  );
+
+  function exportPDF(entry) {
+    setPdfLoading(true);
+    const dateStr = new Date().toLocaleDateString("he-IL");
+    const clickRows = Object.entries(entry.clicks).sort((a,b) => b[1]-a[1]);
+    const totalClicks = entry.total_clicks;
+
+    const html = `<!DOCTYPE html><html lang="he" dir="rtl">
+<head><meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Heebo',Arial,sans-serif;direction:rtl;background:#fff;color:#111;padding:40px}
+  .doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:2px solid #111;margin-bottom:28px}
+  .brand{font-size:11px;font-weight:700;letter-spacing:0.4em;text-transform:uppercase;color:#111;margin-bottom:4px}
+  .doc-type{font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:#888;margin-bottom:12px}
+  .release-name{font-size:26px;font-weight:900;letter-spacing:-0.5px;line-height:1}
+  .artist-name{font-size:12px;color:#666;margin-top:4px;letter-spacing:0.05em}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+  .kpi{border:1px solid #ddd;padding:18px;text-align:center}
+  .kpi-label{font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:#888;margin-bottom:8px}
+  .kpi-val{font-size:28px;font-weight:900;color:#111;font-family:'Courier New',monospace}
+  .section-head{font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:#888;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #e8e8e8}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{padding:8px 10px;text-align:right;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:#888;border-bottom:1.5px solid #111;font-weight:600}
+  th.num{text-align:left}
+  td{padding:8px 10px;border-bottom:1px solid #f0f0f0}
+  td.num{text-align:left;font-family:'Courier New',monospace;font-weight:700}
+  .bar-wrap{flex:1;height:4px;background:#f0f0f0;margin:0 10px;position:relative}
+  .bar-fill{position:absolute;right:0;top:0;bottom:0;background:#111}
+  tr:nth-child(even) td{background:#fafafa}
+  .footer{margin-top:28px;padding-top:14px;border-top:1px solid #ddd;display:flex;justify-content:space-between}
+  .footer-brand{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:#bbb;font-weight:700}
+  .footer-note{font-size:8px;color:#ccc}
+  @media print{body{padding:20px}@page{margin:10mm;size:A4}}
+</style></head><body>
+  <div class="doc-header">
+    <div>
+      <div class="brand">YEN SOUND</div>
+      <div class="doc-type">Analytics Report</div>
+      <div class="release-name">${entry.title}</div>
+      ${entry.artist ? `<div class="artist-name">${entry.artist}</div>` : ''}
+    </div>
+    <div style="text-align:left">
+      <div style="font-size:10px;color:#888">${dateStr}</div>
+      <div style="font-size:10px;color:#555;margin-top:4px">yensound.com/release/${entry.slug}</div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Page Views</div><div class="kpi-val">${entry.views.toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-label">Link Clicks</div><div class="kpi-val">${totalClicks.toLocaleString()}</div></div>
+  </div>
+
+  ${clickRows.length > 0 ? `
+  <div style="margin-bottom:28px">
+    <div class="section-head">Clicks by Button</div>
+    <table>
+      <thead><tr>
+        <th>Button</th>
+        <th class="num">Clicks</th>
+        <th class="num">%</th>
+      </tr></thead>
+      <tbody>
+        ${clickRows.map(([label, count]) => `
+          <tr>
+            <td>${label}</td>
+            <td class="num">${count}</td>
+            <td class="num">${totalClicks > 0 ? Math.round(count/totalClicks*100) : 0}%</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>` : ''}
+
+  <div class="footer">
+    <span class="footer-brand">YEN SOUND</span>
+    <span class="footer-note">הופק ${dateStr} · מסמך זה מיועד לאמן בלבד</span>
+  </div>
+</body></html>`;
+
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); setPdfLoading(false); }, 600);
+  }
+
+  if (loading) return <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25 }}>Loading...</p>;
+  if (rows.length === 0) return (
+    <div>
+      <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.25, marginBottom: "12px" }}>No data yet.</p>
+      <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.2, lineHeight: 1.7, letterSpacing: "0.08em" }}>
+        Analytics are tracked automatically when visitors open release pages and click buttons.
+        Make sure to run the SQL below in Supabase first.
+      </p>
+      <pre style={{ background: "#080808", border: "1px solid #1a1a1a", padding: "16px", fontFamily: "monospace", fontSize: "11px", color: "rgba(100,255,180,0.85)", overflowX: "auto", lineHeight: 1.6, marginTop: "16px", whiteSpace: "pre-wrap" }}>
+{`CREATE TABLE IF NOT EXISTS page_events (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  page_type text NOT NULL,
+  page_slug text NOT NULL,
+  event_type text NOT NULL,
+  label text,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE page_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anon insert" ON page_events
+  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anon select" ON page_events
+  FOR SELECT USING (true);`}
+      </pre>
+    </div>
+  );
+
+  return (
+    <div>
+      <FieldLabel>Release Performance</FieldLabel>
+      {selectedSlug && (() => {
+        const entry = sorted.find(s => s.slug === selectedSlug);
+        if (!entry) return null;
+        const clickRows = Object.entries(entry.clicks).sort((a,b) => b[1]-a[1]);
+        const maxClicks = clickRows[0]?.[1] || 1;
+        return (
+          <div style={{ border: "1px solid rgba(240,237,232,0.15)", marginBottom: "16px", padding: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+              <div>
+                <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#f0ede8" }}>{entry.title}</p>
+                {entry.artist && <p style={{ fontFamily: F, fontSize: "10px", opacity: 0.4, marginTop: "2px" }}>{entry.artist}</p>}
+              </div>
+              <GhostBtn onClick={() => setSelectedSlug(null)}>✕</GhostBtn>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+              {[["Page Views", entry.views], ["Link Clicks", entry.total_clicks]].map(([label, val]) => (
+                <div key={label} style={{ border: "1px solid rgba(240,237,232,0.1)", padding: "14px", textAlign: "center" }}>
+                  <p style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.25em", textTransform: "uppercase", opacity: 0.35, marginBottom: "8px" }}>{label}</p>
+                  <p style={{ fontFamily: "monospace", fontSize: "22px", color: "#f0ede8" }}>{val.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+
+            {clickRows.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <p style={{ fontFamily: F, fontSize: "8px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.3, marginBottom: "12px" }}>Clicks by Button</p>
+                {clickRows.map(([label, count]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", direction: "rtl" }}>
+                    <span style={{ fontFamily: F, fontSize: "10px", width: "100px", textAlign: "right", flexShrink: 0, opacity: 0.7 }}>{label}</span>
+                    <div style={{ flex: 1, height: "3px", background: "rgba(240,237,232,0.07)" }}>
+                      <div style={{ height: "100%", width: `${(count/maxClicks)*100}%`, background: "rgba(240,237,232,0.5)", transition: "width 0.4s" }} />
+                    </div>
+                    <span style={{ fontFamily: "monospace", fontSize: "10px", opacity: 0.5, width: "30px", textAlign: "left", flexShrink: 0 }}>{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <ActionBtn onClick={() => exportPDF(entry)} disabled={pdfLoading}>
+              {pdfLoading ? "Generating..." : "Export PDF Report"}
+            </ActionBtn>
+          </div>
+        );
+      })()}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        {sorted.map(entry => (
+          <div key={entry.slug}
+            onClick={() => setSelectedSlug(entry.slug === selectedSlug ? null : entry.slug)}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: `1px solid ${entry.slug === selectedSlug ? "rgba(240,237,232,0.4)" : "rgba(240,237,232,0.08)"}`, cursor: "pointer", background: entry.slug === selectedSlug ? "#0d0d0d" : "transparent", transition: "all 0.15s" }}
+            onMouseOver={e => { if (entry.slug !== selectedSlug) e.currentTarget.style.borderColor = "rgba(240,237,232,0.2)"; }}
+            onMouseOut={e => { if (entry.slug !== selectedSlug) e.currentTarget.style.borderColor = "rgba(240,237,232,0.08)"; }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", color: "#f0ede8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{entry.title}</p>
+              {entry.artist && <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.35, marginTop: "2px" }}>{entry.artist}</p>}
+            </div>
+            <div style={{ display: "flex", gap: "16px", flexShrink: 0, marginRight: "8px" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontFamily: "monospace", fontSize: "14px", color: "#f0ede8" }}>{entry.views.toLocaleString()}</p>
+                <p style={{ fontFamily: F, fontSize: "7px", opacity: 0.3, letterSpacing: "0.15em", textTransform: "uppercase" }}>views</p>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontFamily: "monospace", fontSize: "14px", color: "#f0ede8" }}>{entry.total_clicks.toLocaleString()}</p>
+                <p style={{ fontFamily: F, fontSize: "7px", opacity: 0.3, letterSpacing: "0.15em", textTransform: "uppercase" }}>clicks</p>
+              </div>
+            </div>
+            <span style={{ opacity: 0.3, fontSize: "10px" }}>{entry.slug === selectedSlug ? "▲" : "▼"}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════
    MAIN DASHBOARD
 ══════════════════════════════════════════════ */
@@ -1074,6 +1313,7 @@ export default function AdminDashboard() {
     { id: "photos",     icon: "◻", label: "Photos"     },
     { id: "bg",         icon: "▣", label: "Background" },
     { id: "royalties",  icon: "₪", label: "Royalties"  },
+    { id: "analytics",  icon: "◎", label: "Analytics"  },
   ];
 
   const toggle = id => setActivePanel(p => p === id ? null : id);
@@ -1299,6 +1539,13 @@ export default function AdminDashboard() {
         {activePanel === "bg" && (
           <Panel>
             <SiteBackgroundPanel />
+          </Panel>
+        )}
+
+        {/* ── Analytics ── */}
+        {activePanel === "analytics" && (
+          <Panel>
+            <AnalyticsPanel releases={releases} />
           </Panel>
         )}
 
