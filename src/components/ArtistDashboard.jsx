@@ -119,33 +119,45 @@ function migrateEmbedUrl(buttons, embedUrl) {
   return [...buttons, { id: uid(), type: 'embed', url: embedUrl.trim(), label: '' }];
 }
 
+/* ─── Design tokens (matches AdminDashboard) ─── */
+const D = {
+  bg: '#080808', surface: '#0d0d0d', surface2: '#111', surface3: '#161616',
+  border: 'rgba(255,255,255,0.07)', borderHi: 'rgba(255,255,255,0.18)',
+  text: '#f0ede8', muted: 'rgba(240,237,232,0.4)',
+  green: 'rgba(74,222,128,0.9)', red: 'rgba(248,113,113,0.9)',
+  radius: '8px', radiusSm: '6px',
+  shadow: '0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+};
+
 /* ─── Shared input styles ─── */
 const inputStyle = {
-  width: '100%', boxSizing: 'border-box', background: 'transparent',
-  border: '1px solid rgba(240,237,232,0.2)', color: '#f0ede8',
-  fontFamily: F, fontSize: '16px', letterSpacing: '0.05em',
-  padding: '12px 12px', outline: 'none', borderRadius: 0, WebkitAppearance: 'none',
+  width: '100%', boxSizing: 'border-box', background: D.surface2,
+  border: `1px solid ${D.border}`, color: D.text,
+  fontFamily: F, fontSize: '15px',
+  padding: '11px 14px', outline: 'none', borderRadius: D.radiusSm, WebkitAppearance: 'none',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
 };
-function focusBorder(e) { e.target.style.borderColor = 'rgba(240,237,232,0.6)'; }
-function blurBorder(e)  { e.target.style.borderColor = 'rgba(240,237,232,0.2)'; }
+function focusBorder(e) { e.target.style.borderColor = 'rgba(74,222,128,0.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(74,222,128,0.08)'; }
+function blurBorder(e)  { e.target.style.borderColor = D.border; e.target.style.boxShadow = 'none'; }
 
 function FieldLabel({ children }) {
-  return <p style={{ fontFamily: F, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px' }}>{children}</p>;
+  return <p style={{ fontFamily: F, fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: D.muted, marginBottom: '8px' }}>{children}</p>;
 }
 
 function ActionBtn({ onClick, children, danger = false, disabled = false }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: 'block', width: '100%', padding: '16px 24px', minHeight: '52px',
-      border: danger ? '2px solid rgba(220,80,80,0.6)' : '2px solid rgba(240,237,232,0.8)',
-      background: 'transparent', color: danger ? 'rgba(220,80,80,0.9)' : '#f0ede8',
-      fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.3em',
-      textTransform: 'uppercase', cursor: disabled ? 'default' : 'pointer',
-      transition: 'background 0.15s', opacity: disabled ? 0.4 : 1, boxSizing: 'border-box',
-      WebkitTapHighlightColor: 'transparent',
+      display: 'block', width: '100%', padding: '13px 20px', minHeight: '46px',
+      border: `1px solid ${danger ? 'rgba(248,113,113,0.4)' : D.borderHi}`,
+      background: danger ? 'rgba(248,113,113,0.06)' : 'rgba(255,255,255,0.04)',
+      color: danger ? D.red : D.text,
+      fontFamily: F, fontSize: '13px', fontWeight: 600, letterSpacing: '0.04em',
+      borderRadius: D.radiusSm, cursor: disabled ? 'default' : 'pointer',
+      transition: 'background 0.15s, border-color 0.15s', opacity: disabled ? 0.4 : 1,
+      boxSizing: 'border-box', WebkitTapHighlightColor: 'transparent',
     }}
-      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(220,80,80,0.08)' : '#111'; }}
-      onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}>
+      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.08)'; }}
+      onMouseOut={e => { if (!disabled) e.currentTarget.style.background = danger ? 'rgba(248,113,113,0.06)' : 'rgba(255,255,255,0.04)'; }}>
       {children}
     </button>
   );
@@ -159,15 +171,31 @@ function ActionBtn({ onClick, children, danger = false, disabled = false }) {
 function Section({ id, activePanel, setActivePanel, label, icon, children }) {
   const open = activePanel === id;
   return (
-    <div style={{ borderBottom: '1px solid rgba(240,237,232,0.1)' }}>
+    <div style={{
+      background: D.surface, border: `1px solid ${open ? D.borderHi : D.border}`,
+      borderRadius: D.radius, marginBottom: '8px', overflow: 'hidden',
+      boxShadow: open ? D.shadow : 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
+    }}>
       <button
         onClick={() => setActivePanel(open ? null : id)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '18px 20px', minHeight: '56px', background: open ? '#0d0d0d' : 'transparent', border: 'none', color: '#f0ede8', cursor: 'pointer', transition: 'background 0.15s', WebkitTapHighlightColor: 'transparent' }}>
-        <span style={{ fontFamily: F, fontSize: '15px', opacity: 0.7, lineHeight: 1 }}>{icon}</span>
-        <span style={{ fontFamily: F, fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', flex: 1, textAlign: 'left' }}>{label}</span>
-        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRight: '1.5px solid rgba(240,237,232,0.4)', borderBottom: '1.5px solid rgba(240,237,232,0.4)', transform: open ? 'rotate(225deg) translateY(-2px)' : 'rotate(45deg)', transition: 'transform 0.2s', marginRight: '4px' }} />
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
+          padding: '16px 18px', minHeight: '54px',
+          background: open ? D.surface3 : 'transparent',
+          border: 'none', color: open ? D.text : D.muted,
+          cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+          WebkitTapHighlightColor: 'transparent' }}
+        onMouseOver={e => { if (!open) { e.currentTarget.style.background = D.surface2; e.currentTarget.style.color = D.text; } }}
+        onMouseOut={e => { if (!open) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = D.muted; } }}
+      >
+        <span style={{ fontSize: '16px', lineHeight: 1, opacity: open ? 1 : 0.7 }}>{icon}</span>
+        <span style={{ fontFamily: F, fontSize: '13px', fontWeight: 600, letterSpacing: '0.02em', flex: 1, textAlign: 'left' }}>{label}</span>
+        <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRight: `1.5px solid ${D.borderHi}`, borderBottom: `1.5px solid ${D.borderHi}`, transform: open ? 'rotate(225deg) translateY(-2px)' : 'rotate(45deg)', transition: 'transform 0.2s', marginRight: '2px' }} />
       </button>
-      {open && <div style={{ padding: '4px 20px 28px' }}>{children}</div>}
+      {open && (
+        <div style={{ padding: '0 18px 20px', borderTop: `1px solid ${D.border}`, paddingTop: '16px' }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -978,7 +1006,7 @@ export default function ArtistDashboard() {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
           <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: '52px', height: '52px', opacity: 0.55 }} />
         </div>
-        <div style={{ overflow: 'hidden', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', padding: '7px 0' }}>
+        <div style={{ overflow: 'hidden', borderTop: '1px solid #1a1a1a', borderBottom: `1px solid ${D.border}`, padding: '7px 0' }}>
           <div style={{ display: 'inline-flex', animation: 'marquee 18s linear infinite', whiteSpace: 'nowrap' }}>
             {Array(6).fill('YEN SOUND ®   ').map((t, i) => (
               <span key={i} style={{ fontFamily: F, fontSize: '9px', fontWeight: 700, letterSpacing: '0.35em', textTransform: 'uppercase', opacity: 0.25, paddingRight: '40px' }}>{t}</span>
