@@ -81,18 +81,6 @@ function PageTransition({ children }) {
 }
 
 /* ---------------- Bottom Marquee ---------------- */
-const MARQUEE_TEXT = "YEN SOUND · TEL AVIV · PR & DISTRIBUTION · BOUTIQUE LABEL · ";
-function Marquee() {
-  const items = Array(8).fill(MARQUEE_TEXT);
-  return (
-    <div className="yen-marquee-wrap">
-      <div className="yen-marquee-track">
-        {items.map((t, i) => <span key={i} className="yen-marquee-item">{t}</span>)}
-      </div>
-    </div>
-  );
-}
-
 /* ---------------- Home ---------------- */
 const Home = ({ releases }) => {
   const videoRef = React.useRef(null);
