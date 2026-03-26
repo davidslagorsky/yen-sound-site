@@ -6,10 +6,35 @@ import roster from "./rosterData";
 const F = "'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 /* ══════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════ */
+const D = {
+  bg:       "#080808",
+  surface:  "#0d0d0d",
+  surface2: "#111",
+  surface3: "#161616",
+  border:   "rgba(255,255,255,0.07)",
+  borderHi: "rgba(255,255,255,0.18)",
+  text:     "#f0ede8",
+  muted:    "rgba(240,237,232,0.4)",
+  green:    "rgba(74,222,128,0.9)",
+  red:      "rgba(248,113,113,0.9)",
+  radius:   "8px",
+  radiusSm: "6px",
+  shadow:   "0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)",
+  shadowLg: "0 4px 24px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.4)",
+};
+
+/* ══════════════════════════════════════════════
    SHARED UI PRIMITIVES
 ══════════════════════════════════════════════ */
 function FieldLabel({ children }) {
-  return <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.35, marginBottom: "6px" }}>{children}</p>;
+  return (
+    <p style={{ fontFamily: F, fontSize: "10px", fontWeight: 600, letterSpacing: "0.06em",
+      color: D.muted, marginBottom: "8px", textTransform: "uppercase" }}>
+      {children}
+    </p>
+  );
 }
 
 function Input({ value, onChange, placeholder, name, type = "text" }) {
@@ -17,9 +42,12 @@ function Input({ value, onChange, placeholder, name, type = "text" }) {
     <input
       name={name} type={type} value={value}
       onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", padding: "10px 12px", outline: "none", transition: "border-color 0.15s" }}
-      onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
-      onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+      style={{ width: "100%", boxSizing: "border-box", background: D.surface2,
+        border: `1px solid ${D.border}`, color: D.text, fontFamily: F, fontSize: "13px",
+        padding: "10px 14px", outline: "none", borderRadius: D.radiusSm,
+        transition: "border-color 0.15s, box-shadow 0.15s" }}
+      onFocus={e => { e.target.style.borderColor = "rgba(74,222,128,0.5)"; e.target.style.boxShadow = "0 0 0 3px rgba(74,222,128,0.08)"; }}
+      onBlur={e => { e.target.style.borderColor = D.border; e.target.style.boxShadow = "none"; }}
     />
   );
 }
@@ -29,9 +57,12 @@ function NamedInput({ name, value, onChange, placeholder, type = "text" }) {
     <input
       name={name} type={type} value={value}
       onChange={onChange} placeholder={placeholder}
-      style={{ width: "100%", boxSizing: "border-box", background: "transparent", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", padding: "10px 12px", outline: "none", transition: "border-color 0.15s" }}
-      onFocus={e => e.target.style.borderColor = "rgba(240,237,232,0.6)"}
-      onBlur={e => e.target.style.borderColor = "rgba(240,237,232,0.2)"}
+      style={{ width: "100%", boxSizing: "border-box", background: D.surface2,
+        border: `1px solid ${D.border}`, color: D.text, fontFamily: F, fontSize: "13px",
+        padding: "10px 14px", outline: "none", borderRadius: D.radiusSm,
+        transition: "border-color 0.15s, box-shadow 0.15s" }}
+      onFocus={e => { e.target.style.borderColor = "rgba(74,222,128,0.5)"; e.target.style.boxShadow = "0 0 0 3px rgba(74,222,128,0.08)"; }}
+      onBlur={e => { e.target.style.borderColor = D.border; e.target.style.boxShadow = "none"; }}
     />
   );
 }
@@ -39,45 +70,52 @@ function NamedInput({ name, value, onChange, placeholder, type = "text" }) {
 function ActionBtn({ onClick, children, danger = false, disabled = false, small = false }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      display: "block", width: "100%", padding: small ? "10px 16px" : "16px 24px",
-      border: danger ? "2px solid rgba(220,80,80,0.6)" : "2px solid rgba(240,237,232,0.8)",
-      background: "transparent", color: danger ? "rgba(220,80,80,0.9)" : "#f0ede8",
-      fontFamily: F, fontSize: "11px", fontWeight: 700, letterSpacing: "0.3em",
-      textTransform: "uppercase", cursor: disabled ? "default" : "pointer",
-      transition: "background 0.15s", opacity: disabled ? 0.4 : 1, boxSizing: "border-box",
+      display: "block", width: "100%", padding: small ? "9px 16px" : "13px 20px",
+      border: `1px solid ${danger ? "rgba(248,113,113,0.4)" : D.borderHi}`,
+      background: danger ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.04)",
+      color: danger ? D.red : D.text,
+      fontFamily: F, fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em",
+      borderRadius: D.radiusSm, cursor: disabled ? "default" : "pointer",
+      transition: "background 0.15s, border-color 0.15s", opacity: disabled ? 0.4 : 1,
+      boxSizing: "border-box",
     }}
-      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(220,80,80,0.08)" : "#111"; }}
-      onMouseOut={e => e.currentTarget.style.background = "transparent"}
+      onMouseOver={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.08)"; }}
+      onMouseOut={e => { if (!disabled) e.currentTarget.style.background = danger ? "rgba(248,113,113,0.06)" : "rgba(255,255,255,0.04)"; }}
     >{children}</button>
   );
 }
 
 function GhostBtn({ onClick, href, children, danger = false }) {
   const s = {
-    fontFamily: F, fontSize: "9px", letterSpacing: "0.2em", textTransform: "uppercase",
-    padding: "7px 12px", background: "transparent", cursor: "pointer", textDecoration: "none",
-    border: danger ? "1px solid rgba(220,80,80,0.5)" : "1px solid rgba(240,237,232,0.25)",
-    color: danger ? "rgba(220,80,80,0.9)" : "#f0ede8",
-    transition: "border-color 0.15s",
+    fontFamily: F, fontSize: "11px", fontWeight: 500, letterSpacing: "0.02em",
+    padding: "6px 12px", background: "transparent", cursor: "pointer", textDecoration: "none",
+    border: `1px solid ${danger ? "rgba(248,113,113,0.35)" : D.border}`,
+    color: danger ? D.red : D.muted,
+    borderRadius: D.radiusSm, transition: "all 0.15s",
   };
-  if (href) return <a href={href} target="_blank" rel="noreferrer" style={s}>{children}</a>;
-  return <button onClick={onClick} style={s}>{children}</button>;
+  const over = e => { e.currentTarget.style.background = danger ? "rgba(248,113,113,0.08)" : D.surface3; e.currentTarget.style.borderColor = danger ? "rgba(248,113,113,0.6)" : D.borderHi; e.currentTarget.style.color = danger ? D.red : D.text; };
+  const out  = e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = danger ? "rgba(248,113,113,0.35)" : D.border; e.currentTarget.style.color = danger ? D.red : D.muted; };
+  if (href) return <a href={href} target="_blank" rel="noreferrer" style={s} onMouseOver={over} onMouseOut={out}>{children}</a>;
+  return <button onClick={onClick} style={s} onMouseOver={over} onMouseOut={out}>{children}</button>;
 }
 
 function DashTile({ icon, label, active, onClick }) {
   return (
     <button onClick={onClick} style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: "10px", padding: "28px 16px",
-      border: active ? "1px solid rgba(240,237,232,0.6)" : "1px solid rgba(240,237,232,0.15)",
-      background: active ? "#0d0d0d" : "transparent", color: "#f0ede8",
-      cursor: "pointer", transition: "border-color 0.2s, background 0.2s", width: "100%",
+      gap: "8px", padding: "20px 12px",
+      border: `1px solid ${active ? "rgba(74,222,128,0.35)" : D.border}`,
+      background: active ? "rgba(74,222,128,0.06)" : D.surface,
+      color: active ? D.text : D.muted,
+      borderRadius: D.radius, cursor: "pointer",
+      transition: "all 0.2s", width: "100%",
+      boxShadow: active ? "0 0 0 1px rgba(74,222,128,0.15), inset 0 1px 0 rgba(255,255,255,0.04)" : "none",
     }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "rgba(240,237,232,0.4)"; e.currentTarget.style.background = "#0a0a0a"; } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "rgba(240,237,232,0.15)"; e.currentTarget.style.background = "transparent"; } }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = D.surface2; e.currentTarget.style.borderColor = D.borderHi; e.currentTarget.style.color = D.text; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = D.surface; e.currentTarget.style.borderColor = D.border; e.currentTarget.style.color = D.muted; } }}
     >
-      <span style={{ fontSize: "22px", lineHeight: 1, opacity: 0.7 }}>{icon}</span>
-      <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", opacity: active ? 1 : 0.7 }}>{label}</span>
+      <span style={{ fontSize: "18px", lineHeight: 1 }}>{icon}</span>
+      <span style={{ fontFamily: F, fontSize: "10px", fontWeight: 600, letterSpacing: "0.04em" }}>{label}</span>
     </button>
   );
 }
@@ -86,18 +124,37 @@ function StatusMsg({ status, noun }) {
   if (!status) return null;
   const ok = status === "success";
   return (
-    <p style={{ fontFamily: F, fontSize: "10px", letterSpacing: "0.15em", marginTop: "10px", color: ok ? "rgba(100,255,180,0.85)" : "rgba(255,100,100,0.85)" }}>
-      {ok ? `✓ ${noun}` : status.replace("error:", "")}
-    </p>
+    <div style={{
+      display: "flex", alignItems: "center", gap: "8px",
+      marginTop: "10px", padding: "10px 12px",
+      background: ok ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)",
+      border: `1px solid ${ok ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}`,
+      borderRadius: D.radiusSm,
+    }}>
+      <span style={{ fontSize: "12px" }}>{ok ? "✓" : "✕"}</span>
+      <p style={{ fontFamily: F, fontSize: "12px", fontWeight: 500,
+        color: ok ? D.green : D.red }}>
+        {ok ? noun : status.replace("error:", "")}
+      </p>
+    </div>
   );
 }
 
 function DataRow({ label, sub, children }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", border: "1px solid #111", gap: "12px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+      padding: "12px 14px", borderRadius: D.radiusSm, gap: "12px",
+      background: D.surface, border: `1px solid ${D.border}`,
+      transition: "border-color 0.15s",
+    }}
+      onMouseOver={e => e.currentTarget.style.borderColor = D.borderHi}
+      onMouseOut={e => e.currentTarget.style.borderColor = D.border}
+    >
       <div style={{ minWidth: 0, flex: 1 }}>
-        <p style={{ fontFamily: F, fontSize: "11px", letterSpacing: "0.05em", color: "#f0ede8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</p>
-        {sub && <p style={{ fontFamily: F, fontSize: "9px", opacity: 0.35, marginTop: "2px", letterSpacing: "0.08em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</p>}
+        <p style={{ fontFamily: F, fontSize: "13px", fontWeight: 500, color: D.text,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</p>
+        {sub && <p style={{ fontFamily: F, fontSize: "11px", color: D.muted, marginTop: "2px",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</p>}
       </div>
       {children && <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>{children}</div>}
     </div>
@@ -105,11 +162,24 @@ function DataRow({ label, sub, children }) {
 }
 
 function Panel({ children }) {
-  return <div style={{ border: "1px solid rgba(240,237,232,0.15)", padding: "24px", marginBottom: "12px" }}>{children}</div>;
+  return (
+    <div style={{
+      background: D.surface, border: `1px solid ${D.border}`,
+      borderRadius: D.radius, padding: "20px",
+      marginBottom: "10px", boxShadow: D.shadow,
+    }}>
+      {children}
+    </div>
+  );
 }
 
 function SectionLabel({ children }) {
-  return <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.2, textAlign: "center", marginBottom: "16px" }}>{children}</p>;
+  return (
+    <p style={{ fontFamily: F, fontSize: "10px", fontWeight: 600, letterSpacing: "0.08em",
+      textTransform: "uppercase", color: D.muted, textAlign: "center", marginBottom: "14px" }}>
+      {children}
+    </p>
+  );
 }
 
 /* ══════════════════════════════════════════════
@@ -340,6 +410,7 @@ CREATE POLICY "Anon delete" ON slugs
             <GhostBtn danger onClick={() => deleteSlug(s.id, s.slug)}>Delete</GhostBtn>
           </DataRow>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -1281,25 +1352,21 @@ export default function AdminDashboard() {
 
   /* ── Login screen ── */
   if (!auth) return (
-    <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
-      <div style={{ paddingTop: "36px" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-          <img src="/spinning yen logo white.gif" alt="YEN SOUND" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
+    <div style={{ background: D.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+      <div style={{ width: "100%", maxWidth: "340px" }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <img src="/spinning yen logo white.gif" alt="YEN SOUND" style={{ width: "48px", height: "48px", opacity: 0.6, marginBottom: "16px" }} />
+          <p style={{ fontFamily: F, fontSize: "11px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: D.muted }}>Admin Dashboard</p>
         </div>
-        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
-            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
-            ))}
+        <div style={{ background: D.surface, border: `1px solid ${D.border}`, borderRadius: D.radius, padding: "28px", boxShadow: D.shadowLg }}>
+          <FieldLabel>Password</FieldLabel>
+          <Input value={password} onChange={setPassword} placeholder="Enter password" type="password" />
+          {authError && (
+            <p style={{ fontFamily: F, fontSize: "12px", color: D.red, marginTop: "8px" }}>{authError}</p>
+          )}
+          <div style={{ marginTop: "16px" }}>
+            <ActionBtn onClick={handleLogin}>Enter</ActionBtn>
           </div>
-        </div>
-      </div>
-      <div style={{ padding: "60px 24px", maxWidth: "320px", margin: "0 auto" }}>
-        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, marginBottom: "24px", textAlign: "center" }}>Admin</p>
-        <Input value={password} onChange={setPassword} placeholder="Password" type="password" />
-        {authError && <p style={{ fontFamily: F, fontSize: "10px", color: "rgba(255,100,100,0.8)", marginTop: "8px" }}>{authError}</p>}
-        <div style={{ marginTop: "16px" }}>
-          <ActionBtn onClick={handleLogin}>Enter</ActionBtn>
         </div>
       </div>
     </div>
@@ -1319,38 +1386,30 @@ export default function AdminDashboard() {
   const toggle = id => setActivePanel(p => p === id ? null : id);
 
   return (
-    <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "#f0ede8", maxWidth: "600px", margin: "0 auto" }}>
+    <div style={{ background: D.bg, minHeight: "100vh", color: D.text }}>
+      <div style={{ maxWidth: "640px", margin: "0 auto", padding: "0 20px" }}>
 
-      {/* logo + marquee */}
-      <div style={{ paddingTop: "36px" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
-          <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "52px", height: "52px", opacity: 0.55 }} />
+      {/* header */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "28px 0 24px", borderBottom: `1px solid ${D.border}`, marginBottom: "28px" }}>
+        <img src="/spinning yen logo white.gif" alt="YEN SOUND" className="yen-spin" style={{ width: "32px", height: "32px", opacity: 0.6 }} />
+        <div>
+          <h1 style={{ fontFamily: F, fontSize: "14px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: D.text, lineHeight: 1 }}>Admin</h1>
+          <p style={{ fontFamily: F, fontSize: "11px", color: D.muted, marginTop: "3px" }}>Yen Sound Dashboard</p>
         </div>
-        <div style={{ overflow: "hidden", borderTop: "1px solid #1a1a1a", borderBottom: "1px solid #1a1a1a", padding: "7px 0" }}>
-          <div style={{ display: "inline-flex", animation: "marquee 18s linear infinite", whiteSpace: "nowrap" }}>
-            {Array(6).fill("YEN SOUND ®   ").map((t, i) => (
-              <span key={i} style={{ fontFamily: F, fontSize: "9px", fontWeight: 700, letterSpacing: "0.35em", textTransform: "uppercase", opacity: 0.25, paddingRight: "40px" }}>{t}</span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* title */}
-      <div style={{ padding: "40px 24px 32px", textAlign: "center" }}>
-        <h1 style={{ fontFamily: F, fontSize: "17px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#f0ede8", marginBottom: "6px" }}>Admin</h1>
-        <p style={{ fontFamily: F, fontSize: "9px", letterSpacing: "0.3em", textTransform: "uppercase", opacity: 0.25 }}>Yen Sound Dashboard</p>
       </div>
 
       {/* tile grid */}
-      <div style={{ padding: "0 24px" }}>
-        <SectionLabel>Manage</SectionLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
-          {tiles.map(t => <DashTile key={t.id} icon={t.icon} label={t.label} active={activePanel === t.id} onClick={() => toggle(t.id)} />)}
+      <div style={{ marginBottom: "28px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", marginBottom: "8px" }}>
+          {tiles.slice(0, 4).map(t => <DashTile key={t.id} icon={t.icon} label={t.label} active={activePanel === t.id} onClick={() => toggle(t.id)} />)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+          {tiles.slice(4).map(t => <DashTile key={t.id} icon={t.icon} label={t.label} active={activePanel === t.id} onClick={() => toggle(t.id)} />)}
         </div>
       </div>
 
       {/* panels */}
-      <div style={{ padding: "0 24px 80px" }}>
+      <div style={{ paddingBottom: "80px" }}>
 
         {/* ── Releases ── */}
         {activePanel === "releases" && (
@@ -1378,7 +1437,7 @@ export default function AdminDashboard() {
                   { name: "socials_website",  placeholder: "Website URL"               },
                 ].map(f => <NamedInput key={f.name} name={f.name} value={releaseForm[f.name]} onChange={handleReleaseChange} placeholder={f.placeholder} />)}
                 <select name="type" value={releaseForm.type} onChange={handleReleaseChange}
-                  style={{ background: "#000", border: "1px solid rgba(240,237,232,0.2)", color: "#f0ede8", fontFamily: F, fontSize: "11px", padding: "10px 12px", cursor: "pointer", outline: "none", width: "100%" }}>
+                  style={{ background: D.surface2, border: `1px solid ${D.border}`, color: D.text, fontFamily: F, fontSize: "13px", padding: "10px 14px", cursor: "pointer", outline: "none", width: "100%", borderRadius: D.radiusSm }}>
                   <option value="Single">Single</option>
                   <option value="Album">Album</option>
                   <option value="EP">EP</option>
